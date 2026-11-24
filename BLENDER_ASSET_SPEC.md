@@ -219,3 +219,70 @@ flowchart LR
 | **Đợt 2** | 7 công trình Landmark (`lm_*`) + `COL_*` + Bộ cây Stylized (`env_trees_pack.glb`) + Đá/Núi xa + Lightmap UV2 | Trung bình | Tiêu chí `#2`: `5.5 → 8.3`<br>Tiêu chí `#1`: `7.0 → 8.3`<br>Tiêu chí `#7`: `6.4 → 8.0` |
 | **Đợt 3** | 7 NPC cốt truyện (`npc_*`) + 6 Trùm (`boss_*` có node vỡ giáp / bùn / khiên) | Trung bình | Tiêu chí `#5`: `7.4 → 8.8`<br>Tiêu chí `#6`: `7.2 → 8.6` |
 | **Đợt 4** | 4 Shared Rigs thú phụ + Đạo cụ giải đố (`Cell Fracture` tường pha lê, Đài Gương, Cổng Portal, Đèn lồng) + tối ưu LOD/Instancing | Hoàn thiện | **Tổng điểm toàn game tiến tới `8.6 – 9.0 / 10` thật chất!** |
+
+---
+
+## 10. Tiêu Chí Nghiệm Thu Đạt / Không Đạt (QA Pass / Warn / Fail Gate)
+
+Mọi file `.glb` xuất từ Blender **chỉ được phép ghép vào game khi đạt trạng thái `PASS` (0 lỗi `FAIL`)** trên cả **kiểm định tự động (`tools/check_glb.py`)** lẫn **kiểm tra thị giác trong Blender / Three.js**.
+
+### 10.1. Bảng Ngưỡng Định Lượng (Pass / Fail) Theo Từng Nhóm Model
+
+| Nhóm (`--type`) | Nhận diện tên file | Trần Tam Giác (`FAIL`) | Trần Xương (`FAIL`) | Trần Material | Trần Texture | Trần Dung Lượng (`FAIL`) | Bắt buộc có trong `.glb` |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :--- |
+| **`player`** | `may*.glb` | `≤ 9.000` *(đích 4.5k–7.5k)* | `≤ 32` *(≤4 w/vtx)* | `≤ 4` | `≤ 1024 px` | `≤ 3.5 MB` | `TEXCOORD_0`, `SkinnedMesh`, `Socket_Staff`, `Socket_Back`, 12 clip animation chuẩn |
+| **`npc`** | `npc_*.glb` | `≤ 3.500` | `≤ 20` *(≤4 w/vtx)* | `≤ 2` | `≤ 1024 px` | `≤ 1.5 MB` | `TEXCOORD_0`, `SkinnedMesh`, tối thiểu clip `Idle` & `Talk` |
+| **`companion`** | `companion_*.glb` | `≤ 3.500` | `≤ 20` *(≤4 w/vtx)* | `≤ 2` | `≤ 1024 px` | `≤ 1.5 MB` | `TEXCOORD_0`, `SkinnedMesh`, tối thiểu 2 clip chuyển động (`Idle`/`Run`/`Fly`/`Swim`) |
+| **`boss`** | `boss_*.glb` | `≤ 7.000` | `≤ 28` *(≤4 w/vtx)* | `≤ 3` | `≤ 1024 px` | `≤ 2.5 MB` | `TEXCOORD_0`, `SkinnedMesh`, node điểm yếu (`Layer_*`/`Socket_*`), tối thiểu 5 clip (`Intro`, `Idle`, `Attack`, `Stun`, `Defeat`) |
+| **`landmark`** | `lm_*.glb` | `≤ 9.500` *(không tính `COL_*`)* | `0` *(tĩnh)* | `≤ 3` | `≤ 1024 px` | `≤ 3.0 MB` | `TEXCOORD_0`, `TEXCOORD_1` (UV2 Lightmap), mesh va chạm `COL_Solid_*` hoặc `COL_Walk_*` |
+| **`env`** | `env_*.glb` | LOD0 `≤ 1.800` / mẫu<br>LOD1 `≤ 500` / mẫu | `0` | `≤ 2` | `≤ 1024 px` | `≤ 2.0 MB` | `TEXCOORD_0`, cặp hậu tố `_LOD0` & `_LOD1` |
+| **`prop`** | `prop_*.glb` *(hoặc khác)* | `≤ 2.500` | `≤ 6` | `≤ 2` | `≤ 1024 px` | `≤ 1.0 MB` | `TEXCOORD_0` (riêng `prop_cracked_wall` phải có `≥ 8` mảnh `Shard_*`) |
+
+> [!CAUTION]
+> **Quy tắc chấm trạng thái tổng thể**:
+> - **❌ KHÔNG ĐẠT (`FAIL`)**: Dính **bất kỳ 1 lỗi chặn** nào bên dưới → **từ chối ghép vào game**, quay lại Blender sửa dứt điểm.
+> - **⚠️ ĐẠT CÓ CẢNH BÁO (`WARN`)**: `0` lỗi `FAIL`, nhưng chạm trên `85%` trần tài nguyên hoặc còn mục tối ưu → ghép thử được, nhưng phải tối ưu trước khi chốt bản phát hành.
+> - **✅ ĐẠT CHUẨN (`PASS`)**: `0` lỗi `FAIL` và `0` cảnh báo quan trọng, đạt cả kiểm định tự động lẫn kiểm tra thị giác.
+
+### 10.2. 12 Lỗi Chặn Bắt Buộc Sửa (`HARD FAIL`)
+
+| Mã | Nhóm kiểm tra | Điều kiện **KHÔNG ĐẠT (`FAIL`)** | Cách sửa nhanh trong Blender |
+| :---: | :--- | :--- | :--- |
+| **F01** | **Transform chưa Apply** | Bất kỳ node mesh/armature gốc nào có `scale ≠ (1, 1, 1)` (sai số `> 0.01`) | Chọn vật thể → `Ctrl + A` → `All Transforms` |
+| **F02** | **Lệch gốc / tỷ lệ** | Nhân vật/công trình trên cạn có `minY` lệch khỏi `0.0` quá `±0.08 m`, hoặc Bé Mây cao ngoài khoảng `1.25 – 1.65 m` | Đặt chân/đáy chạm lưới `Z = 0`, `Origin to 3D Cursor` tại `(0,0,0)` |
+| **F03** | **Sai hướng mặt** | Nhìn từ `Front View (Numpad 1)` trong Blender nhưng nhân vật quay lưng hoặc xoay ngang | Xoay mặt nhìn thẳng vào camera `-Y` rồi `Ctrl + A → Rotation` |
+| **F04** | **Vượt trần đa giác / xương / Material** | Vượt ngưỡng bảng 10.1 hoặc có đỉnh chịu ảnh hưởng `> 4` xương (`JOINTS_1` / `WEIGHTS_1`) | `Decimate` / Retopo lại; Weight Paint → `Weights → Limit Total (4)` |
+| **F05** | **Lỗi bề mặt (Normals / Non-manifold)** | Bật `Face Orientation` thấy mặt màu **đỏ** hướng ra ngoài (thủng mặt trong Three.js) hoặc còn n-gon biến dạng mạnh | Edit Mode → `Shift + N` (Recalculate Outside), `M → Merge by Distance` |
+| **F06** | **Thiếu UV1 hoặc vỡ ảnh ngoài** | Mesh hiển thị thiếu `TEXCOORD_0`, hoặc texture lưu dạng đường dẫn rời (`uri`) không nhúng vào `.glb` | Unwrap UV1; xuất `.glb` (Binary) để nhúng toàn bộ ảnh |
+| **F07** | **Quá khổ Texture / Dung lượng** | Có ảnh texture `> 2048 px` (hoặc `> 1024 px` cho prop/NPC) hoặc dung lượng `.glb` vượt trần bảng 10.1 | Resize ảnh về `512–1024 px`, chuyển định dạng **WebP / JPEG 85%** |
+| **F08** | **Bật nén Draco không tương thích** | File có `KHR_draco_mesh_compression` khi game chưa cài decoder WASM offline | Tắt dấu tick `Compression` trong hộp thoại xuất glTF 2.0 |
+| **F09** | **Thiếu Rig / Socket / Clip Animation** | Model `player`/`npc`/`companion`/`boss` thiếu `SkinnedMesh`, thiếu xương neo (`Socket_*`) hoặc thiếu/sai chính tả tên clip NLA bắt buộc | Push các Action xuống NLA Tracks, đặt đúng tên chuẩn mục 2–4 |
+| **F10** | **Hoạt ảnh giật / rách khớp** | Clip loop (`Idle/Walk/Run/Swim/Fly`) giật khựng giữa frame cuối và frame đầu, hoặc khuỷu tay/đầu gối bị bẹp nát khi gập | Sao chép keyframe frame đầu sang frame cuối, chỉnh lại Weight Paint khớp |
+| **F11** | **Thiếu `COL_*` / `LOD` / Node cơ chế** | `lm_*` không có `COL_Solid_*` hoặc `COL_Walk_*`; `env_*` thiếu cặp `_LOD0/_LOD1`; `boss_*` thiếu node điểm yếu tương ứng | Dựng khối đơn giản đặt tên `COL_Solid_01`, `COL_Walk_Bridge` ngay trong file |
+| **F12** | **Lỗi khi chạy thật trên Three.js** | Phát sinh bất kỳ lỗi/cảnh báo Console hoặc WebGL, bóng tự đổ bị sọc acne nặng, hoặc lỗi tải khi offline | Kiểm tra lại shader Principled BSDF & thử trên `http://127.0.0.1:8765/` |
+
+### 10.3. Danh Sách Cảnh Báo Tối Ưu (`SOFT WARN`)
+- **W01**: Số tam giác hoặc dung lượng file đạt **85% – 100%** trần cho phép.
+- **W02**: Dùng ảnh **PNG không nén** có kích thước lớn (`> 300 KB/ảnh`) cho texture không cần kênh trong suốt (nên đổi sang WebP/JPEG).
+- **W03**: `landmark` thiếu kênh **`TEXCOORD_1` (UV2)** để nướng Lightmap/AO hoặc có ánh sáng gắt.
+- **W04**: Tán cây `env_*` chưa dùng **Custom Split Normals** (`Data Transfer` từ khối cầu) nên bóng đổ giữa các thẻ lá bị lộ mảng cứng.
+- **W05**: Chưa gộp kênh `AO + Roughness + Metallic` vào chung 1 ảnh **ORM** (gây thừa số ảnh texture).
+- **W06**: `may_rigged.glb` thiếu Shape Keys biểu cảm mặt (`Blink`, `Smile`, `Surprised`, `Talk_Open`).
+
+### 10.4. Kiểm Định Tự Động 1 Lệnh Bằng `tools/check_glb.py`
+
+Mỗi lần xuất file `.glb` từ Blender, chạy ngay script kiểm định tự động (thuần Python chuẩn, không cần cài thư viện ngoài):
+
+```powershell
+# Kiểm tra 1 file vừa xuất từ Blender (tự nhận diện nhóm theo tên file)
+python tools/check_glb.py assets/models/may_rigged.glb
+
+# Chỉ định rõ nhóm kiểm định (player | npc | companion | boss | landmark | env | prop)
+python tools/check_glb.py assets/models/lm_lighthouse.glb --type landmark
+
+# Quét kiểm định toàn bộ thư mục assets/models/
+python tools/check_glb.py assets/models/
+```
+
+- Script trả về **mã thoát `0`** nếu toàn bộ file **PASS / WARN**, và **mã thoát `1`** nếu có ít nhất 1 file **FAIL** (in rõ mã lỗi `F01–F11` và cảnh báo `W01–W06` kèm thông số đo thực tế).
+- Sau khi `tools/check_glb.py` báo **PASS**, chỉ cần kiểm tra nốt 3 mục thị giác bằng mắt: **Face Orientation xanh 100% (F05)**, **hướng mặt nhìn thẳng Front View `-Y` (F03)** và **loop chuyển động mượt không rách khớp (F10)** là đủ chuẩn đưa thẳng vào game!

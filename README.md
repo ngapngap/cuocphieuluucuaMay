@@ -32,3 +32,4 @@ Phiên bản web 3D (PWA chơi offline hoàn toàn, sẵn sàng chạy trên Git
 - `js/systems.js`: Nhà máy thú 3D (35 loài), World Context, nhãn diegetic tự mờ theo khoảng cách, thử thách & modal.
 - `js/levels/hub.js` và `level1_ocean.js` … `level6_clouds.js`: 7 bản đồ 3D hoàn chỉnh.
 - `sw.js`, `manifest.json`: PWA cài đặt và chơi offline hoàn toàn.
+- `BLENDER_ASSET_SPEC.md` & `tools/check_glb.py`: Đặc tả thiết kế model/rig/animation/lightmap bằng Blender và script kiểm định Đạt/Không Đạt (PASS/WARN/FAIL) cho tệp `.glb` (`python tools/check_glb.py assets/models/`).
