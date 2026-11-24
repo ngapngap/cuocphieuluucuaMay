@@ -822,6 +822,7 @@
       var pmrem = new THREE.PMREMGenerator(MAY.renderer);
       var rt = pmrem.fromScene(ts, 0.04);
       if (currentEnvRT) currentEnvRT.dispose();
+      if (MAY._baseEnvRT) { MAY._baseEnvRT.dispose(); MAY._baseEnvRT = null; }
       currentEnvRT = rt;
       MAY.scene.environment = rt.texture;
       pmrem.dispose();

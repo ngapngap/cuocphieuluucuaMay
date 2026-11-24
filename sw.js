@@ -1,5 +1,5 @@
-/* Cuộc Phiêu Lưu Của Mây v11.1 — offline cache (PWA). Network-first cho code, cache-first cho model/ảnh/giọng đọc. */
-var CACHE = 'may-phieu-luu-v11.1';
+/* Cuộc Phiêu Lưu Của Mây v11.2 — offline cache (PWA). Network-first cho code, cache-first cho model/ảnh/giọng đọc. */
+var CACHE = 'may-phieu-luu-v11.2';
 var CORE = [
   "./", "index.html", "style.css", "three.min.js", "game.js", "manifest.json",
   "js/data.js", "js/audio.js", "js/core.js", "js/pbr.js", "js/vfx.js", "js/player.js", "js/systems.js", "js/story.js",
@@ -46,23 +46,35 @@ self.addEventListener('fetch', function (e) {
   if (e.request.method !== 'GET') return;
   var url = new URL(e.request.url);
   if (url.origin !== self.location.origin) return;
+  /* Chuẩn hóa khóa cache bỏ query string (?v=...) & CHỈ lưu phản hồi 200 (tránh lỗi 206 Partial Content của file MP3!) */
+  var cacheKey = url.origin + url.pathname;
   var isCode = e.request.mode === 'navigate' || url.pathname.endsWith('/') || /\.(html|js|css|json)$/i.test(url.pathname);
+  var canCache = function (r) { return r && r.ok && r.status === 200 && r.type === 'basic'; };
   if (isCode) {
     e.respondWith(fetch(e.request).then(function (r) {
-      if (r && r.ok) {
+      if (canCache(r)) {
         var copy = r.clone();
-        caches.open(CACHE).then(function (c) { c.put(e.request, copy); });
+        caches.open(CACHE).then(function (c) { c.put(cacheKey, copy); }).catch(function () {});
       }
       return r;
-    }).catch(function () { return caches.match(e.request).then(function (h) { return h || caches.match('index.html'); }); }));
+    }).catch(function () {
+      return caches.match(cacheKey, { ignoreSearch: true }).then(function (h) {
+        return h || caches.match('index.html', { ignoreSearch: true }) || caches.match('./', { ignoreSearch: true });
+      });
+    }));
   } else {
-    e.respondWith(caches.match(e.request).then(function (hit) {
-      return hit || fetch(e.request).then(function (r) {
-        if (r && r.ok) {
+    e.respondWith(caches.match(cacheKey, { ignoreSearch: true }).then(function (hit) {
+      if (hit) return hit;
+      return fetch(e.request).then(function (r) {
+        if (canCache(r)) {
           var copy = r.clone();
-          caches.open(CACHE).then(function (c) { c.put(e.request, copy); });
+          caches.open(CACHE).then(function (c) { c.put(cacheKey, copy); }).catch(function () {});
         }
         return r;
+      }).catch(function () {
+        return caches.match(e.request, { ignoreSearch: true }).then(function (h) {
+          return h || new Response('', { status: 503, statusText: 'Offline' });
+        });
       });
     }));
   }

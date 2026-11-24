@@ -27,6 +27,9 @@
   MAY.enterLevel = function (levelId, silent) {
     if (!MAY.LEVELS || !MAY.LEVELS[levelId]) levelId = "hub";
     if (MAY.closeDialogue) MAY.closeDialogue();
+    if (MAY.currentCtx && MAY.currentCtx.save && !MAY.currentCtx.save.gem && MAY.currentCtx.playSecs > 0) {
+      MAY.currentCtx.save.playSecs = Math.round(MAY.currentCtx.playSecs);
+    }
     if (MAY.clear3DLoops) MAY.clear3DLoops();
     if (MAY.VFX) MAY.VFX.clear();
     if (MAY.PlanarReflector) MAY.PlanarReflector.clear();

@@ -576,8 +576,7 @@
       beacon: null,
       onUpdate: null,
       onModelsReady: null,
-      levelStartTime: Date.now(),
-      playSecs: 0,
+      playSecs: ls.gem ? 0 : (ls.playSecs || 0),
       portalCooldown: 1.5,
       gemAwardedThisVisit: ls.gem
     };
@@ -1078,19 +1077,24 @@
       if (MAY.save.gears.indexOf(meta.num) === -1) MAY.save.gears.push(meta.num);
       var secs = Math.max(1, Math.round(ctx.playSecs));
       if (!ls.bestTime || secs < ls.bestTime) ls.bestTime = secs;
+      ls.playSecs = 0;
       MAY.persist();
       MAY.refreshHUD();
       MAY.sndGem();
       MAY.burstAt(MAY.player.pos.clone().add(new THREE.Vector3(0, 1.5, 0)), meta.gemColor, 28);
-      setTimeout(function () {
+      var winLevelId = ctx.id;
+      var showWinFn = function () {
+        if (MAY.currentLevelId !== winLevelId) return;
         if (MAY.save.gems.length >= 6 && !MAY.save.finaleSeen) {
           MAY.save.finaleSeen = true;
           MAY.persist();
           MAY.showGrandFinale();
         } else {
-          MAY.showLevelWin(ctx.id, secs);
+          MAY.showLevelWin(winLevelId, secs);
         }
-      }, 900);
+      };
+      if (ctx.scheduleEvent) ctx.scheduleEvent(0.9, showWinFn);
+      else setTimeout(showWinFn, 900);
     };
 
     /* ---- Cập nhật hàng frame cho toàn bộ hệ thống màn chơi ---- */
@@ -1098,7 +1102,10 @@
 
     ctx.updateAll = function (dt, t) {
       var pPos = MAY.player.pos;
-      if (MAY.started && !MAY.modalOpen) ctx.playSecs += dt;
+      if (MAY.started && !MAY.modalOpen) {
+        ctx.playSecs += dt;
+        if (!ls.gem) ls.playSecs = Math.floor(ctx.playSecs);
+      }
       if (ctx.portalCooldown > 0) ctx.portalCooldown -= dt;
 
       /* Đèn mặt trời & bóng đổ sắc nét đi theo Mây */
@@ -1362,7 +1369,7 @@
             MAY.toast("🏁 Bắt đầu " + ra.title + "! Qua " + ra.rings.length + " vòng xanh trong " + ra.limit + " giây!", "Bắt đầu đua nào!");
           }
         } else {
-          ra.t -= dt;
+          if (!MAY.modalOpen) ra.t -= dt;
           var hintEl = document.getElementById("hint");
           if (hintEl) hintEl.textContent = "🏁 " + ra.title + ": còn " + Math.ceil(ra.t) + "s — vòng " + (ra.idx + 1) + "/" + ra.rings.length + "!";
           if (ra.t <= 0) {

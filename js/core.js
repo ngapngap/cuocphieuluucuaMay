@@ -334,6 +334,43 @@
     return baked;
   }
 
+  /* Bảo vệ tuyệt đối geometry/material/texture gốc trong MAY.MODEL_T để clearWorld không phá hủy template khi đổi màn */
+  var protectedGeos = new Set();
+  var protectedMats = new Set();
+  var protectedTexs = new Set();
+  var MAT_TEX_SLOTS = ["map", "normalMap", "roughnessMap", "metalnessMap", "alphaMap", "aoMap", "emissiveMap", "bumpMap", "lightMap", "clearcoatNormalMap"];
+
+  function protectTemplateObj(root) {
+    if (!root || !root.traverse) return;
+    root.traverse(function (o) {
+      if (o.isMesh) {
+        o.userData.sharedGeo = true;
+        if (o.geometry) protectedGeos.add(o.geometry.uuid);
+        if (o.material) {
+          var mats = Array.isArray(o.material) ? o.material : [o.material];
+          mats.forEach(function (m) {
+            if (!m) return;
+            protectedMats.add(m.uuid);
+            MAT_TEX_SLOTS.forEach(function (slot) {
+              if (m[slot]) protectedTexs.add(m[slot].uuid);
+            });
+          });
+        }
+      }
+    });
+  }
+
+  function registerAllTemplates() {
+    var T = MAY.MODEL_T;
+    Object.keys(T).forEach(function (k) {
+      var entry = T[k];
+      if (!entry) return;
+      if (entry.group) protectTemplateObj(entry.group);
+      if (entry.base) protectTemplateObj(entry.base);
+      if (entry.lid) protectTemplateObj(entry.lid);
+    });
+  }
+
   function buildTemplates(res) {
     var T = MAY.MODEL_T;
     function fishTemplate(sc) {
@@ -389,6 +426,7 @@
     if (res[12]) T.prop_starfish = propTemplate(res[12], "x", 1.2);
     if (res[13]) T.prop_seaweed = propTemplate(res[13], "y", 2.5);
     if (res[14]) T.prop_kelp = propTemplate(res[14], "y", 3.5);
+    registerAllTemplates();
   }
 
   MAY.cloneFish = function (color, len, species) {
@@ -505,6 +543,7 @@
   /* ---- Dọn dẹp màn cũ khi chuyển màn ---- */
   function isProtectedTex(tex) {
     if (!tex) return true;
+    if (protectedTexs.has(tex.uuid)) return true;
     var k;
     for (k in TEX) if (TEX[k] && TEX[k].uuid === tex.uuid) return true;
     if (MAY.PBR) {
@@ -543,14 +582,21 @@
       var ch = worldRoot.children[0];
       worldRoot.remove(ch);
       ch.traverse(function (o) {
+        if (o.isLight && o.shadow && o.shadow.map) {
+          try { o.shadow.map.dispose(); o.shadow.map = null; } catch (e) {}
+        }
         if (o.isMesh || o.isPoints || o.isLine) {
-          if (o.geometry && o.geometry !== sharedStarGeo && o.geometry !== burstGeo && !o.userData.sharedGeo) {
+          if (o.geometry && o.geometry !== sharedStarGeo && o.geometry !== burstGeo && !o.userData.sharedGeo && !protectedGeos.has(o.geometry.uuid)) {
             try { o.geometry.dispose(); } catch (e) {}
+          }
+          if (o.isInstancedMesh && o.dispose) {
+            try { o.dispose(); } catch (e) {}
           }
           if (o.material) {
             var mats = Array.isArray(o.material) ? o.material : [o.material];
             mats.forEach(function (m) {
-              ["map", "normalMap", "roughnessMap", "alphaMap"].forEach(function (slot) {
+              if (!m || protectedMats.has(m.uuid)) return;
+              MAT_TEX_SLOTS.forEach(function (slot) {
                 if (m[slot] && !isProtectedTex(m[slot])) { try { m[slot].dispose(); } catch (e) {} }
               });
               try { m.dispose(); } catch (e) {}
@@ -593,7 +639,9 @@
         envTex.needsUpdate = true;
         var pmrem = new THREE.PMREMGenerator(renderer);
         var envRT = pmrem.fromEquirectangular(envTex);
-        scene.environment = envRT.texture;
+        if (!scene.environment) scene.environment = envRT.texture;
+        MAY._baseEnvRT = envRT;
+        envTex.dispose();
         pmrem.dispose();
       } catch (e) {}
     }

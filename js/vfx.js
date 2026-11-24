@@ -702,7 +702,10 @@
         if (fx.age >= fx.dur) {
           MAY.worldRoot.remove(fx.root);
           fx.root.traverse(function (o) {
-            if (o.isMesh) {
+            if (o.isLight && o.shadow && o.shadow.map) {
+              try { o.shadow.map.dispose(); o.shadow.map = null; } catch (e) {}
+            }
+            if (o.isMesh || o.isPoints || o.isLine) {
               if (o.geometry && !o.userData.sharedGeo) try { o.geometry.dispose(); } catch (e) {}
               if (o.material && o.material.dispose) try { o.material.dispose(); } catch (e) {}
             } else if (o.isSprite && o.material) try { o.material.dispose(); } catch (e) {}
