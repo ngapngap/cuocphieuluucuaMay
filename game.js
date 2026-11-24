@@ -1,6 +1,6 @@
 "use strict";
 /* ============================================================================
-   GAME.JS — Khởi chạy Cuộc Phiêu Lưu Của Mây v11.0 (6 Vùng Đất + Đảo Mây + PBR)
+   GAME.JS — Khởi chạy Cuộc Phiêu Lưu Của Mây v12.0 (6 Vùng Đất + Đảo Mây + PBR + Rigged GLB)
    ============================================================================ */
 (function (MAY) {
 
@@ -67,9 +67,40 @@
   document.querySelectorAll(".qbtn").forEach(function (b) {
     b.onclick = function () {
       MAY.applyQuality(b.dataset.q);
+      MAY.save.quality = b.dataset.q;
+      MAY.persist();
       MAY.beep(880, 0.1);
     };
   });
+
+  function syncFreeExploreUI() {
+    var qw = document.getElementById("quick-worlds");
+    var sf = document.getElementById("btn-start-free");
+    var mf = document.getElementById("btn-map-free");
+    var on = !!(MAY.save.freeExplore || MAY.save.freeSpells);
+    if (qw) qw.classList.toggle("hidden", !on);
+    if (sf) sf.textContent = on
+      ? "🔓 Đang bật Chế độ Tự do (Chọn nhanh mọi màn) — Bấm về Cốt truyện"
+      : "🧭 Chế độ Cốt truyện (Mở từng chương) — Bấm để bật Tự do";
+    if (mf) mf.textContent = on ? "🔒 Quay về Chế độ Cốt truyện" : "🔓 Mở Khám phá Tự do";
+  }
+  MAY.syncFreeExploreUI = syncFreeExploreUI;
+  MAY.toggleFreeExplore = function () {
+    var next = !(MAY.save.freeExplore || MAY.save.freeSpells);
+    MAY.save.freeExplore = next;
+    if (!next) MAY.save.freeSpells = false;
+    MAY.persist();
+    syncFreeExploreUI();
+    if (MAY.VFX && MAY.VFX.syncSpellUI) MAY.VFX.syncSpellUI();
+    var mapOv = document.getElementById("ov-map");
+    if (mapOv && !mapOv.classList.contains("hidden") && MAY.openMap) MAY.openMap();
+    MAY.toast(next ? "🔓 Đã bật Chế độ Khám phá Tự do: Mở khóa toàn bộ 6 vùng đất!" : "🧭 Đã trở về Chế độ Cốt truyện: Mở từng chương theo hành trình!");
+  };
+  var btnStartFree = document.getElementById("btn-start-free");
+  if (btnStartFree) btnStartFree.onclick = function () { MAY.toggleFreeExplore(); };
+  var btnMapFree = document.getElementById("btn-map-free");
+  if (btnMapFree) btnMapFree.onclick = function () { MAY.toggleFreeExplore(); };
+  syncFreeExploreUI();
 
   function startGame(targetLevel) {
     document.getElementById("ov-start").classList.add("hidden");
@@ -113,6 +144,8 @@
   if (freeBtn) freeBtn.onclick = function () { if (MAY.toggleFreeSpells) MAY.toggleFreeSpells(); };
   document.getElementById("btn-voice").onclick = function () {
     MAY.voiceOn = !MAY.voiceOn;
+    MAY.save.voiceOn = MAY.voiceOn;
+    MAY.persist();
     document.getElementById("btn-voice").textContent = MAY.voiceOn ? "🔊" : "🔇";
     if (MAY.setMasterMute) MAY.setMasterMute(!MAY.voiceOn);
     if (!MAY.voiceOn && MAY.stopSpeech) MAY.stopSpeech();
@@ -138,9 +171,16 @@
   };
   document.getElementById("btn-finale-stay").onclick = function () { MAY.closeAllModals(); };
 
-  /* ---- Khởi tạo màn đầu tiên & tải 15 mô hình 3D ---- */
-  MAY.applyQuality("mid");
-  MAY.enterLevel(MAY.save.currentLevel || "hub", true);
+  /* ---- Khôi phục cài đặt đã lưu (đồ họa, âm thanh, camera) & khởi tạo màn đầu ---- */
+  MAY.voiceOn = MAY.save.voiceOn !== undefined ? !!MAY.save.voiceOn : true;
+  var vb = document.getElementById("btn-voice");
+  if (vb) vb.textContent = MAY.voiceOn ? "🔊" : "🔇";
+  if (MAY.setMasterMute) MAY.setMasterMute(!MAY.voiceOn);
+  if (MAY.player && typeof MAY.save.camDist === "number") MAY.player.camDist = MAY.save.camDist;
+  MAY.applyQuality(MAY.save.quality || "mid");
+  var initLv = MAY.save.currentLevel || "hub";
+  if (MAY.isLevelUnlocked && !MAY.isLevelUnlocked(initLv)) initLv = "hub";
+  MAY.enterLevel(initLv, true);
 
   var BOOT_STEPS = [
     ["Đang tổng hợp vật liệu PBR & Normal Map…", 20],
@@ -160,6 +200,9 @@
       setBoot("Đang tải mô hình 3D (" + done + "/" + total + ")…", 84 + Math.round(16 * done / total));
     },
     function () {
+      if (MAY.currentCtx && MAY.currentCtx.upgradeRiggedCompanion) {
+        try { MAY.currentCtx.upgradeRiggedCompanion(); } catch (e) {}
+      }
       if (MAY.currentCtx && MAY.currentCtx.onModelsReady) {
         try { MAY.currentCtx.onModelsReady(); } catch (e) {}
       }
@@ -184,7 +227,7 @@
         ctx.updateAll(dt, t);
         MAY.updateBursts(dt);
       } else {
-        MAY.player.updateIdleOrbit(t);
+        MAY.player.updateIdleOrbit(t, dt);
         if (ctx.onUpdate) ctx.onUpdate(dt, t);
         MAY.updateSunFollow(MAY.player.pos);
       }

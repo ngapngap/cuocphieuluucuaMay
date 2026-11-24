@@ -163,6 +163,7 @@
       var pine = makeSnowPine(0.9 + (pi % 4) * 0.26);
       pine.position.set(px, ctx.groundH(px, pz) - 0.15, pz);
       pine.rotation.y = pi; ctx.add(pine);
+      ctx.addCollider(px, pz, 0.55, "pine");
     }
 
     /* Làng lều tuyết Igloo có vết phong hóa băng đá & ánh đèn vàng ấm (lều chính đổ bóng thật!) */
@@ -180,8 +181,10 @@
       var igLan = MAY.makeCagedLantern(0xffcb69, castShadow ? 3.2 : 2.5, 24, !!castShadow);
       igLan.position.set(0, 1.9, 3.9); g.add(igLan);
       g.add(MAY.makeContactShadow(3.6, 0.52));
-      g.position.set(x, ctx.groundH(x, z) - 0.15, z); g.rotation.y = rotY;
+      var igY = ctx.groundH(x, z);
+      g.position.set(x, igY - 0.15, z); g.rotation.y = rotY;
       ctx.add(g);
+      ctx.addCollider(x, z, 3.25, "igloo", { maxY: igY + 3.6 });
     }
     makeIgloo(-26, 22, 0.7, true);
     makeIgloo(26, 20, -0.8, false);
@@ -214,6 +217,7 @@
     sman.position.set(0, smY, -38);
     sman.traverse(function (o) { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
     ctx.add(sman);
+    ctx.addCollider(0, -38, 2.35, "snowman", { maxY: smY + 8.8 });
     ctx.addGemAltar([0, -32]);
 
     /* ---- 10 Bông Tuyết Bạc (Nhiệm vụ chính) ---- */

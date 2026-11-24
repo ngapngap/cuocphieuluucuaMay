@@ -294,8 +294,9 @@
     );
   };
 
-  /* ---- 15 Mô hình GLB thật (tái sử dụng cho toàn bộ 6 màn) ---- */
+  /* ---- 15 Mô hình GLB tĩnh + 2 Mô hình GLB có khung xương (SkinnedMesh + AnimationMixer) ---- */
   MAY.MODEL_T = {};
+  MAY.RIGGED = {};
   MAY.modelsReady = false;
   var MODEL_FILES = [
     "assets/models/fish.glb", "assets/models/coral.glb", "assets/models/turtle.glb",
@@ -303,6 +304,10 @@
     "assets/models/tang-yellow.glb", "assets/models/manta.glb", "assets/models/barrel.glb",
     "assets/models/amphora.glb", "assets/models/clam.glb", "assets/models/sanddollar.glb",
     "assets/models/starfish.glb", "assets/models/seaweed.glb", "assets/models/kelp.glb"
+  ];
+  var RIGGED_FILES = [
+    { key: "may",  url: "assets/models/may_rigged.glb" },
+    { key: "milo", url: "assets/models/companion_milo.glb" }
   ];
 
   function bakeModel(sc) {
@@ -490,23 +495,72 @@
     return { wrap: wrap, pivot: pivot };
   };
 
+  /* Nhân bản mô hình GLB có khung xương (tương đương SkeletonUtils.clone — rebind Skeleton độc lập cho từng AnimationMixer!) */
+  MAY.cloneSkinnedGLB = function (key) {
+    var rec = MAY.RIGGED[key];
+    if (!rec || !rec.scene) return null;
+    var source = rec.scene;
+    var clone = source.clone(true);
+    var srcList = [], dstList = [];
+    source.traverse(function (o) { srcList.push(o); });
+    clone.traverse(function (o) { dstList.push(o); });
+    var map = new Map();
+    for (var i = 0; i < srcList.length; i++) map.set(srcList[i], dstList[i]);
+    for (var j = 0; j < srcList.length; j++) {
+      var s = srcList[j], d = dstList[j];
+      if (s.isSkinnedMesh && d.isSkinnedMesh && s.skeleton) {
+        var newBones = s.skeleton.bones.map(function (b) { return map.get(b) || b; });
+        var newInverses = s.skeleton.boneInverses.map(function (m) { return m.clone(); });
+        d.bind(new THREE.Skeleton(newBones, newInverses), s.bindMatrix.clone());
+      }
+      if (d.isMesh) {
+        d.userData.sharedGeo = true;
+        d.castShadow = true;
+        d.receiveShadow = true;
+        d.frustumCulled = false;
+      }
+    }
+    return { scene: clone, animations: rec.animations || [] };
+  };
+
   var modelsLoadedCount = 0;
   MAY.loadAllModels = function (onProgress, onDone) {
     var loader = new THREE.GLTFLoader();
-    Promise.all(MODEL_FILES.map(function (url) {
+    var totalCount = MODEL_FILES.length + RIGGED_FILES.length;
+    var staticProm = Promise.all(MODEL_FILES.map(function (url) {
       return new Promise(function (res) {
         function finish(sc) {
           modelsLoadedCount++;
-          if (onProgress) onProgress(modelsLoadedCount, MODEL_FILES.length);
+          if (onProgress) onProgress(modelsLoadedCount, totalCount);
           res(sc);
         }
         try {
           loader.load(url, function (g) { finish(g.scene); }, undefined, function () { finish(null); });
         } catch (e) { finish(null); }
       });
-    })).then(function (res) {
-      try { buildTemplates(res); } catch (e) { if (window.console) console.log("buildTemplates err", e); }
+    }));
+    var riggedProm = Promise.all(RIGGED_FILES.map(function (rf) {
+      return new Promise(function (res) {
+        function finish(gltf) {
+          modelsLoadedCount++;
+          if (onProgress) onProgress(modelsLoadedCount, totalCount);
+          if (gltf && gltf.scene) {
+            protectTemplateObj(gltf.scene);
+            MAY.RIGGED[rf.key] = { scene: gltf.scene, animations: gltf.animations || [] };
+          }
+          res(gltf);
+        }
+        try {
+          loader.load(rf.url, function (g) { finish(g); }, undefined, function () { finish(null); });
+        } catch (e) { finish(null); }
+      });
+    }));
+    Promise.all([staticProm, riggedProm]).then(function (all) {
+      try { buildTemplates(all[0]); } catch (e) { if (window.console) console.log("buildTemplates err", e); }
       MAY.modelsReady = true;
+      if (MAY.player && MAY.player.attachRiggedMay && MAY.RIGGED.may) {
+        try { MAY.player.attachRiggedMay(); } catch (e) {}
+      }
       if (onDone) onDone();
     });
   };

@@ -47,6 +47,9 @@
   var diver = new THREE.Group();
   var diverPose = new THREE.Group();
   diver.add(diverPose);
+  /* Fallback thủ tục đặt trong procGroup; khi may_rigged.glb tải xong sẽ tự ẩn procGroup và dùng SkinnedMesh + AnimationMixer! */
+  var procGroup = new THREE.Group();
+  diverPose.add(procGroup);
 
   /* Thân người giải phẫu tự nhiên bằng LatheGeometry (hông -> eo -> ngực -> vai) */
   var torsoPts = [
@@ -62,14 +65,14 @@
   var torsoGeo = new THREE.LatheGeometry(torsoPts, 20);
   var torsoMesh = new THREE.Mesh(torsoGeo, bodyMat);
   torsoMesh.scale.set(1.06, 1.0, 0.78);
-  diverPose.add(torsoMesh);
+  procGroup.add(torsoMesh);
 
   /* Đai thắt lưng / viền áo */
   var beltMesh = new THREE.Mesh(new THREE.TorusGeometry(0.185, 0.032, 8, 20), accentMat);
   beltMesh.rotation.x = Math.PI / 2;
   beltMesh.scale.set(1.05, 0.82, 1.0);
   beltMesh.position.y = -0.04;
-  diverPose.add(beltMesh);
+  procGroup.add(beltMesh);
 
   /* Chân váy xếp ly mềm cho các bộ váy (ẩn khi ở dạng đồ lặn chuyên nghiệp) */
   var skirtPts = [
@@ -81,12 +84,12 @@
   var skirtGeo = new THREE.LatheGeometry(skirtPts, 20);
   var skirtMesh = new THREE.Mesh(skirtGeo, bodyMat);
   skirtMesh.scale.set(1.02, 1.0, 0.86);
-  diverPose.add(skirtMesh);
+  procGroup.add(skirtMesh);
 
   /* Cổ & Đầu + Gương mặt chi tiết */
   var headGroup = new THREE.Group();
   headGroup.position.set(0, 0.52, 0);
-  diverPose.add(headGroup);
+  procGroup.add(headGroup);
 
   var neck = new THREE.Mesh(new THREE.CylinderGeometry(0.078, 0.09, 0.14, 12), skinMat);
   neck.position.y = 0.02;
@@ -223,7 +226,7 @@
   var tankBand = new THREE.Mesh(new THREE.CylinderGeometry(0.122, 0.122, 0.06, 16), accentMat);
   tankBand.position.set(0, 0.12, 0.27);
   scubaBackGroup.add(tankCyl, tankValve, tankBand);
-  diverPose.add(scubaBackGroup);
+  procGroup.add(scubaBackGroup);
 
   /* Khăn choàng sa mạc/tuyết, Đèn pha pha lê, Đôi cánh mây */
   var scarfGroup = new THREE.Group();
@@ -233,7 +236,7 @@
   var scarfTail = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.38, 0.04), new THREE.MeshStandardMaterial({ color: 0xffb703, roughness: 0.85 }));
   scarfTail.position.set(0.11, 0.24, 0.21); scarfTail.rotation.x = 0.35;
   scarfGroup.add(scarfRing, scarfTail);
-  diverPose.add(scarfGroup);
+  procGroup.add(scarfGroup);
 
   var lampGroup = new THREE.Group();
   var lampBand = new THREE.Mesh(new THREE.TorusGeometry(0.245, 0.022, 6, 18), new THREE.MeshStandardMaterial({ color: 0x6b46c1 }));
@@ -274,7 +277,7 @@
     elbow.add(hand);
 
     shoulder.add(elbow);
-    diverPose.add(shoulder);
+    procGroup.add(shoulder);
     return { root: shoulder, mid: elbow };
   }
 
@@ -326,7 +329,7 @@
     skis.push(ski);
 
     hip.add(knee);
-    diverPose.add(hip);
+    procGroup.add(hip);
     return { root: hip, mid: knee };
   }
 
@@ -368,14 +371,135 @@
   staffGroup.rotation.x = -0.35;
   armR.mid.add(staffGroup);
 
+  /* ---- Bộ điều khiển SkinnedMesh + AnimationMixer + Morph Targets cho assets/models/may_rigged.glb ---- */
+  var rigMay = null;
   var castAnim = 0;
+
+  function playMayClip(name, fadeSec, oneShot) {
+    if (!rigMay || !rigMay.actions[name]) return;
+    if (!oneShot && rigMay.curName === name) return;
+    var nextAct = rigMay.actions[name];
+    var prevAct = rigMay.curAction;
+    if (oneShot) {
+      nextAct.setLoop(THREE.LoopOnce, 1);
+      nextAct.clampWhenFinished = true;
+      rigMay.oneShotName = name;
+      rigMay.oneShotT = nextAct.getClip().duration || 0.6;
+    } else {
+      nextAct.setLoop(THREE.LoopRepeat, Infinity);
+      nextAct.clampWhenFinished = false;
+    }
+    nextAct.reset();
+    nextAct.enabled = true;
+    nextAct.setEffectiveTimeScale(1);
+    nextAct.setEffectiveWeight(1);
+    nextAct.play();
+    if (prevAct && prevAct !== nextAct) prevAct.crossFadeTo(nextAct, fadeSec !== undefined ? fadeSec : 0.14, false);
+    rigMay.curAction = nextAct;
+    rigMay.curName = name;
+  }
+
+  function syncRiggedOutfit(name, inWater) {
+    if (!rigMay) return;
+    var targetOutfit = inWater ? "Outfit_BoiBien" : (
+      name === "haibim" ? "Outfit_HaiBim" :
+      name === "muvang" ? "Outfit_MuVang" :
+      name === "tuyetbong" ? "Outfit_AoAm" :
+      name === "cauvong" ? "Outfit_CongChua" : "Outfit_VayHong"
+    );
+    Object.keys(rigMay.outfits).forEach(function (k) {
+      rigMay.outfits[k].visible = (k === targetOutfit);
+    });
+    if (rigMay.hairBui) rigMay.hairBui.visible = (name !== "haibim");
+    if (rigMay.hairHaiBim) rigMay.hairHaiBim.visible = (name === "haibim");
+  }
+
+  P.attachRiggedMay = function () {
+    if (rigMay || !MAY.cloneSkinnedGLB) return;
+    var cl = MAY.cloneSkinnedGLB("may");
+    if (!cl || !cl.scene) return;
+    var root = cl.scene;
+    root.position.set(0, -0.90, 0);
+    root.rotation.y = Math.PI;
+    root.scale.setScalar(1.06);
+
+    var outfits = {}, hairBui = null, hairHaiBim = null, faceMesh = null, staffNode = null, staffGemNode = null, staffGemRigMat = null, socketBack = null;
+    root.traverse(function (o) {
+      if (o.name && o.name.indexOf("Outfit_") === 0) outfits[o.name] = o;
+      if (o.name === "Hair_Bui") hairBui = o;
+      if (o.name === "Hair_HaiBim") hairHaiBim = o;
+      if (o.name === "Face" && o.isMesh) faceMesh = o;
+      if (o.name === "Gear_GayPhep") staffNode = o;
+      if (o.name === "Socket_Back") socketBack = o;
+      if (o.name === "StaffGem" && o.isMesh) {
+        staffGemNode = o;
+        o.material = o.material.clone();
+        staffGemRigMat = o.material;
+      }
+      if (o.isMesh && o.material && o.material.name === "Mat_Body") {
+        o.material.roughness = 0.62;
+        o.material.metalness = 0.04;
+      }
+    });
+
+    if (staffGemNode) {
+      var sgHalo = new THREE.Sprite(new THREE.SpriteMaterial({
+        map: MAY.TEX.glow, color: 0x4ade80, transparent: true, opacity: 0.72,
+        blending: THREE.AdditiveBlending, depthWrite: false
+      }));
+      sgHalo.scale.set(0.45, 0.45, 1);
+      staffGemNode.add(sgHalo);
+      staffGemNode.userData.halo = sgHalo;
+    }
+
+    var mixer = new THREE.AnimationMixer(root);
+    var actions = {};
+    cl.animations.forEach(function (clip) {
+      actions[clip.name] = mixer.clipAction(clip);
+    });
+
+    diverPose.add(root);
+    procGroup.visible = false;
+    rigMay = {
+      root: root, mixer: mixer, actions: actions,
+      curAction: null, curName: null, oneShotName: null, oneShotT: 0,
+      outfits: outfits, hairBui: hairBui, hairHaiBim: hairHaiBim,
+      faceMesh: faceMesh, staffNode: staffNode, staffGemNode: staffGemNode, staffGemMat: staffGemRigMat,
+      socketBack: socketBack, blinkT: 2.5, smileT: 0, hurtFaceT: 0
+    };
+    syncRiggedOutfit(MAY.save.outfit || "vayhong", !P.onLand);
+    playMayClip("Idle", 0.01, false);
+  };
+
   P.setStaffSpell = function (sp) {
     if (!sp) return;
     staffGemMat.color.setHex(sp.color);
     staffGemMat.emissive.setHex(sp.color);
     staffGlow.material.color.setHex(sp.color);
+    if (rigMay && rigMay.staffGemMat) {
+      rigMay.staffGemMat.color.setHex(sp.color);
+      if (rigMay.staffGemMat.emissive) {
+        rigMay.staffGemMat.emissive.setHex(sp.color);
+        rigMay.staffGemMat.emissiveIntensity = 0.9;
+      }
+      if (rigMay.staffGemNode && rigMay.staffGemNode.userData.halo) {
+        rigMay.staffGemNode.userData.halo.material.color.setHex(sp.color);
+      }
+    }
   };
-  P.triggerCastAnim = function () { castAnim = 1.0; };
+  P.triggerCastAnim = function () {
+    castAnim = 1.0;
+    if (rigMay) playMayClip("Cast_Spell", 0.08, true);
+  };
+  P.triggerPetAnim = function () {
+    if (rigMay) { rigMay.smileT = 2.0; playMayClip("Interact_Pet", 0.10, true); }
+  };
+  P.triggerHurtAnim = function () {
+    if (rigMay) { rigMay.hurtFaceT = 1.2; playMayClip("Hit_Hurt", 0.06, true); }
+  };
+  P.triggerVictoryAnim = function () {
+    if (rigMay) { rigMay.smileT = 3.5; playMayClip("Victory", 0.12, true); }
+  };
 
   /* Bóng tiếp xúc chân mềm gắn dưới đất để Mây luôn dính sát mặt đất */
   var playerContact = MAY.makeContactShadow(0.62, 0.62);
@@ -454,6 +578,7 @@
     document.querySelectorAll(".outfit").forEach(function (el) {
       el.classList.toggle("sel", el.dataset.outfit === name);
     });
+    syncRiggedOutfit(name, !P.onLand);
   };
 
   function updateGearVisuals(levelId) {
@@ -462,6 +587,15 @@
     var hasSkis  = (levelId === "level5" && P.onLand);
     var hasLamp  = (levelId === "level4" || MAY.hasGear(4));
     var hasScarf = (levelId === "level3" || levelId === "level5" || MAY.hasGear(3));
+
+    if (rigMay) {
+      syncRiggedOutfit(MAY.save.outfit || "vayhong", inWater);
+      if (rigMay.staffNode) rigMay.staffNode.visible = P.onLand || castAnim > 0.01;
+      if (rigMay.staffGemNode) rigMay.staffGemNode.visible = P.onLand || castAnim > 0.01;
+      wingsGroup.visible = hasWings && !inWater;
+      wingsGroup.position.set(0, 0.02, 0.04);
+      return;
+    }
 
     scubaHeadGroup.visible = inWater;
     scubaBackGroup.visible = inWater;
@@ -501,6 +635,11 @@
     var kLow = (e.key || "").toLowerCase();
     if (KEY_ALIAS[kLow]) P.keys[KEY_ALIAS[kLow]] = true;
     if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space"].indexOf(e.code) !== -1) e.preventDefault();
+    if (e.code === "Escape" && MAY.modalOpen) {
+      if (MAY.closeDialogue) MAY.closeDialogue();
+      if (MAY.closeAllModals) MAY.closeAllModals();
+      return;
+    }
     if (!MAY.started || MAY.modalOpen) return;
     if (e.code === "KeyF" || kLow === "f") MAY.cycleCam();
     if (e.code === "KeyM" || kLow === "m") MAY.toggleMap();
@@ -664,6 +803,7 @@
     var dists = [4.2, 6.2, 8.6];
     var i = dists.indexOf(P.camDist);
     P.camDist = dists[(i + 1) % dists.length];
+    if (MAY.save) { MAY.save.camDist = P.camDist; MAY.persist(); }
     MAY.toast(P.camDist === 4.2 ? "📷 Góc nhìn gần" : P.camDist === 6.2 ? "📷 Góc nhìn vừa" : "📷 Góc nhìn xa");
   };
 
@@ -751,10 +891,12 @@
     playerPos.x += vel.x * dt;
     playerPos.z += vel.z * dt;
 
-    /* Va chạm rắn 3D (chặn đi xuyên tường pha lê nứt, bùn chắn, thân cây cổ thụ, cột đá!) */
+    /* Va chạm rắn 3D (chặn đi xuyên tường pha lê nứt, bùn chắn, thân cây cổ thụ, cột đá, lâu đài, lều tuyết!) */
     if (ctx.colliders && ctx.colliders.length) {
       for (var ci = 0; ci < ctx.colliders.length; ci++) {
         var col = ctx.colliders[ci];
+        if (col.maxY !== undefined && playerPos.y - 0.9 > col.maxY) continue;
+        if (col.minY !== undefined && playerPos.y + 0.6 < col.minY) continue;
         var cdx = playerPos.x - col.x, cdz = playerPos.z - col.z;
         var cdist = Math.hypot(cdx, cdz);
         var minD = (col.r || 1.2) + 0.52;
@@ -784,6 +926,7 @@
         vel.y = jumpPower;
         P.grounded = false;
         MAY.beep(540, 0.08, "sine", 0.07);
+        if (rigMay) playMayClip("Jump_Start", 0.08, true);
       }
 
       if (ctx.bouncePads && ctx.bouncePads.length) {
@@ -868,6 +1011,7 @@
     if (P.onLand && P.grounded && !prevGrounded) {
       landDip = 0.22;
       if (MAY.sndFootstep) MAY.sndFootstep(ctx.getSurface ? ctx.getSurface(playerPos.x, playerPos.z) : "grass");
+      if (rigMay && !rigMay.oneShotName) playMayClip("Land", 0.08, true);
     }
     prevGrounded = P.grounded;
     if (landDip > 0) landDip = Math.max(0, landDip - dt * 1.4);
@@ -980,6 +1124,36 @@
       armR.mid.rotation.x = -0.25;
     }
 
+    /* Cập nhật AnimationMixer (13 clip) + biểu cảm khuôn mặt Shape Keys cho may_rigged.glb */
+    if (rigMay) {
+      if (rigMay.oneShotT > 0) {
+        rigMay.oneShotT -= dt;
+        if (rigMay.oneShotT <= 0) rigMay.oneShotName = null;
+      }
+      if (!rigMay.oneShotName) {
+        var desiredClip = "Idle";
+        if (!P.onLand) desiredClip = moving ? "Swim_Move" : "Swim_Idle";
+        else if (P.gliding) desiredClip = "Glide";
+        else if (!P.grounded) desiredClip = vel.y > 1.5 ? "Jump_Start" : "Fall_Loop";
+        else if (moving) desiredClip = (sprint || speedHoriz > 7.0) ? "Run" : "Walk";
+        playMayClip(desiredClip, 0.14, false);
+      }
+      rigMay.mixer.update(dt);
+      /* Morph Targets trên khuôn mặt Mây: chớp mắt tự nhiên, cười khi vui, ngạc nhiên khi bị đòn */
+      if (rigMay.faceMesh && rigMay.faceMesh.morphTargetInfluences && rigMay.faceMesh.morphTargetDictionary) {
+        var md = rigMay.faceMesh.morphTargetDictionary;
+        var mi = rigMay.faceMesh.morphTargetInfluences;
+        rigMay.blinkT -= dt;
+        if (rigMay.blinkT <= -0.16) rigMay.blinkT = 2.8 + Math.random() * 2.4;
+        var blinkVal = rigMay.blinkT < 0 ? Math.sin((-rigMay.blinkT / 0.16) * Math.PI) : 0;
+        if (md.Blink !== undefined) mi[md.Blink] = blinkVal;
+        if (rigMay.smileT > 0) rigMay.smileT = Math.max(0, rigMay.smileT - dt);
+        if (rigMay.hurtFaceT > 0) rigMay.hurtFaceT = Math.max(0, rigMay.hurtFaceT - dt);
+        if (md.Smile !== undefined) mi[md.Smile] = rigMay.smileT > 0 ? Math.min(1, rigMay.smileT) : 0.18;
+        if (md.Surprised !== undefined) mi[md.Surprised] = rigMay.hurtFaceT > 0 ? Math.min(1, rigMay.hurtFaceT) : 0;
+      }
+    }
+
     /* Camera góc nhìn thứ 3 điện ảnh có nhịp bước chân, độ nhún tiếp đất & rung chấn phép thuật */
     var fwdX = -Math.sin(P.yaw), fwdZ = -Math.cos(P.yaw);
     var rightX = Math.cos(P.yaw), rightZ = -Math.sin(P.yaw);
@@ -1011,12 +1185,16 @@
     MAY.camera.rotation.z += -str * 0.014 + headBobX * 0.08;
   };
 
-  P.updateIdleOrbit = function (t) {
+  P.updateIdleOrbit = function (t, dt) {
     P.yaw = t * 0.16;
     diver.position.set(playerPos.x, playerPos.y - 0.12, playerPos.z);
     diver.rotation.y = P.yaw;
     diverPose.rotation.x = P.onLand ? 0 : -1.2;
     updateGearVisuals(MAY.currentLevelId || "hub");
+    if (rigMay) {
+      playMayClip(P.onLand ? "Idle" : "Swim_Idle", 0.2, false);
+      rigMay.mixer.update(dt || 0.016);
+    }
     MAY.camera.position.set(playerPos.x + Math.sin(t * 0.16) * 7.2, playerPos.y + 2.8, playerPos.z + Math.cos(t * 0.16) * 7.2);
     MAY.camera.lookAt(playerPos.x, playerPos.y + 0.55, playerPos.z);
   };

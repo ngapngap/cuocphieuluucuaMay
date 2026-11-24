@@ -198,8 +198,10 @@
 
     [[-26, 22, 1.4, true], [28, 20, 1.35, true], [-34, -18, 1.5, true], [36, -16, 1.45, true], [0, -38, 1.6, true], [-18, -44, 1.2, false], [22, -42, 1.3, false], [-48, 4, 1.4, false], [48, 2, 1.35, false]].forEach(function (cp, idx) {
       var cl = makeCrystalCluster(crysCols[idx % crysCols.length], cp[2], cp[3]);
-      cl.position.set(cp[0], ctx.groundH(cp[0], cp[1]), cp[1]);
+      var cy = ctx.groundH(cp[0], cp[1]);
+      cl.position.set(cp[0], cy, cp[1]);
       ctx.add(cl);
+      ctx.addCollider(cp[0], cp[1], cp[2] * 0.72, "crystal", { maxY: cy + cp[2] * 3.8 });
     });
 
     /* Cá & Sứa phát sáng bơi trong hồ ngầm */

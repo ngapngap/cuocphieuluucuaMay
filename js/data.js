@@ -386,6 +386,7 @@ window.MAY = window.MAY || {};
       quizDone: 0,
       gem: false,
       bestTime: 0,
+      playSecs: 0,
       story: { stage: 0, steps: {}, bossDown: false, rewarded: false }
     };
   }
@@ -400,6 +401,10 @@ window.MAY = window.MAY || {};
       storySeen: false,
       finaleSeen: false,
       freeSpells: false,
+      freeExplore: false,
+      quality: "mid",
+      voiceOn: true,
+      camDist: 4.8,
       unlockedSpells: [],
       gems: [],
       gears: [1],
@@ -417,6 +422,10 @@ window.MAY = window.MAY || {};
         s.storySeen = !!raw.storySeen;
         s.finaleSeen = !!raw.finaleSeen;
         s.freeSpells = !!raw.freeSpells;
+        s.freeExplore = !!raw.freeExplore;
+        s.quality = (raw.quality === "low" || raw.quality === "mid" || raw.quality === "high") ? raw.quality : "mid";
+        s.voiceOn = raw.voiceOn !== undefined ? !!raw.voiceOn : true;
+        s.camDist = (typeof raw.camDist === "number" && raw.camDist >= 3.0 && raw.camDist <= 10.5) ? raw.camDist : 4.8;
         s.unlockedSpells = Array.isArray(raw.unlockedSpells) ? raw.unlockedSpells : [];
         s.gems = Array.isArray(raw.gems) ? raw.gems : [];
         s.gears = Array.isArray(raw.gears) ? raw.gears : [1];
@@ -434,6 +443,7 @@ window.MAY = window.MAY || {};
           dst.quizDone = src.quizDone || 0;
           dst.gem = !!src.gem;
           dst.bestTime = src.bestTime || 0;
+          dst.playSecs = src.playSecs || 0;
           dst.story = src.story && typeof src.story === "object"
             ? { stage: src.story.stage || 0, steps: src.story.steps || {}, bossDown: !!src.story.bossDown, rewarded: !!src.story.rewarded }
             : { stage: 0, steps: {}, bossDown: false, rewarded: false };
@@ -458,9 +468,23 @@ window.MAY = window.MAY || {};
 
   MAY.resetSave = function () {
     var keepOutfit = MAY.save.outfit;
+    var keepQ = MAY.save.quality, keepV = MAY.save.voiceOn, keepCam = MAY.save.camDist;
     MAY.save = createDefaultSave();
     MAY.save.outfit = MAY.isOutfitUnlocked(keepOutfit) ? keepOutfit : "vayhong";
+    MAY.save.quality = keepQ || "mid";
+    MAY.save.voiceOn = keepV !== undefined ? keepV : true;
+    MAY.save.camDist = keepCam || 4.8;
     MAY.persist();
+  };
+
+  MAY.isLevelUnlocked = function (levelId) {
+    if (!levelId || levelId === "hub" || levelId === "level1") return true;
+    if (MAY.save.freeExplore || MAY.save.freeSpells) return true;
+    var meta = MAY.getMeta(levelId);
+    if (!meta || meta.num <= 1) return true;
+    var prevNum = meta.num - 1;
+    var prevLs = MAY.getLevelSave("level" + prevNum);
+    return MAY.save.gems.indexOf(prevNum) !== -1 || !!(prevLs && prevLs.story && prevLs.story.bossDown);
   };
 
   MAY.isOutfitUnlocked = function (id) {
@@ -507,6 +531,7 @@ window.MAY = window.MAY || {};
     MAY.save.freeSpells = !MAY.save.freeSpells;
     MAY.persist();
     if (MAY.VFX && MAY.VFX.syncSpellUI) MAY.VFX.syncSpellUI();
+    if (MAY.syncFreeExploreUI) MAY.syncFreeExploreUI();
     if (MAY.renderAlbum) MAY.renderAlbum();
     MAY.toast(MAY.save.freeSpells ? "🔓 Đã mở Chế Độ Tự Do: Dùng ngay cả 6 Phép Thuật!" : "🔒 Đã trở về Chế Độ Cốt Truyện: Mở khóa từng phép theo chương!");
   };

@@ -203,6 +203,7 @@
       tree.position.set(tx, ctx.groundH(tx, tz) - 0.15, tz);
       tree.rotation.y = ti * 1.1;
       ctx.add(tree);
+      ctx.addCollider(tx, tz, 0.55, "tree");
     }
 
     /* Đồng cỏ 1.800 ngọn uốn sóng gió + hoa dại rực rỡ (chuẩn Fable 5.2!) + đá cuội & dãy núi rừng xa */
@@ -225,8 +226,10 @@
       var rm = new THREE.Mesh(MAY.rockGeo(r2 * 1.9), rockMat);
       var rs = 1.0 + (r2 % 3) * 0.7;
       rm.scale.set(rs * 1.2, rs * 0.75, rs);
-      rm.position.set(rx, ctx.groundH(rx, rz) + rs * 0.25, rz);
+      var ry = ctx.groundH(rx, rz);
+      rm.position.set(rx, ry + rs * 0.25, rz);
       rm.castShadow = true; rm.receiveShadow = true; ctx.add(rm);
+      ctx.addCollider(rx, rz, rs * 0.78, "rock", { maxY: ry + rs * 0.78 });
     }
 
     /* 6 Nấm Lò Xo Khổng Lồ (nhảy lên là nảy bật cao vút!) */

@@ -224,7 +224,42 @@
     g.rotation.order = "YXZ";
 
     if (kind === "milo" || kind === "miloWinged") {
-      /* Nâng cấp hình khối Cún Milo hữu cơ bo tròn (CapsuleGeometry + vòng cổ đỏ + chuông vàng!) */
+      /* Ưu tiên dùng mô hình Blender có khung xương companion_milo.glb (SkinnedMesh + AnimationMixer 5 clip!) */
+      if (MAY.RIGGED && MAY.RIGGED.milo && MAY.cloneSkinnedGLB) {
+        var mcl = MAY.cloneSkinnedGLB("milo");
+        if (mcl && mcl.scene) {
+          var mRoot = mcl.scene;
+          mRoot.rotation.y = Math.PI;
+          mRoot.scale.setScalar(1.42);
+          mRoot.traverse(function (o) {
+            if (o.isMesh && (o.name === "Wing_L" || o.name === "Wing_R")) {
+              o.visible = (kind === "miloWinged");
+            }
+            if (o.isMesh && o.material && o.material.name === "Mat_Body") {
+              o.material.roughness = 0.72;
+              o.material.metalness = 0.04;
+            }
+          });
+          var mMixer = new THREE.AnimationMixer(mRoot);
+          var mActs = {};
+          mcl.animations.forEach(function (c) { mActs[c.name] = mMixer.clipAction(c); });
+          var mCur = null, mCurName = null;
+          g.userData.mixer = mMixer;
+          g.userData.happyT = 0;
+          g.userData.playClip = function (name) {
+            if (!mActs[name] || mCurName === name) return;
+            var nxt = mActs[name];
+            nxt.reset().setEffectiveTimeScale(1).setEffectiveWeight(1).play();
+            if (mCur && mCur !== nxt) mCur.crossFadeTo(nxt, 0.16, false);
+            mCur = nxt; mCurName = name;
+          };
+          g.userData.playClip(kind === "miloWinged" ? "Fly" : "Idle");
+          g.add(mRoot);
+          if (opts.scale) g.scale.setScalar(opts.scale);
+          return g;
+        }
+      }
+      /* Fallback thủ tục nếu companion_milo.glb chưa tải xong */
       var bm = stdMat(0xd49452, 0.82), em = stdMat(0x8a5628, 0.88), bellyM = stdMat(0xf7e1be, 0.88);
       var body = new THREE.Mesh(new THREE.CapsuleGeometry(0.24, 0.44, 8, 12), bm);
       body.rotation.x = Math.PI / 2; body.position.y = 0.46; g.add(body);
@@ -777,10 +812,29 @@
         obj: g, label: "Vuốt ve " + name,
         onInteract: function () {
           MAY.sndFriend();
-          MAY.burstAt(g.position.clone().add(new THREE.Vector3(0, 0.9, 0)), 0xff8fb8, 9);
+          if (MAY.player && MAY.player.triggerPetAnim) MAY.player.triggerPetAnim();
+          if (ctx.companion && ctx.companion.group && ctx.companion.group.userData) ctx.companion.group.userData.happyT = 1.8;
+          MAY.burstAt(ctx.companion.group.position.clone().add(new THREE.Vector3(0, 0.9, 0)), 0xff8fb8, 9);
           MAY.toast("💗 " + name + " vẫy đuôi thích Mây quá trời!", name + " thích Mây lắm!");
         }
       });
+      /* Khi companion_milo.glb tải xong sau khi màn đã mở, tự nâng cấp bạn đồng hành Milo sang bản có xương! */
+      ctx.upgradeRiggedCompanion = function () {
+        if (!ctx.companion || (ctx.companion.kind !== "milo" && ctx.companion.kind !== "miloWinged")) return;
+        if (ctx.companion.group.userData && ctx.companion.group.userData.mixer) return;
+        if (!MAY.RIGGED || !MAY.RIGGED.milo) return;
+        var oldG = ctx.companion.group;
+        var pos = oldG.position.clone(), rotY = oldG.rotation.y;
+        MAY.worldRoot.remove(oldG);
+        var newG = MAY.makeAnimal(ctx.companion.kind, opts);
+        if (!ctx.companion.flying) newG.add(MAY.makeContactShadow(0.6, 0.5));
+        newG.position.copy(pos); newG.rotation.y = rotY;
+        ctx.add(newG);
+        ctx.companion.group = newG;
+        for (var ii = 0; ii < ctx.interactives.length; ii++) {
+          if (ctx.interactives[ii].obj === oldG) ctx.interactives[ii].obj = newG;
+        }
+      };
       return ctx.companion;
     };
 
@@ -1039,10 +1093,18 @@
       ctx.trackLabel(lb, 24);
       g.lookAt(0, y, 0);
       ctx.add(g);
-      ctx.portals.push({ group: g, pos: new THREE.Vector3(pos[0], y + 1.5, z), targetId: targetId, label: label, veil: veil, gRune: gRune });
+      ctx.portals.push({ group: g, pos: new THREE.Vector3(pos[0], y + 1.5, z), targetId: targetId, label: label, veil: veil, gRune: gRune, arch: arch });
       ctx.interactives.push({
         obj: g, label: "Đi tới " + label,
-        onInteract: function () { MAY.enterLevel(targetId); }
+        onInteract: function () {
+          if (MAY.isLevelUnlocked && !MAY.isLevelUnlocked(targetId)) {
+            var tm = MAY.getMeta(targetId);
+            MAY.beep(260, 0.14);
+            MAY.toast("🔒 Cổng tới " + (tm ? tm.shortName : label) + " đang khóa! Hoàn thành Chương " + (tm ? tm.num - 1 : 1) + " trước (hoặc bật Tự do ở Bản đồ M).");
+            return;
+          }
+          MAY.enterLevel(targetId);
+        }
       });
     };
 
@@ -1081,6 +1143,7 @@
       MAY.persist();
       MAY.refreshHUD();
       MAY.sndGem();
+      if (MAY.player && MAY.player.triggerVictoryAnim) MAY.player.triggerVictoryAnim();
       MAY.burstAt(MAY.player.pos.clone().add(new THREE.Vector3(0, 1.5, 0)), meta.gemColor, 28);
       var winLevelId = ctx.id;
       var showWinFn = function () {
@@ -1286,12 +1349,20 @@
           cp.group.position.y += (targetY - cp.group.position.y) * Math.min(1, dt * 8);
         }
         var cdx = tx - cp.group.position.x, cdz = tz - cp.group.position.z;
-        if (Math.hypot(cdx, cdz) > 0.15) cp.group.rotation.y = Math.atan2(-cdx, -cdz);
-        if (cp.group.userData.tail) cp.group.userData.tail.rotation.z = Math.sin(t * 10) * 0.5;
-        if (cp.group.userData.wl) {
-          var fl2 = Math.sin(t * 10) * 0.5;
-          cp.group.userData.wl.rotation.z = fl2;
-          cp.group.userData.wr.rotation.z = -fl2;
+        var cDist = Math.hypot(cdx, cdz);
+        if (cDist > 0.15) cp.group.rotation.y = Math.atan2(-cdx, -cdz);
+        if (cp.group.userData && cp.group.userData.mixer) {
+          if (cp.group.userData.happyT > 0) cp.group.userData.happyT -= dt;
+          var mClip = cp.flying ? "Fly" : (cp.group.userData.happyT > 0 ? "Happy" : (cDist > 0.35 ? "Run" : "Idle"));
+          if (cp.group.userData.playClip) cp.group.userData.playClip(mClip);
+          cp.group.userData.mixer.update(dt);
+        } else {
+          if (cp.group.userData.tail) cp.group.userData.tail.rotation.z = Math.sin(t * 10) * 0.5;
+          if (cp.group.userData.wl) {
+            var fl2 = Math.sin(t * 10) * 0.5;
+            cp.group.userData.wl.rotation.z = fl2;
+            cp.group.userData.wr.rotation.z = -fl2;
+          }
         }
         cp.label.position.set(cp.group.position.x, cp.group.position.y + 1.7, cp.group.position.z);
       }
@@ -1430,12 +1501,20 @@
 
       /* Cổng dịch chuyển + làm mờ nhãn chữ khi ở xa cho khung hình rộng luôn sạch đẹp */
       ctx.portals.forEach(function (pt) {
-        pt.veil.rotation.z += dt * 0.7;
-        pt.veil.material.opacity = 0.42 + Math.sin(t * 3) * 0.14;
-        if (pt.gRune) pt.gRune.rotation.z -= dt * 0.9;
+        var open = !MAY.isLevelUnlocked || MAY.isLevelUnlocked(pt.targetId);
+        pt.veil.rotation.z += dt * (open ? 0.7 : 0.15);
+        pt.veil.material.opacity = open ? (0.42 + Math.sin(t * 3) * 0.14) : 0.12;
+        if (pt.arch && pt.arch.material) pt.arch.material.emissiveIntensity = open ? 0.55 : 0.12;
+        if (pt.gRune) pt.gRune.rotation.z -= dt * (open ? 0.9 : 0.2);
         if (ctx.portalCooldown <= 0 && !MAY.modalOpen && pt.pos.distanceTo(pPos) < 1.95) {
-          ctx.portalCooldown = 2.0;
-          MAY.enterLevel(pt.targetId);
+          ctx.portalCooldown = 2.4;
+          if (!open) {
+            var tm = MAY.getMeta(pt.targetId);
+            MAY.beep(260, 0.14);
+            MAY.toast("🔒 Cổng tới " + (tm ? tm.shortName : pt.label) + " đang khóa! Hoàn thành Chương " + (tm ? tm.num - 1 : 1) + " trước (hoặc bật Tự do ở Bản đồ M).");
+          } else {
+            MAY.enterLevel(pt.targetId);
+          }
         }
       });
 
@@ -1584,6 +1663,7 @@
     q.opts.forEach(function (op) {
       var b = document.createElement("button");
       b.textContent = op;
+      b.setAttribute("aria-label", "Đáp án: " + op);
       b.onclick = function () {
         if (op === q.ans) {
           ls.quizDone++;
@@ -1618,15 +1698,28 @@
     MAY.closeAllModals();
     MAY.modalOpen = true;
     var rec = MAY.nextRecommendedLevel();
+    var freeOn = !!(MAY.save.freeExplore || MAY.save.freeSpells);
+    var lead = document.getElementById("map-lead");
+    if (lead) {
+      lead.innerHTML = freeOn
+        ? "🔓 Đang ở <b>Chế độ Tự do</b> — chọn bất kỳ vùng đất nào để dịch chuyển ngay!"
+        : "🧭 <b>Chế độ Cốt truyện</b>: Hoàn thành từng chương để mở khóa vùng đất tiếp theo (hoặc bấm nút Tự do bên dưới).";
+    }
+    var mf = document.getElementById("btn-map-free");
+    if (mf) mf.textContent = freeOn ? "🔒 Quay về Chế độ Cốt truyện" : "🔓 Mở Khám phá Tự do";
     var grid = document.getElementById("map-grid");
     grid.innerHTML = "";
     MAY.LEVEL_META.forEach(function (m) {
       var ls = MAY.getLevelSave(m.id);
+      var unlocked = !MAY.isLevelUnlocked || MAY.isLevelUnlocked(m.id);
       var card = document.createElement("button");
-      card.className = "map-card" + (MAY.currentLevelId === m.id ? " cur" : "") + (ls.gem ? " cleared" : "");
-      card.style.borderColor = m.theme;
+      card.className = "map-card" + (MAY.currentLevelId === m.id ? " cur" : "") + (ls.gem ? " cleared" : "") + (!unlocked ? " locked" : "");
+      card.style.borderColor = unlocked ? m.theme : "rgba(148,163,184,0.35)";
+      if (!unlocked) card.style.opacity = "0.58";
+      card.setAttribute("aria-label", unlocked ? ("Đi tới " + m.title) : (m.title + " đang khóa, hoàn thành Chương " + (m.num - 1) + " trước"));
       var badge = "";
-      if (MAY.currentLevelId === m.id) badge = '<span class="mbadge here">Đang ở đây</span>';
+      if (!unlocked) badge = '<span class="mbadge">🔒 Qua Chương ' + (m.num - 1) + " trước</span>";
+      else if (MAY.currentLevelId === m.id) badge = '<span class="mbadge here">Đang ở đây</span>';
       else if (ls.gem) badge = '<span class="mbadge done">' + m.gemIcon + " Đã có Ngọc</span>";
       else if (m.id === rec) badge = '<span class="mbadge rec">✨ Khuyên chơi</span>';
 
@@ -1634,8 +1727,12 @@
         ? "🌈 " + MAY.save.gems.length + "/6 Ngọc • 🐾 " + ls.friends.length + "/4 Bạn đảo"
         : m.collectIcon + " " + ls.items.length + "/" + m.collectTarget + " • 🎖️ " + ls.friends.length + "/" + m.friendTarget + " • 🏆 " + Object.keys(ls.challenges).filter(function (k) { return ls.challenges[k]; }).length + "/3";
 
-      card.innerHTML = '<div class="mtop"><span class="mico">' + m.icon + '</span><div><div class="mname">' + m.title + '</div><div class="msub">' + sub + "</div></div></div>" + badge;
+      card.innerHTML = '<div class="mtop"><span class="mico">' + (unlocked ? m.icon : "🔒") + '</span><div><div class="mname">' + m.title + '</div><div class="msub">' + sub + "</div></div></div>" + badge;
       card.onclick = function () {
+        if (!unlocked) {
+          MAY.toast("🔒 Hãy hoàn thành Chương " + (m.num - 1) + " trước (hoặc bấm 'Mở Khám phá Tự do' bên dưới)!");
+          return;
+        }
         MAY.closeAllModals();
         MAY.enterLevel(m.id);
       };
@@ -1703,6 +1800,7 @@
       var b = document.createElement("button");
       b.className = "outfit" + (MAY.save.outfit === k ? " sel" : "") + (ok ? "" : " locked");
       b.dataset.outfit = k;
+      b.setAttribute("aria-label", ok ? ("Mặc trang phục " + o.name) : ("Trang phục " + o.name + " đang khóa: " + o.desc));
       b.innerHTML = '<img src="' + o.img + '" alt="' + o.name + '"><span>' + (ok ? o.name : "🔒 " + o.name) + "</span>";
       b.onclick = function () {
         if (!ok) { MAY.toast("🔒 " + o.desc); MAY.beep(260, 0.14); return; }

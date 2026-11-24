@@ -1,5 +1,5 @@
-/* Cuộc Phiêu Lưu Của Mây v11.2 — offline cache (PWA). Network-first cho code, cache-first cho model/ảnh/giọng đọc. */
-var CACHE = 'may-phieu-luu-v11.2';
+/* Cuộc Phiêu Lưu Của Mây v12.0 — offline cache (PWA). Network-first cho code, cache-first cho model/ảnh/giọng đọc. */
+var CACHE = 'may-phieu-luu-v12.0';
 var CORE = [
   "./", "index.html", "style.css", "three.min.js", "game.js", "manifest.json",
   "js/data.js", "js/audio.js", "js/core.js", "js/pbr.js", "js/vfx.js", "js/player.js", "js/systems.js", "js/story.js",
@@ -7,6 +7,7 @@ var CORE = [
   "js/levels/level3_desert.js", "js/levels/level4_crystal.js", "js/levels/level5_snow.js",
   "js/levels/level6_clouds.js",
   "icons/icon-192.png", "icons/icon-512.png",
+  "assets/models/may_rigged.glb", "assets/models/companion_milo.glb",
   "assets/models/amphora.glb", "assets/models/barrel.glb", "assets/models/chest.glb",
   "assets/models/clam.glb", "assets/models/coral.glb", "assets/models/fish.glb",
   "assets/models/jelly.glb", "assets/models/kelp.glb", "assets/models/manta.glb",

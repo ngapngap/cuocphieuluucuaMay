@@ -2,8 +2,8 @@
 <html lang="vi">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
-<title>Cuộc Phiêu Lưu Của Mây v11.0 — Cốt Truyện 6 Phép Nguyên Tố & Đấu Trùm</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cuộc Phiêu Lưu Của Mây v12.0 — Cốt Truyện 6 Phép Nguyên Tố, Rig 3D &amp; Đấu Trùm</title>
 
 <link rel="stylesheet" href="style.css">
 <link rel="manifest" href="manifest.json">
@@ -30,13 +30,13 @@
 
 <div class="hud" id="spellbar">
   <div class="spell-row" id="spell-row">
-    <button class="spell-slot locked" data-idx="0" title="Phím 1: Sóng Xung Kích (Chương 1)">🌊<kbd>1</kbd></button>
-    <button class="spell-slot locked" data-idx="1" title="Phím 2: Nở Hoa Hồi Sinh (Chương 2)">🌿<kbd>2</kbd></button>
-    <button class="spell-slot locked" data-idx="2" title="Phím 3: Tia Nắng Rực Rỡ (Chương 3)">☀️<kbd>3</kbd></button>
-    <button class="spell-slot locked" data-idx="3" title="Phím 4: Cộng Hưởng Pha Lê (Chương 4)">💎<kbd>4</kbd></button>
-    <button class="spell-slot locked" data-idx="4" title="Phím 5: Sương Băng Đóng Kết (Chương 5)">❄️<kbd>5</kbd></button>
-    <button class="spell-slot locked" data-idx="5" title="Phím 6: Lốc Cầu Vồng (Chương 6)">🌈<kbd>6</kbd></button>
-    <button class="spell-cast" id="btn-cast" title="Phím R: Thi triển phép thuật!">✨ R</button>
+    <button class="spell-slot locked" data-idx="0" title="Phím 1: Sóng Xung Kích (Chương 1)" aria-label="Phím 1: Sóng Xung Kích">🌊<kbd>1</kbd></button>
+    <button class="spell-slot locked" data-idx="1" title="Phím 2: Nở Hoa Hồi Sinh (Chương 2)" aria-label="Phím 2: Nở Hoa Hồi Sinh">🌿<kbd>2</kbd></button>
+    <button class="spell-slot locked" data-idx="2" title="Phím 3: Tia Nắng Rực Rỡ (Chương 3)" aria-label="Phím 3: Tia Nắng Rực Rỡ">☀️<kbd>3</kbd></button>
+    <button class="spell-slot locked" data-idx="3" title="Phím 4: Cộng Hưởng Pha Lê (Chương 4)" aria-label="Phím 4: Cộng Hưởng Pha Lê">💎<kbd>4</kbd></button>
+    <button class="spell-slot locked" data-idx="4" title="Phím 5: Sương Băng Đóng Kết (Chương 5)" aria-label="Phím 5: Sương Băng Đóng Kết">❄️<kbd>5</kbd></button>
+    <button class="spell-slot locked" data-idx="5" title="Phím 6: Lốc Cầu Vồng (Chương 6)" aria-label="Phím 6: Lốc Cầu Vồng">🌈<kbd>6</kbd></button>
+    <button class="spell-cast" id="btn-cast" title="Phím R: Thi triển phép thuật!" aria-label="Thi triển phép thuật (phím R)">✨ R</button>
   </div>
   <div id="spell-name">CHƯA THỨC TỈNH PHÉP — GẶP NPC (!)</div>
 </div>
@@ -74,7 +74,7 @@
       <div id="dlg-text">...</div>
       <div class="dlg-foot">
         <span class="dlg-key">Nhấn Space / Enter hoặc bấm nút để tiếp tục</span>
-        <button class="btn small" id="dlg-next">Tiếp theo ▸</button>
+        <button class="btn small" id="dlg-next" aria-label="Trang thoại tiếp theo">Tiếp theo ▸</button>
       </div>
     </div>
   </div>
@@ -92,11 +92,11 @@
   <span class="pill" id="pill-co"><span id="co-icon">🪸</span> <span id="co-n">0</span>/<span id="co-max">5</span></span>
   <span class="pill" id="pill-ch">🏆 <span id="ch-n">0</span>/3</span>
   <span class="pill" id="zone-pill">🏝️ Đảo Mây</span>
-  <button class="hbtn" id="btn-map" title="Bản Đồ 6 Vùng Đất (M)">🗺️</button>
-  <button class="hbtn" id="btn-album" title="Sổ Tay & Tủ Đồ của Mây (J)">📖</button>
-  <button class="hbtn" id="btn-voice" title="Bật / Tắt giọng đọc">🔊</button>
-  <button class="hbtn" id="btn-cam" title="Đổi góc nhìn gần / vừa / xa (F)">📷</button>
-  <button class="hbtn" id="btn-restart" title="Chơi lại từ đầu">↺</button>
+  <button class="hbtn" id="btn-map" title="Bản Đồ 6 Vùng Đất (M)" aria-label="Mở Bản Đồ 6 Vùng Đất (phím M)">🗺️</button>
+  <button class="hbtn" id="btn-album" title="Sổ Tay & Tủ Đồ của Mây (J)" aria-label="Mở Sổ Tay và Tủ Đồ (phím J)">📖</button>
+  <button class="hbtn" id="btn-voice" title="Bật / Tắt âm thanh & giọng đọc" aria-label="Bật hoặc tắt âm thanh và giọng đọc">🔊</button>
+  <button class="hbtn" id="btn-cam" title="Đổi góc nhìn gần / vừa / xa (F)" aria-label="Đổi góc nhìn camera (phím F)">📷</button>
+  <button class="hbtn" id="btn-restart" title="Chơi lại từ đầu" aria-label="Chơi lại từ đầu">↺</button>
 </div>
 
 <!-- Ảnh đại diện bé Mây góc dưới trái -->
@@ -109,17 +109,17 @@
 <div id="minimap-wrap"><canvas id="minimap" width="132" height="132"></canvas></div>
 <div id="interact">👆</div>
 <div id="toast"></div>
-<div id="hint">Bấm vào màn hình để nhìn quanh • W A S D di chuyển • Space nhảy/lên • M Bản đồ</div>
+<div id="hint">Giữ chuột kéo để xoay • W A S D di chuyển • Space nhảy/lên • M Bản đồ</div>
 
 <!-- Điều khiển cảm ứng điện thoại / máy tính bảng -->
 <div id="joy"><div id="stick"></div></div>
-<div id="vert"><button id="btn-up">▲</button><button id="btn-down">▼</button><button id="btn-jump">⤒</button><button id="btn-sprint">🏃</button></div>
+<div id="vert"><button id="btn-up" aria-label="Bơi lên trên">▲</button><button id="btn-down" aria-label="Lặn xuống dưới">▼</button><button id="btn-jump" aria-label="Nhảy hoặc lướt cánh">⤒</button><button id="btn-sprint" aria-label="Chạy nhanh">🏃</button></div>
 
-<!-- Màn hình Khởi đầu + Cốt truyện + Chọn đồ + Chọn nhanh màn -->
+<!-- Màn hình Khởi đầu + Cốt truyện + Chọn đồ + Chế độ Cốt truyện / Tự do -->
 <div class="overlay" id="ov-start">
   <div class="panel wide">
     <img class="hero-img" src="assets/img/hero.jpg" alt="Mây">
-    <h1>CUỘC PHIÊU LƯU CỦA MÂY <span class="ver-tag">v11.0 CỐT TRUYỆN + BOSS</span></h1>
+    <h1>CUỘC PHIÊU LƯU CỦA MÂY <span class="ver-tag">v12.0 RIG 3D + CỐT TRUYỆN</span></h1>
     <p class="story-lead">
       <b>Vua Mây Bão (Bóng Xám)</b> đã cướp <b>6 Viên Ngọc Cầu Vồng</b> 🌈, bắt cóc <b>Bé Gió Lốc Tí Hon</b> và phủ Sương Xám lên 6 vùng đất!
       Hãy trò chuyện với các <b>NPC Giao Nhiệm Vụ (!)</b>, thức tỉnh lần lượt <b>6 Phép Nguyên Tố thực chiến</b> (hồi sinh cây chết, chiếu gương laser, xây cầu băng, <b>hất văng quái vật lên trời bằng Lốc Cầu Vồng</b>) và đánh bại <b>6 Trùm Sương Xám</b>!
@@ -127,19 +127,22 @@
 
     <p class="outfit-label">👗 Chọn đồ cho Mây trước khi lên đường nhé!</p>
     <div class="outfits" id="outfits">
-      <button class="outfit sel" data-outfit="vayhong"><img src="assets/img/outfit-vayhong.jpg" alt="Váy hồng"><span>Váy hồng</span></button>
-      <button class="outfit" data-outfit="haibim"><img src="assets/img/outfit-haibim.jpg" alt="Hai bím"><span>Hai bím</span></button>
-      <button class="outfit" data-outfit="muvang"><img src="assets/img/outfit-muvang.jpg" alt="Mũ vàng"><span>Mũ vàng</span></button>
+      <button class="outfit sel" data-outfit="vayhong" aria-label="Chọn trang phục Váy hồng"><img src="assets/img/outfit-vayhong.jpg" alt="Váy hồng"><span>Váy hồng</span></button>
+      <button class="outfit" data-outfit="haibim" aria-label="Chọn trang phục Hai bím"><img src="assets/img/outfit-haibim.jpg" alt="Hai bím"><span>Hai bím</span></button>
+      <button class="outfit" data-outfit="muvang" aria-label="Chọn trang phục Mũ vàng"><img src="assets/img/outfit-muvang.jpg" alt="Mũ vàng"><span>Mũ vàng</span></button>
     </div>
 
-    <div class="quick-worlds">
-      <button class="qworld start-jump" data-level="hub">🏝️ Đảo Mây</button>
-      <button class="qworld start-jump" data-level="level1">🌊 Vịnh San Hô</button>
-      <button class="qworld start-jump" data-level="level2">🌲 Rừng Nấm</button>
-      <button class="qworld start-jump" data-level="level3">🏜️ Sa Mạc</button>
-      <button class="qworld start-jump" data-level="level4">💎 Hang Pha Lê</button>
-      <button class="qworld start-jump" data-level="level5">❄️ Xứ Tuyết</button>
-      <button class="qworld start-jump" data-level="level6">☁️ Vương Quốc Mây</button>
+    <div style="margin:6px 0 4px">
+      <button class="btn blue small" id="btn-start-free" aria-label="Bật hoặc tắt Chế độ Khám phá Tự do để chọn nhanh mọi màn">🧭 Chế độ Cốt truyện (Mở từng chương) — Bấm để bật Tự do</button>
+    </div>
+    <div class="quick-worlds hidden" id="quick-worlds">
+      <button class="qworld start-jump" data-level="hub" aria-label="Nhảy tới Đảo Mây">🏝️ Đảo Mây</button>
+      <button class="qworld start-jump" data-level="level1" aria-label="Nhảy tới Chương 1 Vịnh San Hô">🌊 Vịnh San Hô</button>
+      <button class="qworld start-jump" data-level="level2" aria-label="Nhảy tới Chương 2 Rừng Nấm">🌲 Rừng Nấm</button>
+      <button class="qworld start-jump" data-level="level3" aria-label="Nhảy tới Chương 3 Sa Mạc">🏜️ Sa Mạc</button>
+      <button class="qworld start-jump" data-level="level4" aria-label="Nhảy tới Chương 4 Hang Pha Lê">💎 Hang Pha Lê</button>
+      <button class="qworld start-jump" data-level="level5" aria-label="Nhảy tới Chương 5 Xứ Tuyết">❄️ Xứ Tuyết</button>
+      <button class="qworld start-jump" data-level="level6" aria-label="Nhảy tới Chương 6 Vương Quốc Mây">☁️ Vương Quốc Mây</button>
     </div>
 
     <div class="keys">
@@ -148,14 +151,14 @@
     </div>
 
     <div class="qrow">✨ Chất lượng đồ họa PBR &amp; Hậu kỳ:
-      <button class="qbtn" data-q="low">Nhẹ</button>
-      <button class="qbtn sel" data-q="mid">Đẹp (Vừa)</button>
-      <button class="qbtn" data-q="high">Siêu Thực (Cao)</button>
+      <button class="qbtn" data-q="low" aria-label="Chọn chất lượng đồ họa Nhẹ">Nhẹ</button>
+      <button class="qbtn sel" data-q="mid" aria-label="Chọn chất lượng đồ họa Đẹp Vừa">Đẹp (Vừa)</button>
+      <button class="qbtn" data-q="high" aria-label="Chọn chất lượng đồ họa Siêu Thực Cao">Siêu Thực (Cao)</button>
     </div>
 
     <div class="boot-bar"><i id="boot-fill"></i></div>
     <div id="boot-msg">Đang tổng hợp vật liệu PBR…</div>
-    <div style="margin-top:12px"><button class="btn" id="btn-play" disabled>▶ Bắt Đầu Phiêu Lưu!</button></div>
+    <div style="margin-top:12px"><button class="btn" id="btn-play" disabled aria-label="Bắt đầu cuộc phiêu lưu của Mây">▶ Bắt Đầu Phiêu Lưu!</button></div>
   </div>
 </div>
 
@@ -163,9 +166,12 @@
 <div class="overlay hidden" id="ov-map">
   <div class="panel wide">
     <h1>🗺️ BẢN ĐỒ 6 VÙNG ĐẤT KỲ DIỆU</h1>
-    <p>Chọn bất kỳ vùng đất nào để dịch chuyển ngay! Gom đủ <b>6 Viên Ngọc</b> để mở Lễ Hội Cầu Vồng trên Đảo Mây.</p>
+    <p id="map-lead">Hoàn thành từng chương để mở khóa vùng đất tiếp theo! Gom đủ <b>6 Viên Ngọc</b> để mở Lễ Hội Cầu Vồng trên Đảo Mây.</p>
     <div id="map-grid" class="map-grid"></div>
-    <div style="margin-top:14px"><button class="btn blue small" id="map-close">Đóng Bản Đồ</button></div>
+    <div style="margin-top:14px;display:flex;flex-wrap:wrap;gap:8px;justify-content:center">
+      <button class="btn blue small" id="btn-map-free" aria-label="Chuyển đổi Chế độ Khám phá Tự do trên Bản đồ">🔓 Mở Khám phá Tự do</button>
+      <button class="btn blue small" id="map-close" aria-label="Đóng Bản Đồ">Đóng Bản Đồ</button>
+    </div>
   </div>
 </div>
 
@@ -178,12 +184,12 @@
     <div id="alb-gems" class="alb-grid"></div>
     <div class="alb-sec">✨ 6 Phép Thuật Nguyên Tố (mở khóa dần theo cốt truyện)</div>
     <div id="alb-spells" class="alb-grid"></div>
-    <div style="margin:8px 0 4px"><button class="btn blue small" id="btn-free-spells">🔓 Mở nhanh 6 Phép (Chế Độ Tự Do)</button></div>
+    <div style="margin:8px 0 4px"><button class="btn blue small" id="btn-free-spells" aria-label="Bật hoặc tắt Chế độ Tự do mở nhanh cả 6 phép thuật">🔓 Mở nhanh 6 Phép (Chế Độ Tự Do)</button></div>
     <div class="alb-sec">🎒 6 Trang Bị Khám Phá</div>
     <div id="alb-gears" class="alb-grid"></div>
     <div class="alb-sec">👗 Tủ Đồ của Mây (mở khóa thêm khi qua màn!)</div>
     <div id="alb-outfits" class="outfits outfits-6"></div>
-    <div style="margin-top:14px"><button class="btn blue small" id="album-close">Quay lại chơi</button></div>
+    <div style="margin-top:14px"><button class="btn blue small" id="album-close" aria-label="Đóng Sổ Tay và quay lại chơi">Quay lại chơi</button></div>
   </div>
 </div>
 
@@ -197,9 +203,9 @@
     <p id="win-rank" style="font-size:19px;font-weight:800;color:#ffd93d"></p>
     <p id="win-side" style="font-size:15px"></p>
     <div style="margin-top:14px;display:flex;flex-wrap:wrap;gap:8px;justify-content:center">
-      <button class="btn" id="btn-win-next">▶ Sang màn tiếp theo</button>
-      <button class="btn blue small" id="btn-win-hub">🏝️ Về Đảo Mây</button>
-      <button class="btn blue small" id="btn-win-stay">Ở lại chơi tiếp</button>
+      <button class="btn" id="btn-win-next" aria-label="Chuyển sang màn tiếp theo">▶ Sang màn tiếp theo</button>
+      <button class="btn blue small" id="btn-win-hub" aria-label="Quay về Đảo Mây">🏝️ Về Đảo Mây</button>
+      <button class="btn blue small" id="btn-win-stay" aria-label="Ở lại màn hiện tại chơi tiếp">Ở lại chơi tiếp</button>
     </div>
   </div>
 </div>
@@ -213,8 +219,8 @@
     <p>Tuyệt vời quá! Mây đã thu thập đủ cả <b>6 Viên Ngọc Sắc Màu</b>, làm hòa với <b>Bé Gió Lốc Tí Hon</b> và thắp sáng lại Ngọn Hải Đăng Cầu Vồng!</p>
     <p style="color:#ffd93d;font-weight:800">🎁 Đã mở khóa: 🪽 Đôi Cánh Mây Vĩnh Viễn &amp; 👑 Váy Công Chúa Mây!</p>
     <div style="margin-top:14px;display:flex;flex-wrap:wrap;gap:10px;justify-content:center">
-      <button class="btn" id="btn-finale-hub">🏝️ Về Đảo Mây Dự Lễ Hội!</button>
-      <button class="btn blue small" id="btn-finale-stay">Khám phá tiếp</button>
+      <button class="btn" id="btn-finale-hub" aria-label="Về Đảo Mây dự Lễ Hội Cầu Vồng">🏝️ Về Đảo Mây Dự Lễ Hội!</button>
+      <button class="btn blue small" id="btn-finale-stay" aria-label="Ở lại khám phá tiếp">Khám phá tiếp</button>
     </div>
   </div>
 </div>
@@ -226,7 +232,7 @@
     <h1 id="quiz-q" style="font-size:28px">?</h1>
     <p id="quiz-prog" style="color:#ffd93d;font-weight:700"></p>
     <div id="quiz-ans" style="display:grid;gap:10px;margin:12px 0"></div>
-    <button class="btn blue small" id="quiz-close">Để sau</button>
+    <button class="btn blue small" id="quiz-close" aria-label="Đóng câu đố để trả lời sau">Để sau</button>
   </div>
 </div>
 

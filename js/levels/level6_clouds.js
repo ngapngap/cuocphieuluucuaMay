@@ -230,6 +230,10 @@
     roseFrame.position.set(0, 5.4, 4.12); castle.add(roseFrame);
     castle.position.set(0, 18.85, -52);
     ctx.add(castle);
+    ctx.addCollider(0, -52, 4.3, "castle", { minY: 18.0, maxY: 29.0 });
+    [[-4.3, -55.8], [4.3, -55.8], [-4.3, -48.2], [4.3, -48.2]].forEach(function (tp) {
+      ctx.addCollider(tp[0], tp[1], 1.45, "castle_tower", { minY: 18.0, maxY: 32.0 });
+    });
     ctx.addGemAltar([0, 18.90, -40]);
     MAY.buildVistaRing(ctx, { count: 18, radius: 145, hMin: 16, hMax: 38, wBase: 36, baseY: -6, color: 0xf4c2e8 });
 
@@ -268,6 +272,7 @@
     mill.add(blades);
     mill.position.set(42, 13.5, 14); mill.rotation.y = -1.2;
     ctx.add(mill);
+    ctx.addCollider(42, 14, 2.35, "windmill", { minY: 13.0, maxY: 22.8 });
 
     /* Sứa Mây (tái sử dụng jelly.glb màu pastel) bay lơ lửng trên bầu trời + Bụi sao cầu vồng */
     var skyJellies = [];

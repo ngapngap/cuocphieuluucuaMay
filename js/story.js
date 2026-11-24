@@ -158,6 +158,7 @@
     MAY.hearts = Math.max(0, MAY.hearts - (amt || 1));
     MAY.syncHeartsHUD(true);
     if (MAY.sndHurt) MAY.sndHurt();
+    if (MAY.player.triggerHurtAnim) MAY.player.triggerHurtAnim();
     if (MAY.player.addShake) MAY.player.addShake(0.42);
     if (MAY.triggerSpellFlash) MAY.triggerSpellFlash(0xff3b5c, 0.45);
     if (pushFromPos && MAY.player && MAY.player.vel) {
@@ -526,9 +527,15 @@
       return p;
     };
 
-    /* Va chạm rắn 3D (hình trụ đơn giản nhưng chính xác để chặn đi xuyên tường/cây/cột!) */
-    ctx.addCollider = function (x, z, r, tag) {
-      ctx.colliders.push({ x: x, z: z, r: r, tag: tag || null });
+    /* Va chạm rắn 3D (hình trụ có giới hạn độ cao tùy chọn để chặn đi xuyên tường/cây/cột mà vẫn nhảy/bơi/bay qua đỉnh được!) */
+    ctx.addCollider = function (x, z, r, tag, yRange) {
+      if (typeof x !== "number" || typeof z !== "number" || isNaN(x) || isNaN(z)) return;
+      var c = { x: x, z: z, r: r, tag: tag || null };
+      if (yRange) {
+        if (yRange.minY !== undefined) c.minY = yRange.minY;
+        if (yRange.maxY !== undefined) c.maxY = yRange.maxY;
+      }
+      ctx.colliders.push(c);
     };
     ctx.removeCollider = function (tag) {
       for (var i = ctx.colliders.length - 1; i >= 0; i--) {

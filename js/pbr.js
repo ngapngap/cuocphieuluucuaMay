@@ -1,6 +1,6 @@
 "use strict";
 /* ============================================================================
-   PBR & SHADERS v11.0 — Chuẩn "The Hall" + "Fable 5.2":
+   PBR & SHADERS v12.0 — Chuẩn "The Hall" + "Fable 5.2":
    - Texture PBR 512x512 + Anti-Tiling Macro Weathering + Bờ ẩm ướt tự động
    - Phản chiếu mặt phẳng thời gian thực (Planar Reflections cho Nước, Băng & Vũng đá ướt)
    - Hậu kỳ Depth-Buffer SSAO (tối khe góc) + DoF nhẹ + Bloom + Film Grain + Spell Flash

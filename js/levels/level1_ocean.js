@@ -122,6 +122,9 @@
     seaWall.position.set(16, 7.6, 82); seaWall.rotation.y = -0.25;
     seaWall.castShadow = true; seaWall.receiveShadow = true;
     ctx.add(seaWall);
+    [[8.2, 84.0], [16.0, 82.0], [23.8, 80.0]].forEach(function (wp) {
+      ctx.addCollider(wp[0], wp[1], 2.4, "seawall", { maxY: 16.0 });
+    });
 
     var diveBoat = new THREE.Group();
     var bHull = new THREE.Mesh(new THREE.BoxGeometry(2.8, 1.1, 7.0), new THREE.MeshStandardMaterial({ map: MAY.TEX.wood, color: 0x4b3828, roughness: 0.75 }));
@@ -139,6 +142,7 @@
       var pm = MAY.makeRealisticPalm(p[2]);
       pm.position.set(p[0], ctx.groundH(p[0], p[1]) - 0.1, p[1]);
       ctx.add(pm);
+      ctx.addCollider(p[0], p[1], 0.55, "palm");
     });
     ctx.addPortal([0, 92], "hub", "🏝️ Về Đảo Mây", 0x38bdf8);
 
@@ -150,9 +154,13 @@
       var rm = new THREE.Mesh(MAY.rockGeo(rk * 1.7 + 0.5), rockMat);
       var sc = 0.9 + (rk % 5) * 0.55;
       rm.scale.set(sc * 1.25, sc * 0.72, sc);
-      rm.position.set(rx, ctx.groundH(rx, rz) + sc * 0.3, rz);
+      var ry = ctx.groundH(rx, rz);
+      rm.position.set(rx, ry + sc * 0.3, rz);
       rm.rotation.y = rk * 1.3; rm.castShadow = true; rm.receiveShadow = true;
       ctx.add(rm);
+      if (sc >= 1.4 && Math.hypot(rx, rz - 10) > 4.5 && Math.hypot(rx - 16, rz + 10) > 4.5) {
+        ctx.addCollider(rx, rz, sc * 0.78, "rock", { maxY: ry + sc * 0.9 });
+      }
     }
     for (var sp = 0; sp < 8; sp++) {
       var sa = (sp / 8) * Math.PI * 2 + 0.35;
@@ -164,9 +172,11 @@
 
     /* Cổng đá cổ (-30, 30) — nơi đặt Bệ Ngọc Xanh Dương */
     [-3.4, 3.4].forEach(function (dx) {
+      var py = ctx.groundH(-30 + dx, 30);
       var p = new THREE.Mesh(new THREE.BoxGeometry(1.8, 7.6, 2.5), wallMat);
-      p.position.set(-30 + dx, ctx.groundH(-30 + dx, 30) + 3.6, 30);
+      p.position.set(-30 + dx, py + 3.6, 30);
       p.castShadow = true; p.receiveShadow = true; ctx.add(p);
+      ctx.addCollider(-30 + dx, 30, 1.15, "arch_pillar", { maxY: py + 7.6 });
     });
     var archTop = new THREE.Mesh(new THREE.BoxGeometry(10.2, 2.0, 2.6), wallMat);
     archTop.position.set(-30, ctx.groundH(-30, 30) + 8.0, 30);
@@ -191,9 +201,12 @@
     /* Đèn lồng đồng ấm đổ bóng thật bên trong khoang Tàu Đắm (tương phản ấm/lạnh kiểu The Hall dưới lòng biển!) */
     var wreckLan = MAY.makeCagedLantern(0xffb85c, 3.6, 26, true);
     wreckLan.position.set(-2.2, 3.6, 0); wreck.add(wreckLan);
-    wreck.position.set(-60, ctx.groundH(-60, -40), -40); wreck.rotation.y = 0.7; wreck.rotation.z = 0.16;
+    var wY = ctx.groundH(-60, -40);
+    wreck.position.set(-60, wY, -40); wreck.rotation.y = 0.7; wreck.rotation.z = 0.16;
     wreck.traverse(function (o) { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
     ctx.add(wreck);
+    ctx.addCollider(-60, -40, 2.1, "wreck", { maxY: wY + 3.0 });
+    ctx.addCollider(-63.4, -42.8, 1.9, "wreck", { maxY: wY + 2.8 });
     if (MAY.add3DLoop) {
       MAY.add3DLoop([-60, ctx.groundH(-60, -40) + 3.6, -40], { kind: "fire", freq: 620, vol: 0.032, maxDist: 34 });
       MAY.add3DLoop([0, 3.5, -22], { kind: "water", freq: 380, vol: 0.045, maxDist: 52 });

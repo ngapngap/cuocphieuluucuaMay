@@ -253,7 +253,6 @@
     lhDoorLan.position.set(0, 2.6, 4.4); lh.add(lhDoorLan);
     ctx.add(lh);
     ctx.addCollider(0, 0, 4.5, "lighthouse");
-    ctx.addCollider(cabX, cabZ, 3.0, "cabin");
     if (MAY.add3DLoop) {
       MAY.add3DLoop([0, lhY + 2.6, 4.4], { kind: "fire", vol: 0.032, maxDist: 28 });
       MAY.add3DLoop([0, 1.0, 34], { kind: "water", freq: 520, vol: 0.05, maxDist: 46 });
@@ -383,6 +382,7 @@
     cabinG.add(MAY.makeContactShadow(3.6, 0.55));
     cabinG.position.set(cabX, cabY, cabZ); cabinG.rotation.y = -0.6;
     ctx.add(cabinG);
+    ctx.addCollider(cabX, cabZ, 2.75, "cabin", { maxY: cabY + 5.2 });
 
     /* Khung ảnh bé Mây */
     var frameG = new THREE.Group();
@@ -400,11 +400,13 @@
       pm.position.set(p[0], ctx.groundH(p[0], p[1]) - 0.15, p[1]);
       pm.rotation.y = p[0] * 0.7;
       ctx.add(pm);
+      ctx.addCollider(p[0], p[1], 0.55 * p[2], "palm");
     });
     [[-10, -14, 1.0], [18, -1, 0.9], [-18, 2, 0.95]].forEach(function (p) {
       var tr = MAY.makeRealisticTree(p[2], 0x8fd674);
       tr.position.set(p[0], ctx.groundH(p[0], p[1]) - 0.1, p[1]);
       ctx.add(tr);
+      ctx.addCollider(p[0], p[1], 0.65 * p[2], "tree");
     });
     MAY.scatterLushMeadow(ctx, 1300, function (x, z) {
       var d = Math.hypot(x, z);
@@ -436,6 +438,7 @@
       rm.position.set(rx, ctx.groundH(rx, rz) + rs * 0.25, rz);
       rm.rotation.y = ri; rm.castShadow = true; rm.receiveShadow = true;
       ctx.add(rm);
+      ctx.addCollider(rx, rz, rs * 0.85, "rock", { maxY: ctx.groundH(rx, rz) + rs * 0.85 });
     }
 
     /* ---- 6 Cổng Ánh Sáng dẫn thẳng tới 6 Màn Chơi ---- */

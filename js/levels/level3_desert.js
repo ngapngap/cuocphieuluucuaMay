@@ -123,6 +123,7 @@
       obTip.rotation.y = Math.PI / 4; obTip.position.set(bx, 10.0, PYR.half + 2.2); pyrGroup.add(obTip);
       var br = MAY.makeCagedLantern(0xffa438, 3.2, 26, bIdx === 0);
       br.position.set(bx * 0.72, 5.2, PYR.half + 1.4); pyrGroup.add(br);
+      ctx.addCollider(PYR.x + bx, PYR.z + PYR.half + 2.2, 0.95, "obelisk", { maxY: 11.2 });
     });
     ctx.add(pyrGroup);
     if (MAY.add3DLoop) {
@@ -147,6 +148,7 @@
       var pm = MAY.makeRealisticPalm(p[2]);
       pm.position.set(p[0], ctx.groundH(p[0], p[1]) - 0.1, p[1]);
       pm.rotation.y = p[0]; ctx.add(pm);
+      ctx.addCollider(p[0], p[1], 0.55 * p[2], "palm");
     });
     MAY.scatterLushMeadow(ctx, 420, function (x, z) {
       var d = Math.hypot(x - OAS.x, z - OAS.z);
@@ -222,6 +224,7 @@
     }
     [[-18, 34], [26, 36], [56, 8], [-58, 4], [48, -42], [-48, -46], [24, -62], [-18, -68]].forEach(function (p) {
       ctx.add(makeCactus(p[0], p[1], false));
+      ctx.addCollider(p[0], p[1], 0.52, "cactus", { maxY: ctx.groundH(p[0], p[1]) + 3.0 });
     });
     ctx.addInteractProps([[22, 6], [-22, 6], [30, -10], [-28, -14], [14, 34]].map(function (p, i) {
       var cg = makeCactus(p[0], p[1], true);
