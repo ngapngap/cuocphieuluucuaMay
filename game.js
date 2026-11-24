@@ -78,9 +78,6 @@
       var m = MAY.getMeta(MAY.currentLevelId);
       MAY.toast(m.icon + " " + m.title, m.intro);
     }
-    if (!MAY.player.isTouch) {
-      try { var pr = MAY.canvas.requestPointerLock(); if (pr && pr.catch) pr.catch(function () {}); } catch (e) {}
-    }
   }
 
   document.getElementById("btn-play").onclick = function () {

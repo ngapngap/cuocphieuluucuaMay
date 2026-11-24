@@ -450,6 +450,7 @@
   var _reflLook = new THREE.Vector3();
   var _clipPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 
+  var _reflFrame = 0;
   MAY.PlanarReflector = {
     rt: null,
     matrix: new THREE.Matrix4(),
@@ -466,6 +467,7 @@
       this.activePlaneY = planeY;
       this.hideMeshes = hideList || [];
       this.hasValidFrame = false;
+      _reflFrame = 0;
     },
     clear: function () {
       this.activePlaneY = null;
@@ -482,6 +484,11 @@
       if (cam.position.y < py + 0.08) {
         this.hasValidFrame = false;
         return;
+      }
+      /* Trên chất lượng 'mid', cập nhật Planar Reflection mỗi 2 khung hình giúp tăng mạnh FPS mà mặt nước/sàn vẫn phản chiếu mượt */
+      if (MAY.quality === "mid") {
+        _reflFrame++;
+        if (this.hasValidFrame && (_reflFrame % 2 === 1)) return;
       }
       /* Phản chiếu camera thật qua mặt phẳng y = py */
       cam.getWorldDirection(_reflLook);

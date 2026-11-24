@@ -45,8 +45,8 @@
       cloudAmt: 0.52
     });
 
-    /* Địa hình Đảo Mây có bờ cát thoai thoải, đồi cỏ xanh ở trung tâm và lòng vịnh quanh đảo */
-    ctx.groundH = function (x, z) {
+    /* Địa hình Đảo Mây có bờ cát thoai thoải, đồi cỏ xanh ở trung tâm & lòng vịnh quanh đảo */
+    function hubTerrainH(x, z) {
       var d = Math.hypot(x, z);
       var und = Math.sin(x * 0.14) * Math.cos(z * 0.13) * 0.42 + Math.sin(x * 0.31 + 1.2) * Math.cos(z * 0.27) * 0.18;
       if (d < 14) return 4.6 + und * 0.45 + (14 - d) * 0.08;
@@ -56,7 +56,8 @@
         return 4.6 * (1 - sm) + (-2.4) * sm + und * 0.6;
       }
       return -2.4 - Math.min(4.5, (d - 34) * 0.12) + und * 0.5;
-    };
+    }
+    ctx.groundH = hubTerrainH;
 
     /* Kết hợp địa hình cỏ-cát mượt theo độ cao (đáy biển -> cát ẩm -> cát vàng -> cỏ xanh) */
     var islandMat = new THREE.MeshStandardMaterial({
@@ -74,7 +75,7 @@
     var cSand = new THREE.Color(0xe6cf9a), cWet = new THREE.Color(0x9a8862), cGrass = new THREE.Color(0x88c96b), tmp = new THREE.Color();
     for (var i = 0; i < pos.count; i++) {
       var vx = pos.getX(i), vz = pos.getZ(i);
-      var vy = ctx.groundH(vx, vz);
+      var vy = hubTerrainH(vx, vz);
       pos.setY(i, vy);
       if (vy < 0.35) tmp.copy(cWet).lerp(cSand, Math.max(0, (vy + 1.8) / 2.15));
       else if (vy < 2.2) tmp.copy(cSand).lerp(cGrass, (vy - 0.35) / 1.85);
@@ -87,6 +88,14 @@
     var islandMesh = new THREE.Mesh(tGeo, islandMat);
     islandMesh.receiveShadow = true;
     ctx.add(islandMesh);
+
+    /* Bật mặt phẳng đi bộ chắc chắn cho cả Cầu Gỗ (y=2.38) lẫn Bờ Kè Đá hai bên (y=2.22)! */
+    ctx.groundH = function (x, z) {
+      var h = hubTerrainH(x, z);
+      if (Math.abs(x) < 2.9 && z > 21.8 && z < 35.2) h = Math.max(h, 2.38);
+      else if (Math.abs(x) < 4.35 && z > 21.8 && z < 34.2) h = Math.max(h, 2.22);
+      return h;
+    };
 
     /* Mặt biển Gerstner chân thực với phản chiếu trời, bọt bờ đảo & sóng rẽ nước quanh Mây */
     ctx.addWater({
@@ -174,6 +183,22 @@
     }
     var gallery = new THREE.Mesh(new THREE.CylinderGeometry(2.45, 2.1, 0.5, 18), new THREE.MeshStandardMaterial({ color: 0x2a3b4c, metalness: 0.4, roughness: 0.4 }));
     gallery.position.y = 14.0; lh.add(gallery);
+    /* Lan can sắt mỹ thuật bao quanh ban công Hải Đăng + 3 cửa sổ tròn phát sáng ấm dọc thân tháp */
+    var railMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.78, roughness: 0.32 });
+    var topRail = new THREE.Mesh(new THREE.TorusGeometry(2.36, 0.06, 8, 24), railMat);
+    topRail.rotation.x = Math.PI / 2; topRail.position.y = 15.05; lh.add(topRail);
+    for (var rp = 0; rp < 12; rp++) {
+      var rpa = (rp / 12) * Math.PI * 2;
+      var rPost = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.85, 6), railMat);
+      rPost.position.set(Math.cos(rpa) * 2.36, 14.62, Math.sin(rpa) * 2.36); lh.add(rPost);
+    }
+    [5.5, 8.8, 11.8].forEach(function (wy, wi) {
+      var wa = wi * 1.4 - 0.5, wr = 2.74 - wi * 0.28;
+      var rim = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.08, 8, 16), railMat);
+      var glass = new THREE.Mesh(new THREE.CircleGeometry(0.38, 14), new THREE.MeshBasicMaterial({ color: 0xffe49e }));
+      rim.position.set(Math.sin(wa) * wr, wy, Math.cos(wa) * wr); rim.rotation.y = wa; lh.add(rim);
+      glass.position.set(Math.sin(wa) * (wr + 0.04), wy, Math.cos(wa) * (wr + 0.04)); glass.rotation.y = wa; lh.add(glass);
+    });
     var lanternGlass = new THREE.Mesh(new THREE.CylinderGeometry(1.55, 1.55, 2.3, 16),
       new THREE.MeshPhysicalMaterial({ color: 0xfff6cc, emissive: 0xffd93d, emissiveIntensity: 0.7 + MAY.save.gems.length * 0.2, roughness: 0.08, clearcoat: 1.0, transparent: true, opacity: 0.85 }));
     lanternGlass.position.y = 15.4; lh.add(lanternGlass);
@@ -334,6 +359,17 @@
     var mullH = new THREE.Mesh(new THREE.BoxGeometry(1.22, 0.08, 0.08), trimM); mullH.position.set(0, 1.5, 1.95); cabinG.add(mullH);
     var mullV = new THREE.Mesh(new THREE.BoxGeometry(0.08, 1.12, 0.08), trimM); mullV.position.set(0, 1.5, 1.95); cabinG.add(mullV);
     var porch = new THREE.Mesh(new THREE.BoxGeometry(4.5, 0.25, 1.6), dockWoodMat); porch.position.set(0, 0.15, 2.6); porch.receiveShadow = true; cabinG.add(porch);
+    /* Ống khói đá + bồn hoa nở trước cửa sổ + 2 cột hiên gỗ chi tiết cho Nhà Gỗ của Mây */
+    var chimney = new THREE.Mesh(new THREE.BoxGeometry(0.75, 2.6, 0.75), quayMat); chimney.position.set(-1.35, 3.8, -0.75); chimney.castShadow = true; cabinG.add(chimney);
+    var fbox = new THREE.Mesh(new THREE.BoxGeometry(1.35, 0.28, 0.34), trimM); fbox.position.set(0, 0.85, 2.08); cabinG.add(fbox);
+    [-0.4, 0, 0.4].forEach(function (fx, fi) {
+      var fl = new THREE.Mesh(new THREE.SphereGeometry(0.16, 8, 6), new THREE.MeshStandardMaterial({ color: [0xff6b9d, 0xffd93d, 0x38bdf8][fi], roughness: 0.5 }));
+      fl.position.set(fx, 1.08, 2.08); cabinG.add(fl);
+    });
+    [-2.0, 2.0].forEach(function (px) {
+      var pPost = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.12, 2.6, 8), trimM);
+      pPost.position.set(px, 1.45, 3.2); pPost.castShadow = true; cabinG.add(pPost);
+    });
     var cabLan = MAY.makeCagedLantern(0xffd27d, 1.9, 18, false); cabLan.position.set(1.6, 2.4, 2.6); cabinG.add(cabLan);
     cabinG.add(MAY.makeContactShadow(3.6, 0.55));
     cabinG.position.set(cabX, cabY, cabZ); cabinG.rotation.y = -0.6;
@@ -407,7 +443,7 @@
       { name: "Thỏ trắng", kind: "rabbit", pos: [-7, 5], greet: "🐇 Thỏ trắng nhảy cẫng chào Mây về Đảo Mây!" },
       { name: "Khỉ nâu",   kind: "monkey", pos: [11, 6], greet: "🐒 Khỉ nâu vẫy tay chúc Mây lên đường vui vẻ!" },
       { name: "Cua đỏ",    kind: "crab",   pos: [-16, 16], greet: "🦀 Cua đỏ kẹp càng chào Mây ngoài bãi cát!" },
-      { name: "Rùa cạn",   kind: "tortoise", pos: [4, -13], greet: "🐢 Rùa cạn kể chuyện 6 Viên Ngọc Cầu Vồng cho Mây nghe!" }
+      { name: "Cừu Bông Đảo", kind: "sheep", pos: [4, -13], greet: "🐑 Cừu Bông Đảo nhảy tưng tưng chúc Mây thắng lớn!" }
     ]);
 
     ctx.setCompanion(MAY.hasGear(6) ? "miloWinged" : "milo", "🐶 Milo");

@@ -372,8 +372,8 @@
       { name: "Cá hề",       kind: "clownfish", pos: [14, 2.8, 2],    behavior: "swim",  greet: "🐠 Mây gặp bạn Cá hề cam sọc trắng nè!" },
       { name: "Ngọc trai",   kind: "pearl",     pos: [-40, 1.4, -20], behavior: "still", greet: "🦪 Ngọc trai mở vỏ lấp lánh chào Mây!" },
       { name: "Bạch tuộc",   kind: "octopus",   pos: [-15, 2.2, -55], behavior: "still", greet: "🐙 Bạch tuộc tím vẫy cả 6 xúc tu chào Mây!" },
-      { name: "Cá heo Bubi", kind: "dolphin",   pos: [24, 4.2, -16],  behavior: "swim",  isCompanion: true, greet: "🐬 Cá heo Bubi vui quá! Bubi sẽ bơi cùng Mây luôn!" },
-      { name: "Rùa biển",    kind: "turtle",    pos: [-66, 2.4, 28],  behavior: "swim",  greet: "🐢 Cụ Rùa biển gật đầu chào bé Mây!" },
+      { name: "Cá heo Bubi", kind: "dolphin",   pos: [16, 3.6, -10],  behavior: "swim",  isCompanion: true, greet: "🐬 Cá heo Bubi được cứu rồi! Bubi sẽ bơi cùng Mây luôn!" },
+      { name: "Sao biển tím", kind: "pearl",    pos: [-66, 2.4, 28],  behavior: "still", greet: "🐚 Ngọc trai biển sâu gật đầu chào bé Mây!" },
       { name: "Cua đỏ",      kind: "crab",      pos: [25, 1.3, -72],  behavior: "still", greet: "🦀 Cua đỏ giơ càng chào Mây nè!" }
     ]);
 
@@ -604,6 +604,13 @@
     });
     krakenMesh.traverse(function (o) { if (o.isMesh) o.castShadow = true; });
 
+    /* Ẩn Cá heo Bubi tự do cho đến khi Mây thật sự phá lưới đá cứu Bubi (tránh trùng 2 Bubi cùng lúc!) */
+    var bubiFriend = ctx.friends[3];
+    if (bubiFriend && !ch1St.steps.bubiFree) {
+      bubiFriend.group.visible = false;
+      bubiFriend.label.visible = false;
+    }
+
     var ch1Npc;
     var ch1Boss = ctx.setBoss({
       name: "Bạch Tuộc Mực Khổng Lồ", icon: "🐙",
@@ -612,14 +619,14 @@
       tipFn: function () { return "💡 Khi Bạch Tuộc bắn Ngọc Trai Đen, bấm 🌊 Sóng Xung Kích (1 + R) đẩy ngược vào đầu nó!"; },
       onTick: function (dt, t, bs) {
         bs.mesh.position.y = 5.2 + Math.sin(t * 1.8) * 0.6;
-        bs.mesh.lookAt(MAY.player.pos.x, bs.mesh.position.y, MAY.player.pos.z);
+        bs.mesh.rotation.y = Math.atan2(MAY.player.pos.x - bs.pos.x, MAY.player.pos.z - bs.pos.z) + Math.PI;
         kTentacles.forEach(function (tn, i) { tn.rotation.y = Math.sin(t * 3 + i) * 0.35; });
         bs.atkT -= dt;
         if (bs.atkT <= 0 && bs.pos.distanceTo(MAY.player.pos) < 38) {
           bs.atkT = 3.2;
           var dir = new THREE.Vector3().subVectors(MAY.player.pos, bs.pos).normalize();
-          ctx.spawnBossOrb(bs.pos.clone().add(dir.clone().multiplyScalar(3.2)), dir, {
-            speed: 8.8, radius: 0.9, reflectable: true, reflectSpell: "wave", color: 0x1a0b2e, emissive: 0xff3b5c,
+          ctx.spawnBossOrb(bs.pos.clone().add(dir.clone().multiplyScalar(3.4)), dir, {
+            speed: 7.4, radius: 1.05, reflectable: true, reflectSpell: "wave", color: 0x1a0b2e, emissive: 0xff3b5c,
             onReflectHitBoss: function (b) { b.damage("Ngọc Trai Đen bật ngược nổ tung mũ sương xám của Bạch Tuộc!"); }
           });
           MAY.toast("🐙 Bạch Tuộc bắn Ngọc Trai Đen! Dùng 🌊 Sóng Xung Kích (Phím 1 + R) đẩy ngược lại!");
@@ -688,6 +695,12 @@
         ch1St.steps.bubiFree = true;
         MAY.persist();
         bubiCage.visible = false;
+        if (bubiFriend) {
+          bubiFriend.group.visible = true;
+          bubiFriend.label.visible = true;
+          bubiFriend.group.position.copy(bubiCagePos);
+          bubiFriend.following = true;
+        }
         tg.markDone();
         MAY.sndShatter(bubiCagePos);
         MAY.VFX.spawnShatterBurst(bubiCagePos, 0x38bdf8);

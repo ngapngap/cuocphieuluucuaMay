@@ -41,7 +41,7 @@
 
     /* Địa hình rừng: dòng suối uốn lượn quanh trục Z = sin(x*0.06)*12 - 10 + đồi thoai thoải + mỏm đá cao phía Bắc */
     function streamCenterZ(x) { return Math.sin(x * 0.065) * 11 - 12; }
-    ctx.groundH = function (x, z) {
+    function forestTerrainH(x, z) {
       var hills = Math.sin(x * 0.055) * Math.cos(z * 0.052) * 2.4 +
                   Math.sin(x * 0.14 + 1.1) * Math.cos(z * 0.13) * 0.75;
       var base = 2.6 + hills;
@@ -61,7 +61,8 @@
       var cD = Math.hypot(x, z - 22);
       if (cD < 12) base = base * (cD / 12) + 3.2 * (1 - cD / 12);
       return base;
-    };
+    }
+    ctx.groundH = forestTerrainH;
 
     var forestMat = new THREE.MeshStandardMaterial({
       map: MAY.PBR.forestGround.map,
@@ -73,13 +74,25 @@
     MAY.applyCaustics(forestMat, 0.25, 0.65);
     ctx.buildTerrain(230, 120, forestMat);
 
-    /* Dòng suối trong vắt có phản chiếu bầu trời & sóng quanh chân Mây */
+    /* Dòng suối trong vắt có phản chiếu bầu trời & sóng quanh chân Mây (chảy xuyên dưới gầm cầu gỗ!) */
     ctx.addWater({
       width: 220, height: 220, segs: 64, y: 0.25,
       sunDir: new THREE.Vector3(32, 46, 22),
       deepColor: 0x094f4e, shallowColor: 0x249c88, skyColor: 0xc2ebd0,
       foamCenter: new THREE.Vector3(0, 0.25, 22), foamRadius: 22, waveAmp: 0.08
     });
+
+    /* Sau khi dựng lòng suối & mặt nước, bật mặt cầu gỗ bắc qua suối tại x = 0 để Mây đi bộ vững chãi bên trên! */
+    var brZ0 = streamCenterZ(0);
+    ctx.groundH = function (x, z) {
+      var base = forestTerrainH(x, z);
+      if (Math.abs(x) < 2.35 && Math.abs(z - brZ0) < 8.4) {
+        var bf = Math.min(1, Math.abs(z - brZ0) / 8.4);
+        var by = 2.05 + Math.cos(bf * Math.PI * 0.5) * 0.85;
+        if (by > base) base = by;
+      }
+      return base;
+    };
 
     /* Tia nắng khối xuyên tán cây + Đom đóm vàng bay lơ lửng */
     var rayMat = MAY.makeGodRayMat(0xfff4be, 0.18);
@@ -123,9 +136,33 @@
       roughnessMap: MAY.PBR.bark.roughnessMap, roughness: 0.95,
       color: ctx.story.bossDown ? 0xffffff : 0x6b6460
     });
-    var aTrunk = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 3.6, 13.5, 14), barkMat);
-    aTrunk.position.y = 6.5; aTrunk.castShadow = true; aTrunk.receiveShadow = true; ancient.add(aTrunk);
-    ctx.addCollider(0, 22, 3.5, "ancient_mother");
+    var trPts = [new THREE.Vector2(3.8, 0), new THREE.Vector2(3.1, 2.2), new THREE.Vector2(2.4, 6.2), new THREE.Vector2(2.05, 10.2), new THREE.Vector2(2.25, 11.8), new THREE.Vector2(1.45, 13.2), new THREE.Vector2(0.55, 14.0), new THREE.Vector2(0.02, 14.3)];
+    var aTrunk = new THREE.Mesh(new THREE.LatheGeometry(trPts, 18), barkMat);
+    aTrunk.castShadow = true; aTrunk.receiveShadow = true; ancient.add(aTrunk);
+    /* Cổng vòm hốc cây cổ tích + đèn lồng treo + 5 cành đại thụ uốn cong + cành ngọn vươn cao */
+    var hollow = new THREE.Mesh(new THREE.CircleGeometry(1.15, 16, 0, Math.PI), new THREE.MeshBasicMaterial({ color: 0xffe49e }));
+    hollow.position.set(0, 0.9, 3.32); ancient.add(hollow);
+    var archFrame = new THREE.Mesh(new THREE.TorusGeometry(1.18, 0.22, 8, 18, Math.PI), barkMat);
+    archFrame.position.set(0, 0.9, 3.30); ancient.add(archFrame);
+    var mLan = MAY.makeCagedLantern(0xffd480, 2.0, 20, false); mLan.position.set(0, 2.65, 3.55); ancient.add(mLan);
+    for (var bh = 0; bh < 5; bh++) {
+      var ba = (bh / 5) * Math.PI * 2 + 0.4;
+      var bCurve = new THREE.CatmullRomCurve3([
+        new THREE.Vector3(Math.cos(ba) * 1.7, 10.0, Math.sin(ba) * 1.7),
+        new THREE.Vector3(Math.cos(ba) * 4.8, 12.4, Math.sin(ba) * 4.8),
+        new THREE.Vector3(Math.cos(ba) * 7.4, 13.8, Math.sin(ba) * 7.4)
+      ]);
+      var bough = new THREE.Mesh(new THREE.TubeGeometry(bCurve, 12, 0.44, 7, false), barkMat);
+      bough.castShadow = true; ancient.add(bough);
+      var twigCurve = new THREE.CatmullRomCurve3([
+        new THREE.Vector3(Math.cos(ba) * 4.4, 12.2, Math.sin(ba) * 4.4),
+        new THREE.Vector3(Math.cos(ba + 0.35) * 5.8, 14.3, Math.sin(ba + 0.35) * 5.8),
+        new THREE.Vector3(Math.cos(ba + 0.5) * 6.5, 15.6, Math.sin(ba + 0.5) * 6.5)
+      ]);
+      var twig = new THREE.Mesh(new THREE.TubeGeometry(twigCurve, 8, 0.20, 6, false), barkMat);
+      twig.castShadow = true; ancient.add(twig);
+    }
+    ctx.addCollider(0, 22, 3.6, "ancient_mother");
     /* Rễ cổ thụ uốn lượn */
     for (var rk = 0; rk < 6; rk++) {
       var ra = (rk / 6) * Math.PI * 2;
@@ -232,7 +269,7 @@
 
     /* ---- 5 Bạn Rừng + Cún Milo ---- */
     ctx.addFriends([
-      { name: "Sóc Nâu Hạt Dẻ", kind: "squirrel",  pos: [12, 20],  greet: "🐿️ Sóc Nâu tặng Mây nụ cười hạt dẻ!" },
+      { name: "Thỏ Rừng Bông",  kind: "rabbit",    pos: [14, 24],  greet: "🐇 Thỏ Rừng Bông vẫy đôi tai dài chào Mây!" },
       { name: "Hươu Sao",       kind: "deer",      pos: [-24, 8],  greet: "🦌 Hươu Sao cúi đầu chào bé Mây xinh!" },
       { name: "Cáo Cam Nhỏ",    kind: "fox",       pos: [34, -22], greet: "🦊 Cáo Cam vẫy chiếc đuôi xù chào Mây!" },
       { name: "Bướm Xanh Lớn",  kind: "butterfly", pos: [-8, 6.2, -16], behavior: "fly", orbitR: 6, opts: { color: 0x4dd0ff, scale: 1.35 }, greet: "🦋 Bướm Xanh đập cánh lấp lánh quanh Mây!" },
@@ -286,8 +323,8 @@
     ctx.addRaceChallenge([8, 36], [[26, 24], [38, -2], [18, -26], [-12, -26]], { title: "Chạy đua cùng Sóc Nâu", time: 55 });
     ctx.addQuizStation([-10, 38], { label: "Cây Đố Vui" });
 
-    /* Cổng quay về Đảo Mây */
-    ctx.addPortal([0, 52], "hub", "🏝️ Về Đảo Mây", 0x4ade80);
+    /* Cổng quay về Đảo Mây (đặt lui sau điểm xuất phát tránh lùi nhầm) */
+    ctx.addPortal([0, 56], "hub", "🏝️ Về Đảo Mây", 0x4ade80);
 
     ctx.minimapDrawExtra = function (mm, C, K) {
       mm.strokeStyle = "#38bdf8"; mm.lineWidth = 6;
@@ -343,7 +380,7 @@
     var ch2Npc;
     var ch2Boss = ctx.setBoss({
       name: "Vua Nấm Khô Héo", icon: "🍄",
-      pos: new THREE.Vector3(0, ctx.groundH(0, 12), 12), arenaR: 22, maxHp: 3, mesh: bossShroomMesh,
+      pos: new THREE.Vector3(0, ctx.groundH(0, 5), 5), arenaR: 22, maxHp: 3, mesh: bossShroomMesh,
       startActive: ch2St.stage === 3 && !ch2St.bossDown,
       tipFn: function (b) {
         return b.subState.wet
@@ -356,16 +393,16 @@
         bs.mesh.position.y = ctx.groundH(bs.pos.x, bs.pos.z) + Math.abs(Math.sin(t * 2.5)) * 0.65;
         bs.atkT -= dt;
         if (bs.atkT <= 0 && bs.pos.distanceTo(MAY.player.pos) < 28) {
-          bs.atkT = 3.4;
+          bs.atkT = 3.6;
           MAY.VFX.spawnTelegraph(bs.pos.clone(), 8.5, 1.0, 0xff3b5c);
           MAY.toast("🍄 Vua Nấm chuẩn bị dậm sóng đất! Nhấn Space nhảy lên né nhé!");
-          setTimeout(function () {
-            if (!bs.active || bs.defeated || MAY.modalOpen) return;
+          ctx.scheduleEvent(1.0, function () {
+            if (!bs.active || bs.defeated) return;
             MAY.burstAt(bs.pos.clone().add(new THREE.Vector3(0, 0.8, 0)), 0x9333ea, 18);
             if (MAY.player.pos.distanceTo(bs.pos) < 8.5 && MAY.player.grounded) {
               MAY.damagePlayer(1, bs.pos, "Sóng đất của Vua Nấm! Nhớ nhấn Space nhảy né vòng đỏ!");
             }
-          }, 1000);
+          });
         }
       },
       onSpellHit: function (spellId, castPos, bs) {

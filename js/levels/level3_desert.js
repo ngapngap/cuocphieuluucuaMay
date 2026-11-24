@@ -104,12 +104,17 @@
       pyrGroup.add(block);
     }
     pyrGroup.position.set(PYR.x, 0, PYR.z);
-    /* Hai đài lửa cổ ấm rực hai bên lối lên Kim Tự Tháp */
-    [-5.5, 5.5].forEach(function (bx) {
-      var ped = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.72, 2.2, 10), sandstoneMat);
-      ped.position.set(bx, 4.1, PYR.half + 1.4); ped.castShadow = true; pyrGroup.add(ped);
+    /* Đỉnh chóp vàng Kim Tự Tháp + Đôi cột tháp Obelisk Ai Cập + Đài lửa cổ hai bên lối lên */
+    var goldMat = new THREE.MeshPhysicalMaterial({ color: 0xffd93d, emissive: 0xcc8800, emissiveIntensity: 0.45, metalness: 0.85, roughness: 0.18, clearcoat: 1.0 });
+    var capstone = new THREE.Mesh(new THREE.ConeGeometry(2.6, 2.8, 4), goldMat);
+    capstone.rotation.y = Math.PI / 4; capstone.position.set(0, 19.8, 0); pyrGroup.add(capstone);
+    [-6.0, 6.0].forEach(function (bx) {
+      var obShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.85, 6.5, 4), sandstoneMat);
+      obShaft.rotation.y = Math.PI / 4; obShaft.position.set(bx, 6.2, PYR.half + 2.2); obShaft.castShadow = true; pyrGroup.add(obShaft);
+      var obTip = new THREE.Mesh(new THREE.ConeGeometry(0.46, 1.1, 4), goldMat);
+      obTip.rotation.y = Math.PI / 4; obTip.position.set(bx, 10.0, PYR.half + 2.2); pyrGroup.add(obTip);
       var br = MAY.makeCagedLantern(0xffa438, 2.8, 24, false);
-      br.position.set(bx, 5.5, PYR.half + 1.4); pyrGroup.add(br);
+      br.position.set(bx * 0.72, 5.2, PYR.half + 1.4); pyrGroup.add(br);
     });
     ctx.add(pyrGroup);
 
@@ -160,7 +165,7 @@
 
     /* ---- 5 Bạn Sa Mạc + Lạc Đà Nhí Kiki ---- */
     ctx.addFriends([
-      { name: "Lạc Đà Nhí Kiki", kind: "camel",   pos: [14, 20],  isCompanion: true, greet: "🐪 Kiki cõng nắng đi cùng Mây băng qua sa mạc nè!" },
+      { name: "Rùa Sa Mạc",      kind: "tortoise", pos: [16, 22],  greet: "🐢 Rùa Sa Mạc gật đầu chào nhà thám hiểm Mây!" },
       { name: "Cáo Tai To",      kind: "fennec",  pos: [-28, 18], greet: "🦊 Cáo Fennec vẫy đôi tai siêu to chào Mây!" },
       { name: "Thằn Lằn Cát",    kind: "lizard",  pos: [42, -8],  greet: "🦎 Thằn lằn cát chạy zích zắc chào Mây!" },
       { name: "Chồn Đất Nhí",    kind: "meerkat", pos: [-38, -26],greet: "🐾 Chồn đất đứng thẳng vẫy tay chào Mây!" },
@@ -291,14 +296,14 @@
           targetP.y = ctx.groundH(targetP.x, targetP.z);
           MAY.VFX.spawnTelegraph(targetP, 4.2, 1.0, 0xff9f1c);
           MAY.toast("🦂 Bọ Cạp đang lặn cát lao tới vị trí Mây đứng! Chạy né khỏi vòng cam!");
-          setTimeout(function () {
-            if (!bs.active || bs.defeated || MAY.modalOpen) return;
+          ctx.scheduleEvent(1.0, function () {
+            if (!bs.active || bs.defeated) return;
             bs.pos.set(targetP.x, targetP.y, targetP.z);
             MAY.burstAt(bs.pos.clone().add(new THREE.Vector3(0, 1.2, 0)), 0xeec882, 20);
             if (MAY.player.pos.distanceTo(bs.pos) < 4.2) {
               MAY.damagePlayer(1, bs.pos, "Bọ Cạp trồi lên từ cát! Dùng ☀️ Tia Nắng làm chói mắt nó!");
             }
-          }, 1000);
+          });
         }
       },
       onSpellHit: function (spellId, castPos, bs) {

@@ -50,6 +50,7 @@
     };
     MAY.dialogueOpen = true;
     MAY.modalOpen = true;
+    if (MAY.player && MAY.player.clearKeys) MAY.player.clearKeys();
     if (document.pointerLockElement) { try { document.exitPointerLock(); } catch (e) {} }
     var av = document.getElementById("dlg-avatar");
     var nm = document.getElementById("dlg-name");
@@ -75,6 +76,7 @@
   MAY.closeDialogue = function () {
     dlgState = null;
     MAY.dialogueOpen = false;
+    if (MAY.player && MAY.player.clearKeys) MAY.player.clearKeys();
     var box = document.getElementById("dialogue-box");
     if (box) box.classList.add("hidden");
     var anyOther = ["ov-map", "ov-album", "ov-win", "ov-finale", "quiz-ov"].some(function (id) {
@@ -193,78 +195,118 @@
 
   MAY.makeMonsterMesh = function (kind, scale) {
     var g = new THREE.Group();
+    var haloMat = new THREE.MeshBasicMaterial({ color: 0x9333ea, transparent: true, opacity: 0.45, side: THREE.DoubleSide });
+    var darkRing = new THREE.Mesh(new THREE.TorusGeometry(1.15, 0.055, 6, 20), haloMat);
+    darkRing.rotation.x = Math.PI / 2; darkRing.position.y = 0.25; g.add(darkRing);
+    g.userData.auraRing = darkRing;
+
     if (kind === "inkjelly") {
-      var dome = new THREE.Mesh(new THREE.SphereGeometry(0.95, 14, 10, 0, Math.PI * 2, 0, Math.PI * 0.6),
-        stdM(0x2d1e3e, 0.35, { emissive: 0x581c87, emissiveIntensity: 0.45 }));
-      dome.position.y = 0.6; g.add(dome);
-      for (var t = 0; t < 6; t++) {
-        var a = (t / 6) * Math.PI * 2;
-        var tn = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.12, 1.3, 6), stdM(0x1f122b, 0.5, { emissive: 0x7e22ce, emissiveIntensity: 0.35 }));
-        tn.position.set(Math.cos(a) * 0.52, -0.25, Math.sin(a) * 0.52); g.add(tn);
+      var dome = new THREE.Mesh(new THREE.SphereGeometry(0.95, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.62),
+        new THREE.MeshPhysicalMaterial({ color: 0x2d1e3e, emissive: 0x6b21a8, emissiveIntensity: 0.55, roughness: 0.18, clearcoat: 0.9 }));
+      dome.position.y = 0.65; g.add(dome);
+      var frill = new THREE.Mesh(new THREE.TorusGeometry(0.92, 0.12, 8, 20), stdM(0x4c1d95, 0.35, { emissive: 0xa855f7, emissiveIntensity: 0.5 }));
+      frill.rotation.x = Math.PI / 2; frill.position.y = 0.52; g.add(frill);
+      for (var t = 0; t < 8; t++) {
+        var a = (t / 8) * Math.PI * 2;
+        var tn = new THREE.Mesh(new THREE.CapsuleGeometry(0.08, 1.15, 5, 8), stdM(0x1f122b, 0.45, { emissive: 0x7e22ce, emissiveIntensity: 0.4 }));
+        tn.position.set(Math.cos(a) * 0.55, -0.25, Math.sin(a) * 0.55); tn.rotation.z = Math.cos(a) * 0.22; g.add(tn);
       }
-      [-0.32, 0.32].forEach(function (ex) { var e = new THREE.Mesh(new THREE.SphereGeometry(0.13, 8, 6), glowRedEye); e.position.set(ex, 0.85, -0.82); g.add(e); });
+      [-0.32, 0.32].forEach(function (ex) { var e = new THREE.Mesh(new THREE.SphereGeometry(0.14, 10, 8), glowRedEye); e.position.set(ex, 0.92, -0.82); g.add(e); });
     } else if (kind === "thornshroom") {
-      var stem = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.54, 0.95, 10), stdM(0x4b4453, 0.85));
-      stem.position.y = 0.48; g.add(stem);
-      var cap = new THREE.Mesh(new THREE.SphereGeometry(1.05, 14, 10, 0, Math.PI * 2, 0, Math.PI * 0.55),
-        stdM(0x5b2c6f, 0.65, { emissive: 0x3b0764, emissiveIntensity: 0.35 }));
+      var stemPts = [new THREE.Vector2(0.56, 0), new THREE.Vector2(0.46, 0.45), new THREE.Vector2(0.38, 0.95), new THREE.Vector2(0.52, 1.05)];
+      var stem = new THREE.Mesh(new THREE.LatheGeometry(stemPts, 14), stdM(0x4b4453, 0.85));
+      g.add(stem);
+      var cap = new THREE.Mesh(new THREE.SphereGeometry(1.12, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.56),
+        stdM(0x5b2c6f, 0.58, { emissive: 0x3b0764, emissiveIntensity: 0.38 }));
       cap.position.y = 0.88; g.add(cap);
-      var spMat = stdM(0x2a1b3d, 0.5);
-      for (var s = 0; s < 7; s++) {
-        var sa = (s / 7) * Math.PI * 2;
-        var sp = new THREE.Mesh(new THREE.ConeGeometry(0.14, 0.55, 6), spMat);
-        sp.position.set(Math.cos(sa) * 0.72, 1.48, Math.sin(sa) * 0.72);
-        sp.rotation.z = -Math.cos(sa) * 0.5; sp.rotation.x = Math.sin(sa) * 0.5;
-        g.add(sp);
+      var gill = new THREE.Mesh(new THREE.CylinderGeometry(1.06, 0.52, 0.16, 16), stdM(0x2e1a40, 0.9));
+      gill.position.y = 0.86; g.add(gill);
+      var spMat = stdM(0x231433, 0.45);
+      for (var s = 0; s < 9; s++) {
+        var sa = (s / 9) * Math.PI * 2;
+        var sp = new THREE.Mesh(new THREE.ConeGeometry(0.14, 0.62, 6), spMat);
+        sp.position.set(Math.cos(sa) * 0.78, 1.52, Math.sin(sa) * 0.78);
+        sp.rotation.z = -Math.cos(sa) * 0.55; sp.rotation.x = Math.sin(sa) * 0.55; g.add(sp);
       }
-      [-0.22, 0.22].forEach(function (ex) { var e = new THREE.Mesh(new THREE.SphereGeometry(0.11, 8, 6), glowRedEye); e.position.set(ex, 0.65, -0.45); g.add(e); });
+      var crownSp = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.75, 7), spMat); crownSp.position.y = 2.15; g.add(crownSp);
+      [-0.22, 0.22].forEach(function (ex) {
+        var e = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 6), glowRedEye); e.position.set(ex, 0.62, -0.44); g.add(e);
+        var br = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.06, 0.08), spMat);
+        br.position.set(ex, 0.74, -0.46); br.rotation.z = ex > 0 ? 0.35 : -0.35; g.add(br);
+      });
       g.userData.cap = cap;
     } else if (kind === "sandscorpion") {
-      var sm = stdM(0x3b2f2f, 0.55, { emissive: 0x451a03, emissiveIntensity: 0.35 });
-      var body = new THREE.Mesh(new THREE.SphereGeometry(0.75, 12, 8), sm); body.scale.set(1.0, 0.55, 1.45); body.position.y = 0.42; g.add(body);
-      [-0.78, 0.78].forEach(function (cx) {
-        var cl = new THREE.Mesh(new THREE.SphereGeometry(0.32, 8, 6), sm); cl.scale.set(1.1, 0.6, 1.6); cl.position.set(cx, 0.42, -0.95); g.add(cl);
-      });
-      for (var k = 0; k < 4; k++) {
-        var seg = new THREE.Mesh(new THREE.SphereGeometry(0.24 - k * 0.03, 8, 6), sm);
-        seg.position.set(0, 0.65 + k * 0.36, 0.85 - k * 0.25); g.add(seg);
+      var sm = new THREE.MeshPhysicalMaterial({ color: 0x3b2a26, emissive: 0x451a03, emissiveIntensity: 0.38, roughness: 0.32, clearcoat: 0.7 });
+      for (var segI = 0; segI < 3; segI++) {
+        var plate = new THREE.Mesh(new THREE.SphereGeometry(0.68 - segI * 0.10, 12, 8), sm);
+        plate.scale.set(1.08, 0.52, 0.95); plate.position.set(0, 0.44, -0.45 + segI * 0.52); g.add(plate);
       }
-      var sting = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.55, 7), stdM(0xff9f1c, 0.3, { emissive: 0xff5500, emissiveIntensity: 0.8 }));
-      sting.rotation.x = -Math.PI * 0.65; sting.position.set(0, 1.95, 0.02); g.add(sting);
-      [-0.26, 0.26].forEach(function (ex) { var e = new THREE.Mesh(new THREE.SphereGeometry(0.11, 8, 6), glowRedEye); e.position.set(ex, 0.55, -0.96); g.add(e); });
-    } else if (kind === "stonegolem") {
-      var gm = stdM(0x2e2942, 0.78, { flatShading: true });
-      var torso = new THREE.Mesh(new THREE.DodecahedronGeometry(0.95, 0), gm); torso.position.y = 1.25; g.add(torso);
-      var core = new THREE.Mesh(new THREE.OctahedronGeometry(0.42, 0), stdM(0xc084fc, 0.2, { emissive: 0xa855f7, emissiveIntensity: 1.0 }));
-      core.position.set(0, 1.25, -0.68); g.add(core);
-      [-1.15, 1.15].forEach(function (ax) {
-        var arm = new THREE.Mesh(new THREE.DodecahedronGeometry(0.45, 0), gm); arm.position.set(ax, 1.05, -0.2); g.add(arm);
+      [-1, 1].forEach(function (side) {
+        var arm = new THREE.Mesh(new THREE.CapsuleGeometry(0.14, 0.65, 5, 8), sm);
+        arm.rotation.x = Math.PI / 2; arm.rotation.z = side * 0.45; arm.position.set(side * 0.65, 0.42, -0.68); g.add(arm);
+        var pincer = new THREE.Mesh(new THREE.TorusGeometry(0.28, 0.10, 6, 12, Math.PI * 1.4), sm);
+        pincer.rotation.x = Math.PI / 2; pincer.rotation.z = side > 0 ? 0.5 : -2.6; pincer.position.set(side * 0.88, 0.42, -1.18); g.add(pincer);
+        for (var l = 0; l < 3; l++) {
+          var leg = new THREE.Mesh(new THREE.CapsuleGeometry(0.06, 0.48, 4, 6), sm);
+          leg.position.set(side * 0.75, 0.24, -0.25 + l * 0.42); leg.rotation.z = side * 0.85; g.add(leg);
+        }
       });
-      [-0.28, 0.28].forEach(function (ex) { var e = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 6), glowRedEye); e.position.set(ex, 1.72, -0.78); g.add(e); });
+      for (var k = 0; k < 5; k++) {
+        var tSeg = new THREE.Mesh(new THREE.SphereGeometry(0.25 - k * 0.025, 10, 8), sm);
+        tSeg.position.set(0, 0.62 + k * 0.35, 0.95 - k * 0.24); g.add(tSeg);
+      }
+      var sting = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.65, 8), new THREE.MeshPhysicalMaterial({ color: 0xff9f1c, emissive: 0xff5500, emissiveIntensity: 0.95, clearcoat: 1.0 }));
+      sting.rotation.x = -Math.PI * 0.72; sting.position.set(0, 2.25, -0.15); g.add(sting);
+      [-0.25, 0.25].forEach(function (ex) { var e = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 6), glowRedEye); e.position.set(ex, 0.56, -0.96); g.add(e); });
+    } else if (kind === "stonegolem") {
+      var gm = stdM(0x2e2942, 0.72, { flatShading: true });
+      var crysM = new THREE.MeshPhysicalMaterial({ color: 0xc084fc, emissive: 0xa855f7, emissiveIntensity: 1.1, roughness: 0.1, clearcoat: 1.0 });
+      var torso = new THREE.Mesh(new THREE.DodecahedronGeometry(0.98, 0), gm); torso.scale.set(1.1, 1.15, 0.9); torso.position.y = 1.32; g.add(torso);
+      var head = new THREE.Mesh(new THREE.OctahedronGeometry(0.54, 0), gm); head.position.set(0, 2.38, -0.12); g.add(head);
+      var core = new THREE.Mesh(new THREE.OctahedronGeometry(0.45, 0), crysM); core.position.set(0, 1.32, -0.78); g.add(core);
+      [-1.28, 1.28].forEach(function (ax) {
+        var pauldron = new THREE.Mesh(new THREE.DodecahedronGeometry(0.48, 0), gm); pauldron.position.set(ax, 1.82, 0); g.add(pauldron);
+        var spike = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.72, 5), crysM); spike.position.set(ax * 1.05, 2.35, 0); spike.rotation.z = ax > 0 ? -0.35 : 0.35; g.add(spike);
+        var fist = new THREE.Mesh(new THREE.DodecahedronGeometry(0.42, 0), gm); fist.position.set(ax * 1.06, 0.85, -0.28); g.add(fist);
+      });
+      [-0.22, 0.22].forEach(function (ex) { var e = new THREE.Mesh(new THREE.SphereGeometry(0.11, 8, 6), glowRedEye); e.position.set(ex, 2.42, -0.52); g.add(e); });
       g.userData.armor = torso; g.userData.core = core;
     } else if (kind === "icewolf" || kind === "frostbear") {
-      var fm = stdM(0x364963, 0.55, { emissive: 0x0c4a6e, emissiveIntensity: 0.4 });
-      var bd = new THREE.Mesh(new THREE.CapsuleGeometry(0.55, 0.9, 6, 10), fm); bd.rotation.x = Math.PI / 2; bd.position.y = 0.85; g.add(bd);
-      var hd = new THREE.Mesh(new THREE.SphereGeometry(0.46, 10, 8), fm); hd.scale.set(0.9, 0.85, 1.25); hd.position.set(0, 1.15, -0.88); g.add(hd);
-      var iceMat = stdM(0x7dd3fc, 0.15, { emissive: 0x38bdf8, emissiveIntensity: 0.65 });
-      for (var is = 0; is < 4; is++) {
-        var ic = new THREE.Mesh(new THREE.ConeGeometry(0.15, 0.55, 6), iceMat);
-        ic.position.set(0, 1.48, -0.3 + is * 0.35); ic.rotation.x = 0.28; g.add(ic);
+      var fm = stdM(0x364963, 0.55, { emissive: 0x0c4a6e, emissiveIntensity: 0.42 });
+      var iceMat = new THREE.MeshPhysicalMaterial({ color: 0x7dd3fc, emissive: 0x38bdf8, emissiveIntensity: 0.75, roughness: 0.1, clearcoat: 1.0 });
+      var bd = new THREE.Mesh(new THREE.CapsuleGeometry(0.55, 0.95, 8, 12), fm); bd.rotation.x = Math.PI / 2; bd.position.y = 0.88; g.add(bd);
+      [[-0.32, -0.45], [0.32, -0.45], [-0.32, 0.45], [0.32, 0.45]].forEach(function (lp) {
+        var lg = new THREE.Mesh(new THREE.CapsuleGeometry(0.14, 0.52, 5, 8), fm); lg.position.set(lp[0], 0.36, lp[1]); g.add(lg);
+      });
+      var hd = new THREE.Mesh(new THREE.SphereGeometry(0.48, 12, 10), fm); hd.scale.set(0.92, 0.85, 1.3); hd.position.set(0, 1.18, -0.88); g.add(hd);
+      [-0.24, 0.24].forEach(function (ex) {
+        var ear = new THREE.Mesh(new THREE.ConeGeometry(0.14, 0.42, 6), fm); ear.position.set(ex, 1.62, -0.78); ear.rotation.z = ex > 0 ? -0.25 : 0.25; g.add(ear);
+        var e = new THREE.Mesh(new THREE.SphereGeometry(0.10, 8, 6), glowRedEye); e.position.set(ex * 0.85, 1.26, -1.35); g.add(e);
+      });
+      var tail = new THREE.Mesh(new THREE.ConeGeometry(0.24, 0.95, 8), iceMat); tail.rotation.x = Math.PI * 0.38; tail.position.set(0, 1.05, 1.05); g.add(tail);
+      for (var is = 0; is < 5; is++) {
+        var ic = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.65, 6), iceMat);
+        ic.position.set(0, 1.52, -0.35 + is * 0.32); ic.rotation.x = 0.32; g.add(ic);
       }
-      [-0.2, 0.2].forEach(function (ex) { var e = new THREE.Mesh(new THREE.SphereGeometry(0.10, 8, 6), glowRedEye); e.position.set(ex, 1.24, -1.32); g.add(e); });
     } else {
-      /* stormcloud — Quái Mây Sấm (Màn 6 + Boss Vua Mây Bão!) */
-      var cm = stdM(0x2f2840, 0.85, { emissive: 0x3b0764, emissiveIntensity: 0.45 });
-      var mainP = new THREE.Mesh(new THREE.SphereGeometry(0.85, 12, 10), cm); mainP.position.y = 1.2; g.add(mainP);
-      for (var cp = 0; cp < 5; cp++) {
-        var ca = (cp / 5) * Math.PI * 2;
-        var pf = new THREE.Mesh(new THREE.SphereGeometry(0.54, 10, 8), cm);
-        pf.position.set(Math.cos(ca) * 0.68, 1.05 + (cp % 2) * 0.25, Math.sin(ca) * 0.68);
-        g.add(pf);
+      /* stormcloud — Quái Mây Sấm & Trùm Cuối Vua Mây Bão có Vương Miện Sét + Áo Choàng Bão! */
+      var cm = stdM(0x281e3b, 0.82, { emissive: 0x4c1d95, emissiveIntensity: 0.5 });
+      var mainP = new THREE.Mesh(new THREE.SphereGeometry(0.92, 14, 12), cm); mainP.position.y = 1.25; g.add(mainP);
+      for (var cp = 0; cp < 6; cp++) {
+        var ca = (cp / 6) * Math.PI * 2;
+        var pf = new THREE.Mesh(new THREE.SphereGeometry(0.56, 10, 8), cm);
+        pf.position.set(Math.cos(ca) * 0.72, 1.08 + (cp % 2) * 0.28, Math.sin(ca) * 0.72); g.add(pf);
       }
-      var bolt = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.95, 4), new THREE.MeshBasicMaterial({ color: 0xfef08a }));
-      bolt.rotation.x = Math.PI; bolt.position.set(0, 0.42, 0); g.add(bolt);
-      [-0.30, 0.30].forEach(function (ex) { var e = new THREE.Mesh(new THREE.SphereGeometry(0.13, 8, 6), glowRedEye); e.position.set(ex, 1.32, -0.78); g.add(e); });
+      var crownMat = new THREE.MeshBasicMaterial({ color: 0xfef08a });
+      for (var cr = 0; cr < 5; cr++) {
+        var cra = (cr / 5) * Math.PI * 2;
+        var horn = new THREE.Mesh(new THREE.ConeGeometry(0.14, 0.58, 5), crownMat);
+        horn.position.set(Math.cos(cra) * 0.45, 2.25, Math.sin(cra) * 0.45);
+        horn.rotation.z = -Math.cos(cra) * 0.3; horn.rotation.x = Math.sin(cra) * 0.3; g.add(horn);
+      }
+      var bolt = new THREE.Mesh(new THREE.ConeGeometry(0.24, 1.05, 4), crownMat);
+      bolt.rotation.x = Math.PI; bolt.position.set(0, 0.38, 0); g.add(bolt);
+      [-0.32, 0.32].forEach(function (ex) { var e = new THREE.Mesh(new THREE.SphereGeometry(0.14, 8, 6), glowRedEye); e.position.set(ex, 1.35, -0.84); g.add(e); });
       g.userData.bolt = bolt;
     }
     if (scale) g.scale.setScalar(scale);
@@ -448,9 +490,15 @@
     ctx.updrafts = [];
     ctx.dynamicPlatforms = [];
     ctx.colliders = [];
+    ctx.scheduledEvents = [];
     ctx.checkpoint = null;
     ctx.storyObjective = null; /* { icon, text, targetPos } */
     ctx._atmosphere = null;
+
+    /* Bộ hẹn giờ an toàn theo dt (tự tạm dừng khi mở thoại/menu & tự hủy khi đổi màn — khử 100% lỗi setTimeout rò rỉ!) */
+    ctx.scheduleEvent = function (delay, fn) {
+      ctx.scheduledEvents.push({ t: delay, fn: fn });
+    };
 
     /* Cài đặt độ cao nền bao gồm các Cầu Băng / Cầu Ánh Sáng tạo động từ phép thuật! */
     var baseGroundH = ctx.groundH;
@@ -755,6 +803,7 @@
           boss.syncHUD();
           if (MAY.sndBossRoar) MAY.sndBossRoar(boss.pos);
           if (MAY.player.addShake) MAY.player.addShake(0.38);
+          if (MAY.player.triggerCamFocus) MAY.player.triggerCamFocus(boss.pos.clone().add(new THREE.Vector3(0, 2.2, 0)), 1.8);
           MAY.burstAt(boss.pos.clone().add(new THREE.Vector3(0, 2, 0)), 0xff3b5c, 22);
         },
         damage: function (msg, launchFinish) {
@@ -797,6 +846,18 @@
       if (invulnT > 0) invulnT -= dt;
       if (MAY.updateAudioListener) MAY.updateAudioListener(MAY.camera);
       var pPos = MAY.player.pos;
+
+      /* Thực thi sự kiện hẹn giờ an toàn (chỉ chạy khi không bị tạm dừng bởi hộp thoại/modal) */
+      if (!MAY.modalOpen && ctx.scheduledEvents.length) {
+        for (var evi = ctx.scheduledEvents.length - 1; evi >= 0; evi--) {
+          var ev = ctx.scheduledEvents[evi];
+          ev.t -= dt;
+          if (ev.t <= 0) {
+            ctx.scheduledEvents.splice(evi, 1);
+            try { ev.fn(); } catch (e) {}
+          }
+        }
+      }
 
       /* Chuyển mượt khí quyển Sương Xám -> Rực Rỡ khi thế giới được thanh tẩy */
       if (ctx._atmosphere && ctx._atmosphere.t !== ctx._atmosphere.target) {

@@ -34,13 +34,21 @@
       cloudColor: 0xf0f8ff, cloudAmt: 0.35, aurora: true, stars: true
     });
 
-    /* Hồ băng tròn lớn ở trung tâm (0, -6, r=23) + đồi thông tuyết quanh thung lũng */
+    /* Hồ băng tròn lớn ở trung tâm (0, -6, r=23) + 3 Khe Suối Băng khoét sâu vào địa hình (đóng băng thành Cầu Băng thật bằng ❄️!) */
     var ICE = { x: 0, z: -6, r: 23 };
-    ctx.isIce = function (x, z) {
-      return Math.hypot(x - ICE.x, z - ICE.z) < ICE.r - 1.0;
-    };
+    var gapConfigs = [
+      { x: -29, z: 0,   rotY: 0.35,  w: 5.8, l: 9.2 },
+      { x: 27,  z: 8,   rotY: -0.35, w: 5.8, l: 9.2 },
+      { x: 12,  z: -31, rotY: 0.15,  w: 6.0, l: 9.4 }
+    ];
+    var iceBridges = [];
 
-    ctx.groundH = function (x, z) {
+    function gapLocal(x, z, gc) {
+      var dx = x - gc.x, dz = z - gc.z;
+      var c = Math.cos(-gc.rotY), s = Math.sin(-gc.rotY);
+      return { lx: dx * c - dz * s, lz: dx * s + dz * c };
+    }
+    function snowBaseH(x, z) {
       var id = Math.hypot(x - ICE.x, z - ICE.z);
       if (id < ICE.r) return 1.05;
       var rim = Math.min(1, (id - ICE.r) / 14);
@@ -50,6 +58,33 @@
       /* Đồi trượt tuyết cao ở phía Đông Nam */
       var sd = Math.hypot(x - 42, z - 24);
       if (sd < 28) h += (1 - sd / 28) * 7.5;
+      return h;
+    }
+
+    ctx.isIce = function (x, z) {
+      if (Math.hypot(x - ICE.x, z - ICE.z) < ICE.r - 1.0) return true;
+      for (var i = 0; i < iceBridges.length; i++) {
+        var ib = iceBridges[i];
+        if (!ib.frozen) continue;
+        var lc = gapLocal(x, z, ib.gc);
+        if (Math.abs(lc.lx) <= ib.gc.w * 0.5 && Math.abs(lc.lz) <= ib.gc.l * 0.5) return true;
+      }
+      return false;
+    };
+
+    ctx.groundH = function (x, z) {
+      var h = snowBaseH(x, z);
+      for (var i = 0; i < gapConfigs.length; i++) {
+        var gc = gapConfigs[i];
+        var lc = gapLocal(x, z, gc);
+        var mx = Math.max(0, Math.abs(lc.lx) - gc.w * 0.48);
+        var mz = Math.max(0, Math.abs(lc.lz) - gc.l * 0.48);
+        var dEdge = Math.hypot(mx, mz);
+        if (dEdge < 1.6) {
+          var t = 1 - dEdge / 1.6;
+          h -= t * t * (3 - 2 * t) * 2.15;
+        }
+      }
       return h;
     };
 
@@ -116,6 +151,9 @@
       var pa = (pi * 2.399) % 6.28, pr = 29 + (pi * 1.8) % 54;
       var px = Math.cos(pa) * pr, pz = Math.sin(pa) * pr;
       if (Math.hypot(px - ICE.x, pz - ICE.z) < ICE.r + 5 || Math.hypot(px, pz - 42) < 10 || Math.hypot(px, pz + 38) < 12) continue;
+      var nearGap = false;
+      for (var gi = 0; gi < gapConfigs.length; gi++) if (Math.hypot(px - gapConfigs[gi].x, pz - gapConfigs[gi].z) < 7.8) { nearGap = true; break; }
+      if (nearGap) continue;
       var pine = makeSnowPine(0.9 + (pi % 4) * 0.26);
       pine.position.set(px, ctx.groundH(px, pz) - 0.15, pz);
       pine.rotation.y = pi; ctx.add(pine);
@@ -176,9 +214,9 @@
       [-34, 6], [36, 4], [-34, -22], [32, -26], [42, 24]
     ], { color: 0x7dd3fc, icon: "❄️", yOff: 1.35, makeMesh: makeSnowflake });
 
-    /* ---- 5 Bạn Xứ Tuyết + Chim Cánh Cụt Bông ---- */
+    /* ---- 5 Bạn Xứ Tuyết + Thỏ Tuyết Nhí (không trùng Trưởng Làng Cánh Cụt Bông!) ---- */
     ctx.addFriends([
-      { name: "Cánh Cụt Bông",   kind: "penguin",   pos: [-8, 12],  isCompanion: true, greet: "🐧 Cánh cụt Bông lạch bạch trượt băng cùng Mây nè!" },
+      { name: "Thỏ Tuyết Nhí",   kind: "rabbit",    pos: [-10, 12], isCompanion: true, opts: { color: 0xf8fafc }, greet: "🐇 Thỏ Tuyết trắng tinh nhảy tưng tưng dẫn đường cho Mây nè!" },
       { name: "Gấu Bắc Cực Nhí", kind: "polarbear", pos: [-30, 14], greet: "🐻‍❄️ Gấu Bắc Cực Nhí vẫy bàn chân bông chào Mây!" },
       { name: "Tuần Lộc Mũi Đỏ", kind: "reindeer",  pos: [34, 16],  greet: "🦌 Tuần lộc nháy chiếc mũi đỏ rực chào bé Mây!" },
       { name: "Cáo Tuyết Trắng", kind: "snowfox",   pos: [-26, -24],greet: "🦊 Cáo tuyết trắng tinh chạy vòng quanh chào Mây!" },
@@ -248,33 +286,28 @@
     var iceWall = MAY.buildCrackedWall(ctx, 16, ctx.groundH(16, 26), 26, -0.4, 0x38bdf8, "c5_icewall");
     if (ch5St.steps.iceWallBroken) iceWall.shatter(true);
 
-    /* Hồi 3A: 3 Khúc Khe Nước Lạnh -> Tung ❄️ Sương Băng để KẾT TINH CẦU BĂNG THẬT đi bộ/trượt ván qua! */
-    var gapConfigs = [
-      { x: -16, z: 16, rotY: 0.4, w: 6.0, l: 10.0 },
-      { x: 18,  z: 10, rotY: -0.35, w: 6.0, l: 10.0 },
-      { x: 0,   z: -24, rotY: 0, w: 6.4, l: 10.5 }
-    ];
-    var iceBridges = gapConfigs.map(function (gc, idx) {
-      var gy = ctx.groundH(gc.x, gc.z);
+    /* Hồi 3A: 3 Khe Suối Băng thật sự bị khoét sâu dưới lớp tuyết -> Tung ❄️ Sương Băng để KẾT TINH CẦU BĂNG THẬT đi bộ/trượt băng qua! */
+    gapConfigs.forEach(function (gc, idx) {
+      var rimY = snowBaseH(gc.x, gc.z);
       var waterPit = new THREE.Mesh(
-        new THREE.PlaneGeometry(gc.w, gc.l),
-        new THREE.MeshBasicMaterial({ color: 0x083c5e, transparent: true, opacity: 0.85 })
+        new THREE.PlaneGeometry(gc.w + 0.8, gc.l + 0.8),
+        new THREE.MeshPhysicalMaterial({ color: 0x0a4d78, emissive: 0x062d4a, emissiveIntensity: 0.45, roughness: 0.14, clearcoat: 0.9, transparent: true, opacity: 0.92 })
       );
       waterPit.rotation.x = -Math.PI / 2; waterPit.rotation.z = -gc.rotY;
-      waterPit.position.set(gc.x, gy + 0.08, gc.z); ctx.add(waterPit);
+      waterPit.position.set(gc.x, rimY - 0.88, gc.z); ctx.add(waterPit);
 
       var slab = new THREE.Mesh(
-        new THREE.BoxGeometry(gc.w, 0.55, gc.l),
-        new THREE.MeshPhysicalMaterial({ color: 0xbbe8ff, emissive: 0x38bdf8, emissiveIntensity: 0.35, roughness: 0.08, clearcoat: 1.0, transparent: true, opacity: 0.92 })
+        new THREE.BoxGeometry(gc.w + 0.4, 0.52, gc.l + 0.4),
+        new THREE.MeshPhysicalMaterial({ color: 0xc2ecff, emissive: 0x38bdf8, emissiveIntensity: 0.38, roughness: 0.08, clearcoat: 1.0, transparent: true, opacity: 0.94 })
       );
-      slab.position.set(gc.x, gy + 0.32, gc.z); slab.rotation.y = gc.rotY;
+      slab.position.set(gc.x, rimY - 0.18, gc.z); slab.rotation.y = gc.rotY;
       slab.receiveShadow = true; slab.castShadow = true;
       var frozen = !!ch5St.steps["gap" + idx];
       slab.visible = frozen;
       ctx.add(slab);
 
-      var dynPlat = ctx.addDynamicPlatform(gc.x, gy + 0.60, gc.z, gc.w, gc.l, gc.rotY, frozen);
-      return { slab: slab, plat: dynPlat, pos: new THREE.Vector3(gc.x, gy + 0.4, gc.z), frozen: frozen };
+      var dynPlat = ctx.addDynamicPlatform(gc.x, rimY + 0.08, gc.z, gc.w + 0.6, gc.l + 0.6, gc.rotY, frozen);
+      iceBridges.push({ gc: gc, rimY: rimY, slab: slab, plat: dynPlat, pos: new THREE.Vector3(gc.x, rimY + 0.1, gc.z), frozen: frozen });
     });
 
     /* Hồi 3B: Quả Cầu Tuyết Lăn Khổng Lồ -> Tung ❄️ đóng cứng thành bệ băng! */
@@ -324,8 +357,8 @@
           targetP.y = 1.1;
           MAY.VFX.spawnTelegraph(targetP, 3.6, 1.1, 0xff3b5c);
           MAY.toast("🦊 Sói Tuyết sắp lao vồ! Tung ❄️ Sương Băng (Phím 5 + R) dựng Cột Băng chặn đường nó!");
-          setTimeout(function () {
-            if (!bs.active || bs.defeated || MAY.modalOpen) return;
+          ctx.scheduleEvent(1.1, function () {
+            if (!bs.active || bs.defeated) return;
             /* Nếu có Cột Băng bẫy gần đường lao -> Sói đâm sầm bị choáng! */
             if (activeIceTrap && activeIceTrap.life > 0 && (activeIceTrap.pos.distanceTo(targetP) < 8.5 || activeIceTrap.pos.distanceTo(bs.pos) < 10.5)) {
               bs.pos.lerp(activeIceTrap.pos, 0.7);
@@ -344,7 +377,7 @@
                 MAY.damagePlayer(1, bs.pos, "Sói Tuyết lao trúng rồi! Nhớ tung ❄️ dựng Cột Băng bẫy nó!");
               }
             }
-          }, 1100);
+          });
         }
       },
       onSpellHit: function (spellId, castPos, bs) {
@@ -521,8 +554,33 @@
     });
     updateCh5Story();
 
+    var chillWarnCd = 0;
     ctx.onUpdate = function (dt, t) {
       if (activeIceTrap && activeIceTrap.life > 0) activeIceTrap.life -= dt;
+      if (chillWarnCd > 0) chillWarnCd -= dt;
+      /* Nếu Mây lỡ bước xuống khe suối băng chưa đóng băng -> tóe nước lạnh & bật nhẹ lên bờ! */
+      if (!MAY.modalOpen) {
+        var pp = MAY.player.pos;
+        for (var gi = 0; gi < iceBridges.length; gi++) {
+          var ib = iceBridges[gi];
+          if (ib.frozen) continue;
+          var lc = gapLocal(pp.x, pp.z, ib.gc);
+          if (Math.abs(lc.lx) < ib.gc.w * 0.44 && Math.abs(lc.lz) < ib.gc.l * 0.44 && pp.y < ib.rimY + 0.15) {
+            var pushX = (pp.x - ib.gc.x), pushZ = (pp.z - ib.gc.z);
+            var pl = Math.hypot(pushX, pushZ) || 1;
+            MAY.player.vel.x = (pushX / pl) * 8.5;
+            MAY.player.vel.z = (pushZ / pl) * 8.5;
+            MAY.player.vel.y = 8.2;
+            MAY.player.grounded = false;
+            if (chillWarnCd <= 0) {
+              chillWarnCd = 2.0;
+              MAY.burstAt(pp.clone(), 0x7dd3fc, 12);
+              MAY.toast("🥶 Khe nước suối băng lạnh cóng! Dùng ❄️ Sương Băng (Phím 5 + R) đóng băng thành Cầu Băng đi qua nhé!");
+            }
+            break;
+          }
+        }
+      }
       if (!sbFrozen) {
         var sx = 24 + Math.sin(t * 1.4) * 7.5;
         snowBall.position.set(sx, ctx.groundH(sx, -4) + 1.9, -4);

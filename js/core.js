@@ -576,8 +576,8 @@
     MAY.quality = q;
     document.querySelectorAll(".qbtn").forEach(function (b) { b.classList.toggle("sel", b.dataset.q === q); });
     if (q === "low") { renderer.setPixelRatio(1); sun.castShadow = false; setShadowSize(1024); }
-    else if (q === "mid") { renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.35)); sun.castShadow = true; setShadowSize(2048); }
-    else { renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2)); sun.castShadow = true; setShadowSize(4096); }
+    else if (q === "mid") { renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.2)); sun.castShadow = true; setShadowSize(1024); }
+    else { renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.6)); sun.castShadow = true; setShadowSize(2048); }
     if (MAY.resizePostFX) MAY.resizePostFX();
   };
 

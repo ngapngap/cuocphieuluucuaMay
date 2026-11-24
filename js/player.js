@@ -110,25 +110,32 @@
 
   var eyeDark = new THREE.MeshPhysicalMaterial({ color: 0x161421, roughness: 0.05, clearcoat: 1.0 });
   var eyeWhite = new THREE.MeshBasicMaterial({ color: 0xffffff });
-  var blushMat = new THREE.MeshBasicMaterial({ color: 0xff8ea8, transparent: true, opacity: 0.6 });
+  var blushMat = new THREE.MeshBasicMaterial({ color: 0xff8ea8, transparent: true, opacity: 0.65 });
+  var smileMat = new THREE.MeshBasicMaterial({ color: 0xd94b6b });
   [-0.085, 0.085].forEach(function (ex) {
+    var sclera = new THREE.Mesh(new THREE.SphereGeometry(0.044, 10, 8), eyeWhite);
+    sclera.scale.set(1.05, 1.15, 0.55); sclera.position.set(ex, 0.252, -0.198); headGroup.add(sclera);
     var eye = new THREE.Mesh(new THREE.SphereGeometry(0.036, 10, 8), eyeDark);
-    eye.position.set(ex, 0.25, -0.205);
-    headGroup.add(eye);
-    var glint = new THREE.Mesh(new THREE.SphereGeometry(0.011, 6, 5), eyeWhite);
-    glint.position.set(ex + 0.012, 0.264, -0.235);
-    headGroup.add(glint);
-    var bl = new THREE.Mesh(new THREE.SphereGeometry(0.034, 8, 6), blushMat);
-    bl.scale.set(1.2, 0.55, 0.35);
-    bl.position.set(ex * 1.45, 0.195, -0.195);
-    headGroup.add(bl);
+    eye.position.set(ex, 0.25, -0.212); headGroup.add(eye);
+    var glint = new THREE.Mesh(new THREE.SphereGeometry(0.012, 6, 5), eyeWhite);
+    glint.position.set(ex + 0.012, 0.264, -0.244); headGroup.add(glint);
+    var brow = new THREE.Mesh(new THREE.CapsuleGeometry(0.008, 0.042, 4, 6), hairMat);
+    brow.rotation.z = Math.PI / 2 + (ex > 0 ? -0.12 : 0.12); brow.position.set(ex, 0.305, -0.215); headGroup.add(brow);
+    var bl = new THREE.Mesh(new THREE.SphereGeometry(0.036, 8, 6), blushMat);
+    bl.scale.set(1.25, 0.55, 0.35); bl.position.set(ex * 1.48, 0.195, -0.196); headGroup.add(bl);
   });
+  var smile = new THREE.Mesh(new THREE.TorusGeometry(0.042, 0.009, 6, 12, Math.PI), smileMat);
+  smile.rotation.z = Math.PI; smile.position.set(0, 0.175, -0.225); headGroup.add(smile);
 
-  /* Mái tóc mượt + Đuôi tóc động đung đưa khi chạy/bơi */
+  /* Mái tóc mượt có mái bằng + Nơ tóc xinh + Đuôi tóc động đung đưa khi chạy/bơi */
   var hairCrown = new THREE.Mesh(new THREE.SphereGeometry(0.248, 18, 14, 0, Math.PI * 2, 0, Math.PI * 0.62), hairMat);
   hairCrown.position.set(0, 0.245, 0.025);
   hairCrown.rotation.x = -0.38;
   headGroup.add(hairCrown);
+  var bangs = new THREE.Mesh(new THREE.SphereGeometry(0.225, 16, 10, 0, Math.PI * 2, 0, Math.PI * 0.36), hairMat);
+  bangs.position.set(0, 0.275, -0.055); bangs.rotation.x = 0.28; headGroup.add(bangs);
+  var bowRibbon = new THREE.Mesh(new THREE.TorusGeometry(0.075, 0.024, 6, 12), accentMat);
+  bowRibbon.scale.set(1.35, 0.72, 0.6); bowRibbon.position.set(0, 0.35, 0.18); headGroup.add(bowRibbon);
 
   var hairBack = new THREE.Mesh(new THREE.CapsuleGeometry(0.14, 0.16, 6, 12), hairMat);
   hairBack.position.set(0, 0.14, 0.16);
@@ -374,9 +381,22 @@
   var playerContact = MAY.makeContactShadow(0.62, 0.62);
   MAY.scene.add(playerContact);
 
-  /* Camera shake & head-bob vật lý tự nhiên */
+  /* Camera shake, head-bob & Camera điện ảnh quay về Boss khi Trùm xuất hiện */
   var camShake = 0, landDip = 0, prevGrounded = true, stridePhase = 0, lastStepSign = 1;
+  var camFocus = null;
   P.addShake = function (amt) { camShake = Math.min(0.65, Math.max(camShake, amt || 0.2)); };
+  P.triggerCamFocus = function (worldPos, dur) {
+    if (!worldPos) return;
+    camFocus = { target: worldPos.clone(), t: dur || 1.7, maxT: dur || 1.7 };
+  };
+  P.clearKeys = function () {
+    Object.keys(P.keys).forEach(function (k) { P.keys[k] = false; });
+    P.prevSpace = true;
+    P.jumpQueued = false;
+    P.sprintHeld = false;
+    P.joy.active = false; P.joy.x = 0; P.joy.y = 0;
+    P.vert.up = false; P.vert.down = false;
+  };
 
   diver.traverse(function (o) { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
   MAY.scene.add(diver);
@@ -544,28 +564,20 @@
   });
 
   window.addEventListener("mouseup", function (e) {
-    var wasDragging = dragging;
     dragging = false;
     canvas.style.cursor = "";
     if (!MAY.started || MAY.modalOpen) return;
     if (e.target !== canvas) return;
-    var isShortClick = !dragMoved && Math.hypot(e.clientX - downX, e.clientY - downY) < 6 && (Date.now() - downT < 360);
+    var isShortClick = !dragMoved && Math.hypot(e.clientX - downX, e.clientY - downY) < 7 && (Date.now() - downT < 380);
     if (isShortClick && e.button === 0) {
-      if (MAY.doInteract) MAY.doInteract();
-      /* Chỉ thử bật Pointer Lock khi trình duyệt cho phép & người dùng vừa bấm gọn */
-      if (!P.locked && !pointerLockBlocked && !P.isTouch && wasDragging) {
-        try {
-          var pr = canvas.requestPointerLock();
-          if (pr && pr.catch) pr.catch(function () { pointerLockBlocked = true; });
-        } catch (err) { pointerLockBlocked = true; }
-      }
+      if (MAY.doInteract) MAY.doInteract(e.clientX, e.clientY);
     }
   });
 
   window.addEventListener("blur", function () {
     dragging = false;
     canvas.style.cursor = "";
-    Object.keys(P.keys).forEach(function (k) { P.keys[k] = false; });
+    P.clearKeys();
   });
 
   /* Cuộn con lăn chuột để phóng to / thu nhỏ góc nhìn mượt mà */
@@ -988,7 +1000,14 @@
     if (!P.camPosInit) { MAY.camera.position.copy(des); P.camPosInit = true; }
     else MAY.camera.position.lerp(des, Math.min(1, dt * 6.8));
 
-    MAY.camera.lookAt(playerPos.x + fwdX * 2.6, playerPos.y + (P.onLand ? 0.72 : 0.2) + headBobY * 0.4 - landDip * 0.2, playerPos.z + fwdZ * 2.6);
+    var lookP = new THREE.Vector3(playerPos.x + fwdX * 2.6, playerPos.y + (P.onLand ? 0.72 : 0.2) + headBobY * 0.4 - landDip * 0.2, playerPos.z + fwdZ * 2.6);
+    if (camFocus && camFocus.t > 0) {
+      camFocus.t -= dt;
+      var fk = Math.sin(Math.max(0, Math.min(1, camFocus.t / camFocus.maxT)) * Math.PI);
+      lookP.lerp(camFocus.target, fk * 0.85);
+      if (camFocus.t <= 0) camFocus = null;
+    }
+    MAY.camera.lookAt(lookP);
     MAY.camera.rotation.z += -str * 0.014 + headBobX * 0.08;
   };
 

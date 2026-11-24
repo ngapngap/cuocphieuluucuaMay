@@ -142,7 +142,23 @@
     }
   }
 
-  MAY.doInteract = function () {
+  MAY.doInteract = function (clientX, clientY) {
+    var ctx = MAY.currentCtx;
+    /* Cho phép click trực tiếp vào BẤT KỲ NPC, Rương, Hoa, Trạm đố nào dưới con trỏ chuột (không bắt buộc căn dấu chấm giữa màn hình!) */
+    if (typeof clientX === "number" && typeof clientY === "number" && ctx && ctx.interactives && ctx.interactives.length) {
+      var ndc = new THREE.Vector2((clientX / window.innerWidth) * 2 - 1, -(clientY / window.innerHeight) * 2 + 1);
+      raycaster.setFromCamera(ndc, MAY.camera);
+      raycaster.far = 26;
+      var objs = [];
+      for (var i = 0; i < ctx.interactives.length; i++) {
+        if (ctx.interactives[i].obj && ctx.interactives[i].obj.visible) objs.push(ctx.interactives[i].obj);
+      }
+      var hits = raycaster.intersectObjects(objs, true);
+      for (var h = 0; h < hits.length; h++) {
+        var it = findInteractive(hits[h].object, ctx.interactives);
+        if (it && it.onInteract) { it.onInteract(it); return; }
+      }
+    }
     if (!currentTarget) return;
     if (currentTarget.onInteract) currentTarget.onInteract(currentTarget);
   };
@@ -155,11 +171,14 @@
   }
   var blackEye = new THREE.MeshBasicMaterial({ color: 0x1a1a2a });
 
+  var eyeGlintM = new THREE.MeshBasicMaterial({ color: 0xffffff });
   function addEyes(g, xOff, y, z, r) {
+    var rad = r || 0.055;
     [-xOff, xOff].forEach(function (ex) {
-      var e = new THREE.Mesh(new THREE.SphereGeometry(r || 0.055, 8, 6), blackEye);
-      e.position.set(ex, y, z);
-      g.add(e);
+      var e = new THREE.Mesh(new THREE.SphereGeometry(rad, 10, 8), blackEye);
+      e.position.set(ex, y, z); g.add(e);
+      var gl = new THREE.Mesh(new THREE.SphereGeometry(rad * 0.34, 6, 5), eyeGlintM);
+      gl.position.set(ex + rad * 0.25, y + rad * 0.28, z - rad * 0.72); g.add(gl);
     });
   }
 
@@ -279,21 +298,23 @@
     } else if (kind === "deer" || kind === "reindeer") {
       var isRein = (kind === "reindeer");
       var m = stdMat(isRein ? 0x8d5b34 : 0xd08c4e, 0.85);
-      var b = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.55, 1.15), m); b.position.y = 0.95; g.add(b);
-      addLegs(g, m, 0.2, 0.42, 0.72, 0.065);
-      var neck = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.18, 0.65, 8), m); neck.position.set(0, 1.42, -0.52); neck.rotation.x = 0.3; g.add(neck);
-      var hd = new THREE.Mesh(new THREE.SphereGeometry(0.26, 10, 8), m); hd.scale.set(0.85, 0.9, 1.25); hd.position.set(0, 1.72, -0.72); g.add(hd);
-      var nose = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 6), isRein ? stdMat(0xff2e4c, 0.3, { emissive: 0xff2e4c, emissiveIntensity: 0.8 }) : blackEye);
+      var b = new THREE.Mesh(new THREE.CapsuleGeometry(0.30, 0.66, 8, 12), m); b.rotation.x = Math.PI / 2; b.position.y = 0.95; g.add(b);
+      addLegs(g, m, 0.18, 0.40, 0.72, 0.06);
+      var neck = new THREE.Mesh(new THREE.CapsuleGeometry(0.14, 0.48, 6, 10), m); neck.position.set(0, 1.42, -0.50); neck.rotation.x = 0.32; g.add(neck);
+      var hd = new THREE.Mesh(new THREE.SphereGeometry(0.26, 12, 10), m); hd.scale.set(0.85, 0.9, 1.28); hd.position.set(0, 1.72, -0.72); g.add(hd);
+      var nose = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 6), isRein ? stdMat(0xff2e4c, 0.3, { emissive: 0xff2e4c, emissiveIntensity: 0.85 }) : blackEye);
       nose.position.set(0, 1.68, -1.04); g.add(nose);
-      addEyes(g, 0.12, 1.78, -0.92, 0.045);
+      addEyes(g, 0.12, 1.78, -0.92, 0.048);
       var antM = stdMat(0x5c3c1e, 0.9);
       [-0.14, 0.14].forEach(function (x) {
-        var ant = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.04, 0.55, 5), antM);
-        ant.position.set(x, 2.08, -0.66); ant.rotation.z = x > 0 ? -0.45 : 0.45; g.add(ant);
+        var ant = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.045, 0.58, 6), antM);
+        ant.position.set(x, 2.08, -0.66); ant.rotation.z = x > 0 ? -0.42 : 0.42; g.add(ant);
+        var prong = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.03, 0.28, 5), antM);
+        prong.position.set(x * 1.9, 2.22, -0.66); prong.rotation.z = x > 0 ? 0.35 : -0.35; g.add(prong);
       });
       if (!isRein) {
         var spotM = stdMat(0xfff4d6, 0.9);
-        [[-0.28, 1.05, 0.1], [0.28, 1.02, -0.15], [-0.28, 0.96, -0.25], [0.28, 1.08, 0.25]].forEach(function (sp) {
+        [[-0.27, 1.05, 0.1], [0.27, 1.02, -0.15], [-0.27, 0.96, -0.25], [0.27, 1.08, 0.25]].forEach(function (sp) {
           var s = new THREE.Mesh(new THREE.SphereGeometry(0.07, 6, 5), spotM); s.position.set(sp[0], sp[1], sp[2]); g.add(s);
         });
       }
@@ -353,23 +374,39 @@
     } else if (kind === "bat" || kind === "bird" || kind === "eagle" || kind === "phoenix") {
       var col = opts.color || (kind === "bat" ? 0x9b6dff : kind === "eagle" ? 0xd99b26 : kind === "phoenix" ? 0xff6b9d : 0xffffff);
       var em = (kind === "bat" || kind === "phoenix") ? { emissive: col, emissiveIntensity: 0.45 } : null;
-      var bm = stdMat(col, 0.6, em);
-      var bd = new THREE.Mesh(new THREE.SphereGeometry(0.32, 10, 8), bm); bd.scale.set(0.85, 0.8, 1.5); g.add(bd);
-      var hd = new THREE.Mesh(new THREE.SphereGeometry(0.22, 8, 6), bm); hd.position.set(0, 0.14, -0.48); g.add(hd);
+      var bm = stdMat(col, 0.55, em);
+      var bd = new THREE.Mesh(new THREE.SphereGeometry(0.34, 14, 10), bm); bd.scale.set(0.88, 0.82, 1.52); g.add(bd);
+      var hd = new THREE.Mesh(new THREE.SphereGeometry(0.24, 12, 10), bm); hd.position.set(0, 0.18, -0.48); g.add(hd);
       if (kind !== "bat") {
-        var beak = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.28, 6), stdMat(0xffa726));
-        beak.rotation.x = -Math.PI / 2; beak.position.set(0, 0.12, -0.74); g.add(beak);
+        var beak = new THREE.Mesh(new THREE.ConeGeometry(0.085, 0.28, 8), stdMat(0xffa726));
+        beak.rotation.x = -Math.PI / 2; beak.position.set(0, 0.15, -0.75); g.add(beak);
       } else {
-        [-0.12, 0.12].forEach(function (x) { var er = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.24, 5), bm); er.position.set(x, 0.36, -0.45); g.add(er); });
+        [-0.12, 0.12].forEach(function (x) { var er = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.25, 6), bm); er.position.set(x, 0.39, -0.45); g.add(er); });
       }
-      addEyes(g, 0.1, 0.18, -0.66, 0.045);
-      var wLen = kind === "eagle" || kind === "phoenix" ? 1.35 : 0.95;
-      var wl = new THREE.Mesh(new THREE.BoxGeometry(wLen, 0.07, 0.48), bm); wl.position.set(-wLen * 0.55, 0.08, 0); g.add(wl);
-      var wr = wl.clone(); wr.position.x = wLen * 0.55; g.add(wr);
+      addEyes(g, 0.10, 0.22, -0.68, 0.048);
+      /* Cánh lông vũ uốn lượn mềm mại nhiều tầng thay cho tấm hộp thô! */
+      var wLen = kind === "eagle" || kind === "phoenix" ? 1.4 : 0.98;
+      var wTipM = kind === "phoenix" ? stdMat(0xffd93d, 0.35, { emissive: 0xff9f43, emissiveIntensity: 0.55 }) : bm;
+      function makeFeatherWing(side) {
+        var piv = new THREE.Group();
+        piv.position.set(side * 0.22, 0.10, -0.04);
+        var inner = new THREE.Mesh(new THREE.SphereGeometry(0.36, 10, 8), bm);
+        inner.scale.set(wLen * 1.05, 0.14, 0.68); inner.position.set(side * wLen * 0.42, 0, 0.02); piv.add(inner);
+        var tip = new THREE.Mesh(new THREE.ConeGeometry(0.22, wLen * 0.72, 8), wTipM);
+        tip.rotation.z = side > 0 ? -Math.PI / 2 : Math.PI / 2; tip.scale.set(0.32, 1.0, 1.05);
+        tip.position.set(side * wLen * 0.85, 0, 0.06); piv.add(tip);
+        return piv;
+      }
+      var wl = makeFeatherWing(-1), wr = makeFeatherWing(1);
+      g.add(wl, wr);
       g.userData.wl = wl; g.userData.wr = wr;
       if (kind === "phoenix") {
-        var pl = new THREE.Mesh(new THREE.ConeGeometry(0.22, 1.1, 6), stdMat(0xffd93d, 0.4, { emissive: 0xff9f43, emissiveIntensity: 0.6 }));
-        pl.rotation.x = Math.PI / 2; pl.position.set(0, 0.05, 0.95); g.add(pl);
+        var crest = new THREE.Mesh(new THREE.ConeGeometry(0.10, 0.38, 6), wTipM);
+        crest.position.set(0, 0.46, -0.46); crest.rotation.x = -0.35; g.add(crest);
+        [-0.22, 0, 0.22].forEach(function (tx, ti) {
+          var pl = new THREE.Mesh(new THREE.ConeGeometry(0.14, 1.15 - Math.abs(tx) * 0.8, 7), ti === 1 ? wTipM : bm);
+          pl.rotation.x = Math.PI / 2; pl.rotation.z = tx * 0.8; pl.position.set(tx, 0.06, 0.92); g.add(pl);
+        });
       }
     } else if (kind === "owl") {
       var om = stdMat(0x7c589c, 0.85), ym = new THREE.MeshBasicMaterial({ color: 0xffd93d });
@@ -423,15 +460,20 @@
       var ns = new THREE.Mesh(new THREE.SphereGeometry(0.06, 6, 5), blackEye); ns.position.set(0, 0.6, -0.96); g.add(ns);
       addEyes(g, 0.12, 0.68, -0.9, 0.05);
     } else if (kind === "unicorn") {
-      var wh = stdMat(0xffffff, 0.55), pn = stdMat(0xff99dd, 0.5, { emissive: 0xff66cc, emissiveIntensity: 0.25 });
-      var b = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.55, 1.15), wh); b.position.y = 0.9; g.add(b);
-      addLegs(g, wh, 0.2, 0.42, 0.68, 0.075);
-      var neck = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.2, 0.62, 8), wh); neck.position.set(0, 1.34, -0.52); neck.rotation.x = 0.35; g.add(neck);
-      var hd = new THREE.Mesh(new THREE.SphereGeometry(0.28, 10, 8), wh); hd.scale.set(0.85, 0.9, 1.25); hd.position.set(0, 1.64, -0.74); g.add(hd);
-      var horn = new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.52, 8), stdMat(0xffd93d, 0.2, { emissive: 0xffb703, emissiveIntensity: 0.65 }));
-      horn.position.set(0, 1.98, -0.84); horn.rotation.x = 0.35; g.add(horn);
-      var mane = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.55, 0.32), pn); mane.position.set(0, 1.48, -0.35); g.add(mane);
-      addEyes(g, 0.13, 1.68, -0.95, 0.045);
+      var wh = stdMat(0xffffff, 0.5), pn = stdMat(0xff99dd, 0.45, { emissive: 0xff66cc, emissiveIntensity: 0.32 });
+      var b = new THREE.Mesh(new THREE.CapsuleGeometry(0.32, 0.66, 8, 12), wh); b.rotation.x = Math.PI / 2; b.position.y = 0.92; g.add(b);
+      addLegs(g, wh, 0.19, 0.40, 0.68, 0.068);
+      var neck = new THREE.Mesh(new THREE.CapsuleGeometry(0.16, 0.46, 6, 10), wh); neck.position.set(0, 1.35, -0.50); neck.rotation.x = 0.35; g.add(neck);
+      var hd = new THREE.Mesh(new THREE.SphereGeometry(0.28, 12, 10), wh); hd.scale.set(0.85, 0.9, 1.28); hd.position.set(0, 1.66, -0.74); g.add(hd);
+      var horn = new THREE.Mesh(new THREE.ConeGeometry(0.075, 0.55, 10), stdMat(0xffd93d, 0.18, { emissive: 0xffb703, emissiveIntensity: 0.72 }));
+      horn.position.set(0, 2.02, -0.84); horn.rotation.x = 0.35; g.add(horn);
+      for (var mn = 0; mn < 4; mn++) {
+        var tuft = new THREE.Mesh(new THREE.SphereGeometry(0.13 - mn * 0.015, 8, 6), pn);
+        tuft.position.set(0, 1.72 - mn * 0.16, -0.48 + mn * 0.10); g.add(tuft);
+      }
+      var utail = new THREE.Mesh(new THREE.CapsuleGeometry(0.11, 0.42, 6, 8), pn);
+      utail.position.set(0, 0.85, 0.68); utail.rotation.x = -0.45; g.add(utail);
+      addEyes(g, 0.13, 1.70, -0.96, 0.048);
     } else if (kind === "sheep") {
       var fl = stdMat(0xffffff, 0.95), fc = stdMat(0xffd9b3, 0.85);
       for (var i = 0; i < 6; i++) {
@@ -1345,16 +1387,13 @@
         }
       }
 
-      /* Thử thách 3: Trạm câu đố */
+      /* Thử thách 3: Trạm câu đố (CHỈ mở khi bấm/tương tác — không tự bật ngang màn hình khi chạy qua!) */
       if (ctx.quizStation) {
         var qs = ctx.quizStation;
         if (qs.cd > 0) qs.cd -= dt;
         qs.group.position.y = qs.baseY + Math.sin(t * 1.6) * 0.25;
         qs.group.rotation.y += dt * 0.65;
         if (qs.rune) qs.rune.rotation.z -= dt * 0.9;
-        if (!MAY.modalOpen && qs.cd <= 0 && qs.group.position.distanceTo(pPos) < 3.1) {
-          MAY.openQuiz(ctx.id);
-        }
       }
 
       /* Bệ Viên Ngọc Sắc Màu */
@@ -1383,7 +1422,7 @@
         pt.veil.rotation.z += dt * 0.7;
         pt.veil.material.opacity = 0.42 + Math.sin(t * 3) * 0.14;
         if (pt.gRune) pt.gRune.rotation.z -= dt * 0.9;
-        if (ctx.portalCooldown <= 0 && !MAY.modalOpen && pt.pos.distanceTo(pPos) < 2.6) {
+        if (ctx.portalCooldown <= 0 && !MAY.modalOpen && pt.pos.distanceTo(pPos) < 1.95) {
           ctx.portalCooldown = 2.0;
           MAY.enterLevel(pt.targetId);
         }
@@ -1508,6 +1547,7 @@
 
   /* ---- Quản lý các cửa sổ Overlay (Quiz, World Map, Sổ tay, Thắng màn, Lễ hội kết) ---- */
   function releasePointerLock() {
+    if (MAY.player && MAY.player.clearKeys) MAY.player.clearKeys();
     try { if (document.pointerLockElement) document.exitPointerLock(); } catch (e) {}
   }
 

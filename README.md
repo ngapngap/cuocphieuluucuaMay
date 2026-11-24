@@ -1,8 +1,13 @@
-# 🌈 Cuộc Phiêu Lưu Của Mây v10.0 — Cốt Truyện 6 Chương, Kỹ Năng Thực Chiến & Đấu Trùm (Three.js PBR)
+# 🌈 Cuộc Phiêu Lưu Của Mây v11.0 — Cốt Truyện 6 Chương, Kỹ Năng Thực Chiến & Đấu Trùm (Three.js PBR)
 
 Phiên bản web 3D (PWA chơi offline hoàn toàn, sẵn sàng chạy trên GitHub Pages mà không cần bước build).
 
-## Cốt truyện mới & 6 Chương Nhiệm Vụ Đa Dạng (Không lặp lại!)
+## Nâng cấp mới ở v11.0 (Điêu khắc 3D + Sửa toàn bộ lỗi gameplay)
+- **Kiến trúc & Mô hình 3D hữu cơ sắc nét hơn**: Nâng cấp khuôn mặt/tóc Mây (tròng trắng + điểm sáng mắt + nơ tóc), điêu khắc lại Hươu/Tuần lộc/Kỳ lân/Chim/Phượng hoàng bằng `CapsuleGeometry` & cánh phân lớp, nâng cấp toàn bộ **6 mô hình Trùm**, **Ngọn Hải Đăng** (lan can sắt + cửa sổ tròn), **Cây Cổ Thụ Mẹ** (thân Lathe + hốc cổ tích + 5 cành uốn TubeGeometry), **Kim Tự Tháp** (chóp vàng + 2 trụ Obelisk), **Đấu Trường Tròn Golem Pha Lê** trên hồ ngầm và **Lâu Đài Cầu Vồng** (tường châu mai, cổng vòm vàng, cờ bay & lan can cầu vồng cong).
+- **Camera điện ảnh & điều khiển không kẹt chuột**: Gỡ khóa con trỏ tự động gây kẹt nút hội thoại, hỗ trợ **click trực tiếp lên NPC/rương bằng con trỏ chuột**, xóa phím kẹt khi đóng hộp thoại (`clearKeys`), không còn bị Cổng Đố tự bật giữa nhiệm vụ, camera tự xoay giới thiệu Trùm khi xuất hiện (`triggerCamFocus`), và thay toàn bộ `setTimeout` đòn Boss bằng bộ hẹn giờ an toàn `ctx.scheduleEvent` tạm dừng theo modal.
+- **Vật lý cầu & giải đố thật 100%**: Đi bộ vững trên Cầu gỗ Đảo Mây, Cầu vòm Rừng Nấm, Cầu đá & Đấu trường tròn Hang Pha Lê; 3 khe suối Chương 5 khoét sâu thật vào địa hình tuyết để phép `❄️` đóng băng thành Cầu Băng trượt qua; sửa trùng NPC ở cả 6 chương và tối ưu hiệu năng FPS (`PlanarReflector` xen kẽ khung hình trên mức `mid`).
+
+## Cốt truyện & 6 Chương Nhiệm Vụ Đa Dạng (Không lặp lại!)
 **Vua Mây Bão (Bóng Xám)** đã cướp **6 Viên Ngọc Cầu Vồng**, bắt cóc **Bé Gió Lốc Tí Hon** và phủ Màn Sương Xám lên 6 vùng đất. Bé **Mây** xuất phát tại **Đảo Mây** với Cây Gậy Phép còn trống rỗng, trò chuyện với các **NPC Giao Nhiệm Vụ (`!`)**, thức tỉnh lần lượt **6 Kỹ Năng Nguyên Tố thực chiến**, dùng chúng giải đố/biến đổi thế giới và đánh bại **6 Trùm Sương Xám**:
 1. **🌊 Chương 1 — Vịnh San Hô Xanh** *(Giải cứu & Phản đòn)*: Gặp **Cụ Rùa San Hô Cổ** nhận **Phép `1` Sóng Xung Kích (`🌊`)** -> phá lưới đá cứu Cá heo Bubi, thổi tan 3 Đám Mây Mực quanh Tàu Đắm -> đấu **Trùm Bạch Tuộc Mực Khổng Lồ** bằng cách đẩy ngược Ngọc Trai Đen Nổ!
 2. **🌲 Chương 2 — Khu Rừng Nấm Xanh** *(Hồi sinh hệ sinh thái)*: Gặp **Bà Sóc Hạt Dẻ** -> rửa Ụ Bùn Đen bằng `🌊` để thức tỉnh **Phép `2` Nở Hoa Hồi Sinh (`🌿`)** -> **hồi sinh 3 Cây Cổ Thụ Chết Khô** mọc lá xanh, hoa & nấm lò xo -> phối hợp `🌊`+`🌿` đánh bại **Vua Nấm Khô Héo** hồi sinh Cây Cổ Thụ Mẹ!

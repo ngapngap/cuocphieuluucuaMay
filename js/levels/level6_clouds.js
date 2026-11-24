@@ -129,17 +129,19 @@
       ctx.add(g);
     });
 
-    /* Dựng 8 Cầu Vồng phát sáng nối các đảo */
+    /* Dựng 8 Cầu Vồng phát sáng nối các đảo + Lan can cầu vồng uốn cong TubeGeometry mượt mà */
     var rbStripeCols = [0xff595e, 0xffca3a, 0x8ac926, 0x38bdf8, 0xc084fc];
+    var railGoldMat = new THREE.MeshPhysicalMaterial({ color: 0xffe49e, emissive: 0xffb703, emissiveIntensity: 0.45, metalness: 0.65, roughness: 0.2, clearcoat: 0.9 });
     BRIDGES.forEach(function (pair) {
       var a = pair[0], b = pair[1];
       var steps = 16;
+      var angY = Math.atan2(b.x - a.x, b.z - a.z);
+      var perpX = Math.cos(angY), perpZ = -Math.sin(angY);
       for (var s = 0; s < steps; s++) {
         var t0 = (s + 0.5) / steps;
         var x = a.x + (b.x - a.x) * t0, z = a.z + (b.z - a.z) * t0;
         var y = a.y + 0.82 + (b.y - a.y) * t0 + Math.sin(t0 * Math.PI) * 2.4;
         var segLen = Math.hypot(b.x - a.x, b.z - a.z) / steps + 0.35;
-        var angY = Math.atan2(b.x - a.x, b.z - a.z);
         var plank = new THREE.Mesh(
           new THREE.BoxGeometry(5.6, 0.32, segLen),
           new THREE.MeshPhysicalMaterial({
@@ -153,6 +155,20 @@
         plank.receiveShadow = true;
         ctx.add(plank);
       }
+      /* Hai đường viền lan can vàng cong ôm theo vòm cầu vồng */
+      [-2.85, 2.85].forEach(function (side) {
+        var pts = [];
+        for (var k = 0; k <= 12; k++) {
+          var kt = k / 12;
+          pts.push(new THREE.Vector3(
+            a.x + (b.x - a.x) * kt + perpX * side,
+            a.y + 1.02 + (b.y - a.y) * kt + Math.sin(kt * Math.PI) * 2.4,
+            a.z + (b.z - a.z) * kt + perpZ * side
+          ));
+        }
+        var rail = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 16, 0.12, 6, false), railGoldMat);
+        ctx.add(rail);
+      });
     });
 
     /* Biển mây mềm mại bồng bềnh bên dưới */
@@ -170,21 +186,47 @@
     ctx.add(padG);
     ctx.addBouncePad(0, 19.05, -59, 2.5, 13.5);
 
-    /* Lâu Đài Cầu Vồng trên Đảo Bắc (0, -48) + Bệ Ngọc Hồng Cầu Vồng */
+    /* Lâu Đài Cầu Vồng trên Đảo Bắc (0, -48) có tường lỗ châu mai, cổng vòm vàng, cờ phấp phới & Bệ Ngọc Hồng */
     var castle = new THREE.Group();
     var cWallMat = new THREE.MeshStandardMaterial({ color: 0xfff0f8, roughness: 0.45, normalMap: MAY.PBR.stoneWall.normalMap });
     var cRoofMat = new THREE.MeshPhysicalMaterial({ color: 0xd980fa, emissive: 0x8b5cf6, emissiveIntensity: 0.35, roughness: 0.25, clearcoat: 0.8 });
+    var cGoldMat = new THREE.MeshPhysicalMaterial({ color: 0xffd93d, metalness: 0.72, roughness: 0.2, emissive: 0xaa7700, emissiveIntensity: 0.35 });
     var keep = new THREE.Mesh(new THREE.BoxGeometry(9, 7.5, 8), cWallMat); keep.position.y = 3.75; keep.castShadow = true; keep.receiveShadow = true; castle.add(keep);
-    [[-4.5, -4], [4.5, -4], [-4.5, 4], [4.5, 4]].forEach(function (tp) {
+    /* Tường răng cưa châu mai trên đỉnh lâu đài */
+    for (var mx = -3.4; mx <= 3.5; mx += 1.7) {
+      [-3.85, 3.85].forEach(function (mz) {
+        var merlon = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.9, 0.42), cWallMat);
+        merlon.position.set(mx, 7.9, mz); merlon.castShadow = true; castle.add(merlon);
+      });
+    }
+    var castleFlags = [];
+    [[-4.5, -4, 0xff595e], [4.5, -4, 0x38bdf8], [-4.5, 4, 0xffca3a], [4.5, 4, 0x4ade80]].forEach(function (tp, idx) {
       var tw = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 1.55, 11, 14), cWallMat); tw.position.set(tp[0], 5.5, tp[1]); tw.castShadow = true; castle.add(tw);
+      var twTrim = new THREE.Mesh(new THREE.TorusGeometry(1.5, 0.14, 8, 18), cGoldMat); twTrim.rotation.x = Math.PI / 2; twTrim.position.set(tp[0], 10.9, tp[1]); castle.add(twTrim);
       var sp = new THREE.Mesh(new THREE.ConeGeometry(1.9, 4.2, 14), cRoofMat); sp.position.set(tp[0], 13.1, tp[1]); sp.castShadow = true; castle.add(sp);
+      var pole = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 2.2, 6), cGoldMat); pole.position.set(tp[0], 16.0, tp[1]); castle.add(pole);
+      var flag = new THREE.Mesh(new THREE.ConeGeometry(0.45, 1.5, 4), new THREE.MeshStandardMaterial({ color: tp[2], emissive: tp[2], emissiveIntensity: 0.35, roughness: 0.4 }));
+      flag.rotation.z = -Math.PI / 2; flag.position.set(tp[0] + 0.75, 16.6, tp[1]); castle.add(flag);
+      castleFlags.push({ mesh: flag, ph: idx * 1.3 });
     });
-    var mainSpire = new THREE.Mesh(new THREE.ConeGeometry(3.2, 6.2, 16), new THREE.MeshPhysicalMaterial({ color: 0xffd93d, metalness: 0.7, roughness: 0.2, emissive: 0xaa7700, emissiveIntensity: 0.35 }));
+    var mainSpire = new THREE.Mesh(new THREE.ConeGeometry(3.2, 6.2, 16), cGoldMat);
     mainSpire.position.y = 10.6; castle.add(mainSpire);
-    var cLight = MAY.makeCagedLantern(0xffc2ee, 2.8, 34, false); cLight.position.set(0, 6.2, 5.2); castle.add(cLight);
-    /* Cửa sổ hoa hồng phát sáng mặt tiền Lâu Đài + Dãy đỉnh mây hoàng hôn tầm xa */
-    var roseWin = new THREE.Mesh(new THREE.CircleGeometry(1.6, 20), new THREE.MeshBasicMaterial({ color: 0xffe6aa }));
-    roseWin.position.set(0, 5.2, 4.06); castle.add(roseWin);
+    var spireStar = new THREE.Mesh(new THREE.OctahedronGeometry(0.65, 0), new THREE.MeshPhysicalMaterial({ color: 0xfff3b0, emissive: 0xffd93d, emissiveIntensity: 1.0, clearcoat: 1.0 }));
+    spireStar.position.y = 14.3; castle.add(spireStar);
+    /* Cổng vòm hoàng gia + 2 cột đá cẩm thạch + Cửa sổ hoa hồng viền vàng */
+    var gateArch = new THREE.Mesh(new THREE.TorusGeometry(1.75, 0.24, 10, 22, Math.PI), cGoldMat);
+    gateArch.position.set(0, 2.1, 4.08); castle.add(gateArch);
+    var gateInner = new THREE.Mesh(new THREE.BoxGeometry(3.1, 3.2, 0.22), new THREE.MeshBasicMaterial({ color: 0xffe4f2 }));
+    gateInner.position.set(0, 1.6, 4.02); castle.add(gateInner);
+    [-1.75, 1.75].forEach(function (gx) {
+      var colP = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.30, 3.4, 10), cWallMat);
+      colP.position.set(gx, 1.7, 4.18); castle.add(colP);
+    });
+    var cLight = MAY.makeCagedLantern(0xffc2ee, 2.8, 34, false); cLight.position.set(0, 6.4, 5.2); castle.add(cLight);
+    var roseWin = new THREE.Mesh(new THREE.CircleGeometry(1.5, 20), new THREE.MeshBasicMaterial({ color: 0xffe6aa }));
+    roseWin.position.set(0, 5.4, 4.06); castle.add(roseWin);
+    var roseFrame = new THREE.Mesh(new THREE.TorusGeometry(1.55, 0.14, 8, 24), cGoldMat);
+    roseFrame.position.set(0, 5.4, 4.12); castle.add(roseFrame);
     castle.position.set(0, 18.85, -52);
     ctx.add(castle);
     ctx.addGemAltar([0, 18.90, -40]);
@@ -230,15 +272,15 @@
       return m;
     }
     ctx.addCollectibles([
-      [0, 10.6, 36], [-8, 14.0, 6], [10, 14.0, -4], [-40, 13.0, 14], [38, 15.0, 14],
+      [0, 12.2, 36], [-8, 14.0, 6], [10, 14.0, -4], [-40, 13.0, 14], [38, 15.0, 14],
       [-36, 17.0, -32], [36, 18.0, -32], [-18, 17.2, -16], [18, 17.6, -16], [0, 20.2, -45]
     ], { color: 0xf472b6, icon: "🪶", makeMesh: makeFeather });
 
-    /* ---- 5 Bạn Trên Mây (kể cả Bé Gió Lốc Tí Hon!) + Cún Milo Có Cánh ---- */
+    /* ---- 5 Bạn Trên Mây (không trùng Sứ Giả Phượng Hoàng!) + Cún Milo Có Cánh ---- */
     ctx.addFriends([
       { name: "Kỳ Lân Mây Nhí",    kind: "unicorn",      pos: [-8, 12.8, 4],   greet: "🦄 Kỳ Lân Mây vẫy chiếc sừng vàng lấp lánh chào Mây!" },
       { name: "Cừu Bông Biết Bay", kind: "sheep",        pos: [-40, 12.0, 18], greet: "🐑 Cừu Bông mềm mịn nhảy tưng tưng chào Mây!" },
-      { name: "Phượng Hoàng Nhí",  kind: "phoenix",      pos: [36, 19.5, -28], behavior: "fly", orbitR: 8, greet: "🦜 Phượng Hoàng Cầu Vồng sải cánh rực rỡ chào Mây!" },
+      { name: "Chim Cầu Vồng",     kind: "bird",         pos: [36, 19.5, -28], behavior: "fly", orbitR: 8, opts: { color: 0x38bdf8 }, greet: "🐦 Chim Cầu Vồng sải cánh xanh biếc chào Mây!" },
       { name: "Sao Băng Nhỏ",      kind: "shootingstar", pos: [-34, 18.5, -30],behavior: "fly", orbitR: 6, greet: "🌠 Sao Băng Nhỏ tặng Mây một điều ước lấp lánh!" },
       { name: "Bé Gió Lốc Tí Hon", kind: "windspirit",   pos: [0, 19.8, -44],  behavior: "still", greet: "🌬️ Gió Lốc Tí Hon xin lỗi Mây và hóa thành Làn Gió Mát dễ thương!" }
     ]);
@@ -280,7 +322,7 @@
     ctx.addRaceChallenge([8, 13.6, 2], [[34, 15.5, 14], [34, 18.5, -30], [0, 20.5, -44], [-34, 17.5, -30]], { title: "Đua bay cùng Phượng Hoàng", time: 58 });
     ctx.addQuizStation([0, 14.0, 10], { label: "Đài Đố Tổng Hợp" });
 
-    ctx.addPortal([0, 8.8, 48], "hub", "🏝️ Về Đảo Mây", 0xf472b6);
+    ctx.addPortal([0, 8.85, 52.0], "hub", "🏝️ Về Đảo Mây", 0xf472b6);
 
     ctx.minimapDrawExtra = function (mm, C, K) {
       mm.fillStyle = "rgba(255,240,252,0.8)";
@@ -364,14 +406,14 @@
           strikePos.y = Math.max(18.9, ctx.groundH(strikePos.x, strikePos.z));
           MAY.VFX.spawnTelegraph(strikePos, 4.2, 1.0, 0xfef08a);
           MAY.toast("⚡ Vua Mây Bão gọi sét đánh! Chạy né khỏi vòng vàng!");
-          setTimeout(function () {
-            if (!bs.active || bs.defeated || MAY.modalOpen) return;
+          ctx.scheduleEvent(1.0, function () {
+            if (!bs.active || bs.defeated) return;
             MAY.VFX.spawnLaserBeam(strikePos.clone().add(new THREE.Vector3(0, 18, 0)), strikePos.clone(), 0xfef08a, false);
             MAY.sndLaser(strikePos);
             if (MAY.player.pos.distanceTo(strikePos) < 4.2) {
               MAY.damagePlayer(1, strikePos, "Sét của Vua Mây Bão! Nhớ chạy né vòng cảnh báo!");
             }
-          }, 1000);
+          });
         }
       },
       onSpellHit: function (spellId, castPos, bs) {
@@ -413,6 +455,27 @@
       }
     });
 
+    var bossMinionsSpawned = false;
+    function spawnPhase1Minions() {
+      if (bossMinionsSpawned || ch6St.bossDown) return;
+      bossMinionsSpawned = true;
+      [[-8, 20.4, -38], [8, 20.4, -38]].forEach(function (mp, i) {
+        ctx.addEnemy({
+          id: "l6_bguard_" + i, kind: "stormcloud", name: "Hộ Vệ Mây Sấm", pos: mp,
+          flying: true, weakSpell: "tornado", speed: 3.6, patrolR: 5.5,
+          onPurified: function () {
+            if (ch6Boss.active && !ch6Boss.defeated && ch6Boss.hp === 3) {
+              bossShield.visible = false;
+              MAY.sndShatter(ch6Boss.pos);
+              MAY.VFX.spawnShatterBurst(ch6Boss.pos.clone(), 0xc084fc);
+              ch6Boss.damage("🌈 Hộ Vệ Mây Sấm bị hất tung lên trời làm VỠ TAN Khiên Mây Đen của Vua Mây Bão!");
+            }
+          }
+        });
+      });
+    }
+    if (ch6St.stage === 3 && !ch6St.bossDown) spawnPhase1Minions();
+
     function updateCh6Story() {
       if (ch6St.rewarded || ctx.save.gem) {
         ch6Npc.setMarker("♥");
@@ -446,6 +509,7 @@
         ch6Npc.setMarker("?");
         if (!ch6Boss.active) {
           ch6Boss.activate();
+          spawnPhase1Minions();
           MAY.openDialogue({
             name: ch6Sc.npcName, role: ch6Sc.npcRole, icon: ch6Sc.npcIcon, color: ch6Sc.npcColor,
             pages: ch6Sc.bossIntro, endBtn: "⛈️ QUYẾT CHIẾN VUA MÂY BÃO!", voiceClip: "boss_appear"
@@ -507,6 +571,8 @@
       blades.rotation.z -= dt * 0.9;
       sRune.rotation.z += dt * 1.4;
       sOrb.rotation.y += dt * 2.0;
+      spireStar.rotation.y += dt * 1.8;
+      castleFlags.forEach(function (cf) { cf.mesh.rotation.y = Math.sin(t * 4.5 + cf.ph) * 0.32; });
       lockMeshes.forEach(function (lm) { if (lm.visible) lm.rotation.y += dt * 2.2; });
       /* Khi Mây bước tới Đài Hợp Nhất ở Hồi 1 -> Tự động Thức Tỉnh Phép 6: 🌈 LỐC CẦU VỒNG! */
       if (ch6St.stage === 1 && !MAY.modalOpen && MAY.player.pos.distanceTo(shrinePos) < 5.5) {

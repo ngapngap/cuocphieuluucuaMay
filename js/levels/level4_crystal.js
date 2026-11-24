@@ -29,7 +29,7 @@
     MAY.setAmbientTone(260, 0.042, "level4");
     MAY.setPostGrade({ tint: 0xf6f0ff, vignette: 0.34, bloom: 0.44, ssao: 0.65 });
     ctx.getSurface = function (x, z) {
-      return Math.abs(x) < 2.6 && Math.abs(z + 8) < 22 ? "wood" : "wetstone";
+      return (Math.abs(x) < 2.6 && z > -30 && z < 14) || Math.hypot(x, z + 8) < 8.4 ? "stone" : "wetstone";
     };
 
     ctx.landFog = { color: 0x161230, density: 0.0135 };
@@ -42,9 +42,9 @@
       sunDir: new THREE.Vector3(14, 38, 12), sunColor: 0xc084fc, cloudAmt: 0.05, stars: true
     });
 
-    /* Hồ nước ngầm phát sáng tại (0, -8) + bậc đá tự nhiên bao quanh */
+    /* Hồ nước ngầm phát sáng tại (0, -8) + bậc đá tự nhiên + Cầu Đá & Đấu Trường Tròn đi bộ chắc chắn */
     var LAKE = { x: 0, z: -8, r: 22 };
-    ctx.groundH = function (x, z) {
+    function caveTerrainH(x, z) {
       var d = Math.hypot(x, z);
       var ridge = Math.sin(x * 0.08) * Math.cos(z * 0.07) * 1.5 + Math.sin(x * 0.19) * Math.cos(z * 0.17) * 0.45;
       var h = 2.75 + ridge;
@@ -58,9 +58,9 @@
       }
       if (d > 68) h += (d - 68) * 0.45;
       return h;
-    };
-
+    }
     /* Đá hang ẩm ướt có vệt bóng phản chiếu đèn pha lê (roughnessMap thật) */
+    ctx.groundH = caveTerrainH;
     var caveMat = new THREE.MeshStandardMaterial({
       map: MAY.PBR.wetCaveRock.map,
       normalMap: MAY.PBR.wetCaveRock.normalMap,
@@ -71,6 +71,15 @@
     });
     MAY.applyCaustics(caveMat, 0.1, 0.75);
     ctx.buildTerrain(200, 116, caveMat);
+
+    /* Sau khi dựng địa hình lòng hồ thật, bật mặt cầu đá & Đấu Trường Tròn Golem (y=2.45) để Mây đi qua hồ không bị rơi! */
+    ctx.groundH = function (x, z) {
+      var h = caveTerrainH(x, z);
+      if ((Math.abs(x) < 2.38 && z > -30.5 && z < 14.5) || Math.hypot(x, z + 8) < 8.4) {
+        h = Math.max(h, 2.45);
+      }
+      return h;
+    };
 
     /* Vòm trần hang động + Thạch nhũ rủ xuống từ trên cao */
     var domeMat = new THREE.MeshStandardMaterial({
@@ -122,20 +131,31 @@
       fogDensity: 0.0135
     }, new THREE.Vector3(0, 2.71, 30));
 
-    /* Cầu đá có đèn lồng dây tóc VÀNG ẤM đối lập hoàn hảo với ánh pha lê TÍM-CYAN LẠNH (công thức ánh sáng The Hall!) */
+    /* Cầu đá + Đấu Trường Tròn Golem có cột chống xuống hồ & đèn lồng VÀNG ẤM đối lập ánh pha lê TÍM-CYAN! */
     var bridgeMat = new THREE.MeshStandardMaterial({
       map: MAY.PBR.stoneWall.map, normalMap: MAY.PBR.stoneWall.normalMap,
       roughnessMap: MAY.PBR.stoneWall.roughnessMap, color: 0x625a82, roughness: 0.65
     });
-    var archBridge = new THREE.Mesh(new THREE.BoxGeometry(4.5, 0.9, 44), bridgeMat);
-    archBridge.position.set(0, 1.3, -8); archBridge.castShadow = true; archBridge.receiveShadow = true;
+    var archBridge = new THREE.Mesh(new THREE.BoxGeometry(4.7, 0.75, 45), bridgeMat);
+    archBridge.position.set(0, 2.08, -8); archBridge.castShadow = true; archBridge.receiveShadow = true;
     ctx.add(archBridge);
-    [[-2.2, 10], [2.2, -4], [-2.2, -18], [2.2, 28]].forEach(function (lp) {
-      var post = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.14, 3.2, 8), new THREE.MeshStandardMaterial({ color: 0x2b2630, metalness: 0.7, roughness: 0.4 }));
-      var py = lp[1] > 18 ? ctx.groundH(lp[0], lp[1]) : 1.75;
-      post.position.set(lp[0], py + 1.6, lp[1]); post.castShadow = true; ctx.add(post);
-      var lan = MAY.makeCagedLantern(0xffb85c, 2.8, 26, false);
-      lan.position.set(lp[0], py + 3.25, lp[1]); ctx.add(lan);
+    /* Sàn Đấu Trường Tròn r=8.4m ở giữa hồ (đỡ trên 4 cột đá cắm sâu xuống đáy hồ để vẫn bơi lặn dưới hồ được!) */
+    var arenaDeck = new THREE.Mesh(new THREE.CylinderGeometry(8.4, 8.8, 0.75, 28), bridgeMat);
+    arenaDeck.position.set(0, 2.08, -8); arenaDeck.castShadow = true; arenaDeck.receiveShadow = true;
+    ctx.add(arenaDeck);
+    var arenaTrim = new THREE.Mesh(new THREE.TorusGeometry(8.3, 0.18, 8, 32), new THREE.MeshStandardMaterial({ color: 0x9f8fe0, emissive: 0x6d28d9, emissiveIntensity: 0.4, roughness: 0.35 }));
+    arenaTrim.rotation.x = Math.PI / 2; arenaTrim.position.set(0, 2.46, -8); ctx.add(arenaTrim);
+    [[-5.2, -13.2], [5.2, -13.2], [-5.2, -2.8], [5.2, -2.8], [0, 8], [0, -24]].forEach(function (pp) {
+      var pier = new THREE.Mesh(new THREE.CylinderGeometry(0.65, 0.95, 7.2, 10), bridgeMat);
+      pier.position.set(pp[0], -1.6, pp[1]); pier.castShadow = true; ctx.add(pier);
+    });
+    var postMat = new THREE.MeshStandardMaterial({ color: 0x2b2630, metalness: 0.7, roughness: 0.4 });
+    [[-2.2, 11], [2.2, 11], [-2.2, -27], [2.2, -27], [-7.2, -3.5], [7.2, -3.5], [-7.2, -12.5], [7.2, -12.5], [2.2, 28]].forEach(function (lp) {
+      var post = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.14, 3.1, 8), postMat);
+      var py = ctx.groundH(lp[0], lp[1]);
+      post.position.set(lp[0], py + 1.55, lp[1]); post.castShadow = true; ctx.add(post);
+      var lan = MAY.makeCagedLantern(0xffb85c, 2.4, 24, false);
+      lan.position.set(lp[0], py + 3.15, lp[1]); ctx.add(lan);
     });
 
     /* Đá vụn ẩm & mảnh tinh thể lấp lánh rải sàn hang */
@@ -186,13 +206,13 @@
     var shardMat = new THREE.MeshPhysicalMaterial({ color: 0xd8b4fe, emissive: 0xa855f7, emissiveIntensity: 1.05, roughness: 0.08, clearcoat: 1.0 });
     ctx.addCollectibles([
       [-16, 30], [16, 30], [-34, 12], [36, 10], [-42, -16],
-      [42, -18], [-24, -36], [24, -36], [0, -2.0, -8], [10, -2.5, -12]
+      [42, -18], [-24, -36], [24, -36], [-13, -1.8, -10], [13, -2.0, -12]
     ], { color: 0xc084fc, icon: "💎", yOff: 1.3, makeMesh: function () { return new THREE.Mesh(shardGeo, shardMat); } });
 
-    /* ---- 5 Bạn Hang Động + Dơi Nhỏ Bibi bay soi đèn phía trước Mây ---- */
+    /* ---- 5 Bạn Hang Động + Dơi Nhỏ Bibi bay soi đèn phía trước Mây (không trùng Nhạc Sư Cú Mèo!) ---- */
     ctx.addFriends([
-      { name: "Cú Mèo Mắt Vàng",  kind: "owl",      pos: [-22, 24], greet: "🦉 Cú Mèo chớp đôi mắt vàng long lanh chào Mây!" },
-      { name: "Kỳ Nhông Axolotl", kind: "axolotl",  pos: [-7, -2.2, -10], behavior: "swim", greet: "🩷 Kỳ nhông hồng vẫy mang bơi quanh Mây!" },
+      { name: "Rùa Pha Lê",       kind: "tortoise", pos: [-22, 24], greet: "🐢 Rùa Pha Lê lấp lánh vẫy chào Mây!" },
+      { name: "Kỳ Nhông Axolotl", kind: "axolotl",  pos: [-13, -1.8, -4], behavior: "swim", greet: "🩷 Kỳ nhông hồng vẫy mang bơi quanh Mây!" },
       { name: "Chuột Chũi Đèn",   kind: "mole",     pos: [30, 14],  greet: "🔦 Chuột Chũi bật mũ đèn sáng rực chào Mây!" },
       { name: "Đom Đóm Chúa",     kind: "firefly",  pos: [28, 6.5, -24], behavior: "fly", orbitR: 6, greet: "✨ Đom Đóm Chúa vẽ vòng sáng chào Mây!" },
       { name: "Dơi Nhỏ Bibi",     kind: "bat",      pos: [-28, 6.0, -22], behavior: "fly", orbitR: 7, greet: "🦇 Dơi nhỏ Bibi cười hì hì dẫn đường cho Mây!" }
@@ -222,10 +242,10 @@
       };
     }));
 
-    /* Bảo vật ẩn: Viên Ngọc Trai Ánh Trăng dưới đáy hồ ngầm */
+    /* Bảo vật ẩn: Viên Ngọc Trai Ánh Trăng dưới đáy hồ ngầm (vùng nước mở phía Đông đấu trường) */
     var moonPearl = new THREE.Mesh(new THREE.SphereGeometry(0.68, 18, 14),
       new THREE.MeshPhysicalMaterial({ color: 0xf8fafc, emissive: 0x93c5fd, emissiveIntensity: 0.95, roughness: 0.05, metalness: 0.2, clearcoat: 1.0 }));
-    ctx.addHiddenTreasure([6, -4.1, -6], {
+    ctx.addHiddenTreasure([13, -2.6, -2], {
       name: "Ngọc Trai Ánh Trăng",
       hint: "Có ánh trăng dịu nhẹ lấp lánh dưới đáy hồ nước ngầm...",
       mesh: moonPearl, color: 0x93c5fd
@@ -236,7 +256,7 @@
     ctx.addRaceChallenge([14, 24], [[32, 14], [34, -16], [0, -30], [-30, -8]], { title: "Đua cùng Dơi Bibi", time: 55 });
     ctx.addQuizStation([0, 26], { label: "Cổng Đố Hình Học" });
 
-    ctx.addPortal([0, 44], "hub", "🏝️ Về Đảo Mây", 0xc084fc);
+    ctx.addPortal([0, 48], "hub", "🏝️ Về Đảo Mây", 0xc084fc);
 
     ctx.minimapDrawExtra = function (mm, C, K) {
       mm.fillStyle = "#38bdf8";
@@ -304,7 +324,7 @@
     var ch4Npc;
     var ch4Boss = ctx.setBoss({
       name: "Golem Pha Lê Khổng Lồ", icon: "🗿",
-      pos: new THREE.Vector3(0, 1.8, -8), arenaR: 25, maxHp: 3, mesh: titanMesh,
+      pos: new THREE.Vector3(0, 2.48, -8), arenaR: 25, maxHp: 3, mesh: titanMesh,
       startActive: ch4St.stage === 3 && !ch4St.bossDown,
       tipFn: function (b) {
         return b.subState.armorBroken
@@ -314,7 +334,7 @@
       onTick: function (dt, t, bs) {
         var ang = Math.atan2(MAY.player.pos.x - bs.pos.x, MAY.player.pos.z - bs.pos.z);
         bs.mesh.rotation.y = ang + Math.PI;
-        bs.mesh.position.y = 1.8 + Math.sin(t * 2.0) * 0.35;
+        bs.mesh.position.y = 2.48 + Math.sin(t * 2.0) * 0.32;
         bs.atkT -= dt;
         if (bs.atkT <= 0 && bs.pos.distanceTo(MAY.player.pos) < 34) {
           bs.atkT = 3.5;
