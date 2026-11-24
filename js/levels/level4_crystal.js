@@ -19,7 +19,7 @@
     MAY.sun.intensity = 0.95;
     MAY.hemiLight.color.setHex(0x7c64c4);
     MAY.hemiLight.groundColor.setHex(0x20183c);
-    MAY.hemiLight.intensity = 0.72;
+    MAY.hemiLight.intensity = 0.42;
     /* Đèn pha trên mũ Mây bật đổ bóng thực trong hang động giống The Hall! */
     MAY.diveLight.intensity = 2.6;
     MAY.diveLight.color.setHex(0xf6eeff);
@@ -131,11 +131,12 @@
       fogDensity: 0.0135
     }, new THREE.Vector3(0, 2.71, 30));
 
-    /* Cầu đá + Đấu Trường Tròn Golem có cột chống xuống hồ & đèn lồng VÀNG ẤM đối lập ánh pha lê TÍM-CYAN! */
+    /* Cầu đá + Đấu Trường Tròn Golem có vết rêu ẩm không lặp, cột chống & đèn lồng chính đổ bóng thật! */
     var bridgeMat = new THREE.MeshStandardMaterial({
       map: MAY.PBR.stoneWall.map, normalMap: MAY.PBR.stoneWall.normalMap,
       roughnessMap: MAY.PBR.stoneWall.roughnessMap, color: 0x625a82, roughness: 0.65
     });
+    MAY.applyWorldWeathering(bridgeMat, { waterY: 0.1, caustics: 0.35, macro: 0.14, stain: 0.28, wallGrime: 0.32, stainColor: 0x262040 });
     var archBridge = new THREE.Mesh(new THREE.BoxGeometry(4.7, 0.75, 45), bridgeMat);
     archBridge.position.set(0, 2.08, -8); archBridge.castShadow = true; archBridge.receiveShadow = true;
     ctx.add(archBridge);
@@ -150,16 +151,27 @@
       pier.position.set(pp[0], -1.6, pp[1]); pier.castShadow = true; ctx.add(pier);
     });
     var postMat = new THREE.MeshStandardMaterial({ color: 0x2b2630, metalness: 0.7, roughness: 0.4 });
-    [[-2.2, 11], [2.2, 11], [-2.2, -27], [2.2, -27], [-7.2, -3.5], [7.2, -3.5], [-7.2, -12.5], [7.2, -12.5], [2.2, 28]].forEach(function (lp) {
+    [[-2.2, 11], [2.2, 11], [-2.2, -27], [2.2, -27], [-7.2, -3.5], [7.2, -3.5], [-7.2, -12.5], [7.2, -12.5], [2.2, 28]].forEach(function (lp, lIdx) {
       var post = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.14, 3.1, 8), postMat);
       var py = ctx.groundH(lp[0], lp[1]);
       post.position.set(lp[0], py + 1.55, lp[1]); post.castShadow = true; ctx.add(post);
-      var lan = MAY.makeCagedLantern(0xffb85c, 2.4, 24, false);
+      var lan = MAY.makeCagedLantern(0xffb85c, lIdx === 0 ? 3.2 : 2.4, 24, lIdx === 0);
       lan.position.set(lp[0], py + 3.15, lp[1]); ctx.add(lan);
     });
+    if (MAY.add3DLoop) {
+      MAY.add3DLoop([0, 0.8, -8], { kind: "water", freq: 520, vol: 0.045, maxDist: 42 });
+      MAY.add3DLoop([0, 4.0, -36], { kind: "crystal", freq: 370, vol: 0.022, maxDist: 38 });
+      MAY.add3DLoop([-2.2, 5.5, 11], { kind: "fire", freq: 760, vol: 0.028, maxDist: 26 });
+    }
 
-    /* Đá vụn ẩm & mảnh tinh thể lấp lánh rải sàn hang */
+    /* Đá vụn ẩm & mảnh tinh thể rải sàn hang + quanh đầu cầu/cụm pha lê lớn */
     MAY.scatterDebris(ctx, 200, function (x, z) { return Math.hypot(x - LAKE.x, z - LAKE.z) > LAKE.r + 2; }, { spread: 68, size: 0.25, color: 0x484466 });
+    MAY.scatterPropCluster(ctx, [
+      { x: 0, z: 16, rMin: 2.8, rMax: 6.2, count: 18 },
+      { x: 0, z: -36, rMin: 2.5, rMax: 6.5, count: 18 },
+      { x: -26, z: 22, rMin: 2.0, rMax: 5.5, count: 14 },
+      { x: 28, z: 20, rMin: 2.0, rMax: 5.5, count: 14 }
+    ], { size: 0.24, color: 0x5c4f8a });
 
     /* Các cụm Pha Lê khổng lồ trong suốt phản chiếu + Đèn thực tế tỏa sáng lên mặt đá ướt */
     var crysCols = [0xc084fc, 0x38bdf8, 0xf472b6, 0x2dd4bf, 0xa78bfa];
@@ -276,8 +288,8 @@
     var ch4St = ctx.story;
     var ch4Sc = MAY.STORY_SCRIPTS.level4;
     ctx.setupAtmosphere(
-      { fog: 0x0b0818, density: 0.0175, sunInt: 0.55, hemiInt: 0.36 },
-      { fog: 0x1a1640, density: 0.012, sunInt: 1.15, hemiInt: 0.85 },
+      { fog: 0x0b0818, density: 0.0175, sunInt: 0.55, hemiInt: 0.26 },
+      { fog: 0x1a1640, density: 0.012, sunInt: 1.15, hemiInt: 0.48 },
       !!ch4St.bossDown
     );
 

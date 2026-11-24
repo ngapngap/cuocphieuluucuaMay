@@ -154,7 +154,9 @@
         if (ctx.interactives[i].obj && ctx.interactives[i].obj.visible) objs.push(ctx.interactives[i].obj);
       }
       var hits = raycaster.intersectObjects(objs, true);
+      var pPos = MAY.player ? MAY.player.pos : MAY.camera.position;
       for (var h = 0; h < hits.length; h++) {
+        if (hits[h].point.distanceTo(pPos) > 14) continue;
         var it = findInteractive(hits[h].object, ctx.interactives);
         if (it && it.onInteract) { it.onInteract(it); return; }
       }
@@ -575,6 +577,7 @@
       onUpdate: null,
       onModelsReady: null,
       levelStartTime: Date.now(),
+      playSecs: 0,
       portalCooldown: 1.5,
       gemAwardedThisVisit: ls.gem
     };
@@ -1073,7 +1076,7 @@
       ctx.gemAwardedThisVisit = true;
       if (MAY.save.gems.indexOf(meta.num) === -1) MAY.save.gems.push(meta.num);
       if (MAY.save.gears.indexOf(meta.num) === -1) MAY.save.gears.push(meta.num);
-      var secs = Math.max(1, Math.round((Date.now() - ctx.levelStartTime) / 1000));
+      var secs = Math.max(1, Math.round(ctx.playSecs));
       if (!ls.bestTime || secs < ls.bestTime) ls.bestTime = secs;
       MAY.persist();
       MAY.refreshHUD();
@@ -1095,6 +1098,7 @@
 
     ctx.updateAll = function (dt, t) {
       var pPos = MAY.player.pos;
+      if (MAY.started && !MAY.modalOpen) ctx.playSecs += dt;
       if (ctx.portalCooldown > 0) ctx.portalCooldown -= dt;
 
       /* Đèn mặt trời & bóng đổ sắc nét đi theo Mây */

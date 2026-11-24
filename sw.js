@@ -1,5 +1,5 @@
-/* Cuộc Phiêu Lưu Của Mây v11.0 — offline cache (PWA). Network-first cho code, cache-first cho model/ảnh/giọng đọc. */
-var CACHE = 'may-phieu-luu-v11.0';
+/* Cuộc Phiêu Lưu Của Mây v11.1 — offline cache (PWA). Network-first cho code, cache-first cho model/ảnh/giọng đọc. */
+var CACHE = 'may-phieu-luu-v11.1';
 var CORE = [
   "./", "index.html", "style.css", "three.min.js", "game.js", "manifest.json",
   "js/data.js", "js/audio.js", "js/core.js", "js/pbr.js", "js/vfx.js", "js/player.js", "js/systems.js", "js/story.js",
@@ -49,15 +49,19 @@ self.addEventListener('fetch', function (e) {
   var isCode = e.request.mode === 'navigate' || url.pathname.endsWith('/') || /\.(html|js|css|json)$/i.test(url.pathname);
   if (isCode) {
     e.respondWith(fetch(e.request).then(function (r) {
-      var copy = r.clone();
-      caches.open(CACHE).then(function (c) { c.put(e.request, copy); });
+      if (r && r.ok) {
+        var copy = r.clone();
+        caches.open(CACHE).then(function (c) { c.put(e.request, copy); });
+      }
       return r;
     }).catch(function () { return caches.match(e.request).then(function (h) { return h || caches.match('index.html'); }); }));
   } else {
     e.respondWith(caches.match(e.request).then(function (hit) {
       return hit || fetch(e.request).then(function (r) {
-        var copy = r.clone();
-        caches.open(CACHE).then(function (c) { c.put(e.request, copy); });
+        if (r && r.ok) {
+          var copy = r.clone();
+          caches.open(CACHE).then(function (c) { c.put(e.request, copy); });
+        }
         return r;
       });
     }));

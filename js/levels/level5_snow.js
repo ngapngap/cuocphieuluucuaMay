@@ -18,7 +18,7 @@
     MAY.sun.intensity = 1.42;
     MAY.hemiLight.color.setHex(0xb4dcf8);
     MAY.hemiLight.groundColor.setHex(0x527598);
-    MAY.hemiLight.intensity = 0.66;
+    MAY.hemiLight.intensity = 0.44;
     MAY.diveLight.intensity = 0.12;
     MAY.diveLight.castShadow = false;
     MAY.setAmbientTone(480, 0.036, "level5");
@@ -88,7 +88,7 @@
       return h;
     };
 
-    /* Tuyết PBR dịu mát giữ trọn bóng đồi tuyết + Mặt hồ băng trong bóng */
+    /* Tuyết PBR dịu mát có vệt phong hóa không lặp + Mặt hồ băng trong bóng */
     var snowMat = new THREE.MeshStandardMaterial({
       map: MAY.PBR.snow.map,
       normalMap: MAY.PBR.snow.normalMap,
@@ -97,6 +97,7 @@
       color: 0xdcebf7,
       roughness: 0.76
     });
+    MAY.applyWorldWeathering(snowMat, { macro: 0.12, stain: 0.18, wallGrime: 0.16, stainColor: 0x6f96ba });
     ctx.buildTerrain(230, 120, snowMat);
 
     /* HỒ BĂNG SOI GƯƠNG THỜI GIAN THỰC (Planar Reflection + Roughness vết nứt băng!) */
@@ -114,16 +115,21 @@
       fogDensity: 0.0068
     }, new THREE.Vector3(ICE.x, 1.09, ICE.z));
 
-    /* Dãy núi tuyết Alps hùng vĩ bao quanh thung lũng + Đá phủ tuyết rải rác */
+    /* Dãy núi tuyết Alps + Đá phủ tuyết + Tia sáng Cực Quang rọi xuống thung lũng + Tuyết rơi */
     MAY.buildVistaRing(ctx, { count: 24, radius: 142, hMin: 28, hMax: 58, wBase: 32, baseY: -1, color: 0x5d7a96, snowCap: true });
     MAY.scatterDebris(ctx, 160, function (x, z) { return !ctx.isIce(x, z); }, { spread: 80, size: 0.26, color: 0x8ea4ba });
-
-    /* Tuyết rơi lất phất ngập thung lũng */
+    var snowRayMat = MAY.makeGodRayMat(0xb8f2ff, 0.19);
+    [[0, -6], [-26, 20], [26, 18], [0, -36], [-30, -18], [32, -16]].forEach(function (rp, ri) {
+      var ray = new THREE.Mesh(new THREE.ConeGeometry(3.4 + (ri % 3) * 0.8, 42, 12, 1, true), snowRayMat);
+      ray.position.set(rp[0], 21, rp[1]);
+      ray.rotation.z = -0.22;
+      ctx.add(ray);
+    });
     ctx.addAmbientParticles({ count: 480, spread: 130, minY: 0.5, maxY: 26, vy: -1.4, vx: 0.6, color: 0xffffff, size: 0.2, opacity: 0.85 });
 
     /* Rừng thông phủ tuyết dày tán lá đa tầng chân thực */
     var barkMat = new THREE.MeshStandardMaterial({ map: MAY.PBR.bark.map, normalMap: MAY.PBR.bark.normalMap, roughness: 0.95 });
-    var pineLeafMat = new THREE.MeshStandardMaterial({ map: MAY.PBR.leafClusterTex, color: 0x3b7a64, alphaTest: 0.34, side: THREE.DoubleSide, roughness: 0.85 });
+    var pineLeafMat = new THREE.MeshStandardMaterial({ map: MAY.PBR.leafClusterTex, color: 0x4f967c, alphaTest: 0.34, side: THREE.DoubleSide, roughness: 0.82 });
     var capSnowMat = new THREE.MeshStandardMaterial({ map: MAY.PBR.snow.map, color: 0xe6f2fc, roughness: 0.72 });
     function makeSnowPine(s) {
       var g = new THREE.Group();
@@ -159,26 +165,37 @@
       pine.rotation.y = pi; ctx.add(pine);
     }
 
-    /* Làng lều tuyết Igloo có ánh đèn vàng ấm tỏa trên tuyết */
-    function makeIgloo(x, z, rotY) {
+    /* Làng lều tuyết Igloo có vết phong hóa băng đá & ánh đèn vàng ấm (lều chính đổ bóng thật!) */
+    var iglooDomeMat = new THREE.MeshStandardMaterial({ map: MAY.PBR.stoneWall.map, normalMap: MAY.PBR.stoneWall.normalMap, color: 0xe6f4ff, roughness: 0.65 });
+    MAY.applyWorldWeathering(iglooDomeMat, { macro: 0.10, stain: 0.16, wallGrime: 0.22, stainColor: 0x7699ba });
+    function makeIgloo(x, z, rotY, castShadow) {
       var g = new THREE.Group();
-      var dome = new THREE.Mesh(new THREE.SphereGeometry(3.2, 18, 12, 0, Math.PI * 2, 0, Math.PI * 0.52),
-        new THREE.MeshStandardMaterial({ map: MAY.PBR.stoneWall.map, normalMap: MAY.PBR.stoneWall.normalMap, color: 0xe6f4ff, roughness: 0.65 }));
+      var dome = new THREE.Mesh(new THREE.SphereGeometry(3.2, 18, 12, 0, Math.PI * 2, 0, Math.PI * 0.52), iglooDomeMat);
       dome.castShadow = true; dome.receiveShadow = true; g.add(dome);
       var tun = new THREE.Mesh(new THREE.CylinderGeometry(1.15, 1.25, 2.2, 12, 1, false, 0, Math.PI),
         new THREE.MeshStandardMaterial({ color: 0xdff2ff, roughness: 0.7 }));
       tun.rotation.z = Math.PI / 2; tun.rotation.y = Math.PI / 2; tun.position.set(0, 0.1, 3.0); g.add(tun);
       var glowDoor = new THREE.Mesh(new THREE.CircleGeometry(1.0, 12), new THREE.MeshBasicMaterial({ color: 0xffd680 }));
       glowDoor.position.set(0, 0.9, 2.95); g.add(glowDoor);
-      var igLan = MAY.makeCagedLantern(0xffcb69, 2.5, 24, false);
+      var igLan = MAY.makeCagedLantern(0xffcb69, castShadow ? 3.2 : 2.5, 24, !!castShadow);
       igLan.position.set(0, 1.9, 3.9); g.add(igLan);
       g.add(MAY.makeContactShadow(3.6, 0.52));
       g.position.set(x, ctx.groundH(x, z) - 0.15, z); g.rotation.y = rotY;
       ctx.add(g);
     }
-    makeIgloo(-26, 22, 0.7);
-    makeIgloo(26, 20, -0.8);
-    makeIgloo(-22, -32, 0.4);
+    makeIgloo(-26, 22, 0.7, true);
+    makeIgloo(26, 20, -0.8, false);
+    makeIgloo(-22, -32, 0.4, false);
+    MAY.scatterPropCluster(ctx, [
+      { x: -26, z: 22, rMin: 3.4, rMax: 6.4, count: 16 },
+      { x: 26,  z: 20, rMin: 3.4, rMax: 6.4, count: 16 },
+      { x: -22, z: -32, rMin: 3.4, rMax: 6.4, count: 14 },
+      { x: 0,   z: -38, rMin: 2.8, rMax: 6.2, count: 18 }
+    ], { size: 0.25, color: 0xa4c0d8 });
+    if (MAY.add3DLoop) {
+      MAY.add3DLoop([-26, ctx.groundH(-26, 22) + 2.0, 22], { kind: "fire", freq: 780, vol: 0.032, maxDist: 28 });
+      MAY.add3DLoop([-29, snowBaseH(-29, 0), 0], { kind: "water", freq: 720, vol: 0.042, maxDist: 34 });
+    }
 
     /* Người Tuyết Khổng Lồ (0, -38) + Bệ Ngọc Trắng Tuyết */
     var sman = new THREE.Group();
@@ -277,8 +294,8 @@
     var ch5St = ctx.story;
     var ch5Sc = MAY.STORY_SCRIPTS.level5;
     ctx.setupAtmosphere(
-      { fog: 0x6b7f94, density: 0.0105, sunInt: 0.92, hemiInt: 0.44, zenith: 0x263448, horizon: 0x899eb2 },
-      { fog: 0x9dc7e8, density: 0.0066, sunInt: 1.46, hemiInt: 0.68, zenith: 0x16396b, horizon: 0xbce0f7 },
+      { fog: 0x6b7f94, density: 0.0105, sunInt: 0.96, hemiInt: 0.36, zenith: 0x263448, horizon: 0x899eb2 },
+      { fog: 0x9dc7e8, density: 0.0066, sunInt: 1.48, hemiInt: 0.50, zenith: 0x16396b, horizon: 0xbce0f7 },
       !!ch5St.bossDown
     );
 

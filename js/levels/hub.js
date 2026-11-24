@@ -19,7 +19,7 @@
     MAY.sun.intensity = 1.72;
     MAY.hemiLight.color.setHex(0xcbeaff);
     MAY.hemiLight.groundColor.setHex(0x4b6e56);
-    MAY.hemiLight.intensity = 0.78;
+    MAY.hemiLight.intensity = 0.48;
     MAY.diveLight.intensity = 0.12;
     MAY.diveLight.castShadow = false;
     MAY.setAmbientTone(380, 0.04, "hub");
@@ -113,6 +113,10 @@
     MAY.applyCaustics(quayMat, 0.0, 0.45);
     var dockWoodMat = new THREE.MeshStandardMaterial({ map: MAY.TEX.wood, color: 0xb89674, roughness: 0.85 });
     MAY.attachPhotoPBR("wood", MAY.TEX.wood, [dockWoodMat], { rx: 2, ry: 2, normalStrength: 3.0, rMin: 0.5, rMax: 0.95 });
+    MAY.applyWorldWeathering(dockWoodMat, { waterY: 0.0, caustics: 0.0, macro: 0.14, stain: 0.28, wallGrime: 0.25, stainColor: 0x3a2e22 });
+
+    /* Hạt bụi nắng vàng nhẹ trôi trong gió biển Đảo Mây */
+    ctx.addAmbientParticles({ count: 220, spread: 85, minY: 0.8, maxY: 16, vy: 0.22, vx: 0.35, color: 0xfff3c4, size: 0.16, opacity: 0.65 });
 
     /* Bến đá & Cầu gỗ phía Nam + Con thuyền khám phá có mái che dập dềnh (gợi nhớ ảnh 3!) */
     var pier = new THREE.Group();
@@ -176,8 +180,9 @@
     var stripeCols = [0xf5f5f5, 0xe6495c, 0xf5f5f5, 0xe6495c, 0xf5f5f5];
     for (var st = 0; st < 5; st++) {
       var rBot = 2.9 - st * 0.22, rTop = 2.68 - st * 0.22;
-      var seg = new THREE.Mesh(new THREE.CylinderGeometry(rTop, rBot, 2.3, 18),
-        new THREE.MeshStandardMaterial({ color: stripeCols[st], roughness: 0.65 }));
+      var segMat = new THREE.MeshStandardMaterial({ color: stripeCols[st], roughness: 0.65 });
+      MAY.applyWorldWeathering(segMat, { macro: 0.10, stain: 0.12, wallGrime: 0.30, stainColor: 0x3b444d });
+      var seg = new THREE.Mesh(new THREE.CylinderGeometry(rTop, rBot, 2.3, 18), segMat);
       seg.position.y = 3.5 + st * 2.3; seg.castShadow = true; seg.receiveShadow = true;
       lh.add(seg);
     }
@@ -244,11 +249,15 @@
     var lhRune = MAY.VFX.makeRunePlane(5.8, 0xffd93d, 0.42); lhRune.position.y = 0.14; lh.add(lhRune);
     var lhDoor = new THREE.Mesh(new THREE.BoxGeometry(1.4, 2.2, 0.35), new THREE.MeshStandardMaterial({ color: 0x4b3220, roughness: 0.85 }));
     lhDoor.position.set(0, 1.1, 4.15); lh.add(lhDoor);
-    var lhDoorLan = MAY.makeCagedLantern(0xffd480, 1.8, 16, false);
+    var lhDoorLan = MAY.makeCagedLantern(0xffd480, 2.4, 20, true);
     lhDoorLan.position.set(0, 2.6, 4.4); lh.add(lhDoorLan);
     ctx.add(lh);
     ctx.addCollider(0, 0, 4.5, "lighthouse");
     ctx.addCollider(cabX, cabZ, 3.0, "cabin");
+    if (MAY.add3DLoop) {
+      MAY.add3DLoop([0, lhY + 2.6, 4.4], { kind: "fire", vol: 0.032, maxDist: 28 });
+      MAY.add3DLoop([0, 1.0, 34], { kind: "water", freq: 520, vol: 0.05, maxDist: 46 });
+    }
 
     /* ---- CỐT TRUYỆN ĐẢO MÂY: Cụ Rùa Già Gác Đèn (!) + Cây Anh Đào Khô Bí Mật (Hồi sinh bằng 🌿!) ---- */
     var hubSt = ctx.story;
@@ -402,11 +411,17 @@
       return d > 5.8 && d < 22 && ctx.groundH(x, z) > 1.75;
     }, { spread: 25, color: 0x9ce376, w: 0.9, h: 0.78, flowers: true });
 
-    /* Sỏi đá nhỏ ven bãi cát & Quần đảo mờ xa ngoài khơi (Distant Vista) */
+    /* Sỏi đá nhỏ ven bãi cát, đá vụn ôm quanh Hải Đăng/Nhà gỗ & Quần đảo mờ xa ngoài khơi */
     MAY.scatterDebris(ctx, 140, function (x, z) {
       var h = ctx.groundH(x, z);
       return h > -0.2 && h < 2.2;
     }, { spread: 30, size: 0.22, color: 0x8e8b82 });
+    MAY.scatterPropCluster(ctx, [
+      { x: 0, z: 0, rMin: 4.4, rMax: 7.4, count: 24 },
+      { x: cabX, z: cabZ, rMin: 2.8, rMax: 5.5, count: 18 },
+      { x: -6.8, z: 20.5, rMin: 0.8, rMax: 2.8, count: 8 },
+      { x: 6.8,  z: 20.5, rMin: 0.8, rMax: 2.8, count: 8 }
+    ], { size: 0.24, color: 0x7b786f });
     MAY.buildVistaRing(ctx, { count: 16, radius: 145, hMin: 12, hMax: 34, wBase: 28, baseY: -3, color: 0x4b748e });
 
     var rockMat = new THREE.MeshStandardMaterial({ map: MAY.TEX.rock, roughness: 0.88 });

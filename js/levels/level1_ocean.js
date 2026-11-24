@@ -27,7 +27,7 @@
     MAY.sun.intensity = 1.85;
     MAY.hemiLight.color.setHex(0x88e8ff);
     MAY.hemiLight.groundColor.setHex(0x063d56);
-    MAY.hemiLight.intensity = 0.65;
+    MAY.hemiLight.intensity = 0.44;
     MAY.diveLight.intensity = 0.95;
     MAY.diveLight.color.setHex(0xc8f4ff);
     MAY.diveLight.castShadow = false;
@@ -188,17 +188,25 @@
       var cn = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.3, 1.3, 10), cannonMat);
       cn.rotation.z = Math.PI / 2; cn.position.set(0.8, 2.7, cs * 1.0); wreck.add(cn);
     });
-    /* Đèn lồng đồng ấm bên trong khoang Tàu Đắm (tương phản ấm/lạnh kiểu The Hall dưới lòng biển!) */
-    var wreckLan = MAY.makeCagedLantern(0xffb85c, 3.2, 24, false);
+    /* Đèn lồng đồng ấm đổ bóng thật bên trong khoang Tàu Đắm (tương phản ấm/lạnh kiểu The Hall dưới lòng biển!) */
+    var wreckLan = MAY.makeCagedLantern(0xffb85c, 3.6, 26, true);
     wreckLan.position.set(-2.2, 3.6, 0); wreck.add(wreckLan);
     wreck.position.set(-60, ctx.groundH(-60, -40), -40); wreck.rotation.y = 0.7; wreck.rotation.z = 0.16;
     wreck.traverse(function (o) { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
     ctx.add(wreck);
+    if (MAY.add3DLoop) {
+      MAY.add3DLoop([-60, ctx.groundH(-60, -40) + 3.6, -40], { kind: "fire", freq: 620, vol: 0.032, maxDist: 34 });
+      MAY.add3DLoop([0, 3.5, -22], { kind: "water", freq: 380, vol: 0.045, maxDist: 52 });
+    }
 
-    /* Sỏi san hô & vỏ đá rải đáy biển (1 draw call) + Dải núi ngầm xa chân trời */
+    /* Sỏi san hô, đá vụn ôm chân Tàu Đắm/Kè Đá & Dải núi ngầm xa chân trời */
     MAY.scatterDebris(ctx, 220, function (x, z) {
       return Math.hypot(x - SHORE.x, z - SHORE.z) > 22;
     }, { spread: 88, size: 0.28, color: 0x7a8a8e });
+    MAY.scatterPropCluster(ctx, [
+      { x: -60, z: -40, rMin: 5.5, rMax: 11.5, count: 28 },
+      { x: 16, z: 82, rMin: 4.5, rMax: 10.5, count: 20 }
+    ], { size: 0.30, color: 0x5c7278 });
     MAY.buildVistaRing(ctx, { count: 18, radius: 130, hMin: 18, hMax: 36, wBase: 26, baseY: -4, color: 0x164c62 });
 
     /* ---- San hô, Rong biển & Vật thể GLB ---- */
@@ -539,8 +547,8 @@
 
     /* Khí quyển Sương Xám mực đen -> Trong xanh rực rỡ sau khi hạ Bạch Tuộc Mực! */
     ctx.setupAtmosphere(
-      { fog: 0x162b3b, density: 0.022, sunInt: 1.05, hemiInt: 0.42 },
-      { fog: 0x065c78, density: 0.0165, sunInt: 1.85, hemiInt: 0.68 },
+      { fog: 0x162b3b, density: 0.022, sunInt: 1.05, hemiInt: 0.32 },
+      { fog: 0x065c78, density: 0.0165, sunInt: 1.85, hemiInt: 0.48 },
       !!ch1St.bossDown
     );
 

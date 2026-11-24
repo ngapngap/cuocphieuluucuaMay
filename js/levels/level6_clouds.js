@@ -19,7 +19,7 @@
     MAY.sun.intensity = 1.55;
     MAY.hemiLight.color.setHex(0xffd6f0);
     MAY.hemiLight.groundColor.setHex(0x886ec4);
-    MAY.hemiLight.intensity = 0.80;
+    MAY.hemiLight.intensity = 0.50;
     MAY.diveLight.intensity = 0.12;
     MAY.diveLight.castShadow = false;
     MAY.setAmbientTone(680, 0.03, "level6");
@@ -186,9 +186,10 @@
     ctx.add(padG);
     ctx.addBouncePad(0, 19.05, -59, 2.5, 13.5);
 
-    /* Lâu Đài Cầu Vồng trên Đảo Bắc (0, -48) có tường lỗ châu mai, cổng vòm vàng, cờ phấp phới & Bệ Ngọc Hồng */
+    /* Lâu Đài Cầu Vồng trên Đảo Bắc (0, -48) có tường lỗ châu mai, vết đá cổ không lặp, cổng vòm vàng, cờ phấp phới & đèn chính đổ bóng thật */
     var castle = new THREE.Group();
     var cWallMat = new THREE.MeshStandardMaterial({ color: 0xfff0f8, roughness: 0.45, normalMap: MAY.PBR.stoneWall.normalMap });
+    MAY.applyWorldWeathering(cWallMat, { macro: 0.10, stain: 0.14, wallGrime: 0.24, stainColor: 0x8e6ea8 });
     var cRoofMat = new THREE.MeshPhysicalMaterial({ color: 0xd980fa, emissive: 0x8b5cf6, emissiveIntensity: 0.35, roughness: 0.25, clearcoat: 0.8 });
     var cGoldMat = new THREE.MeshPhysicalMaterial({ color: 0xffd93d, metalness: 0.72, roughness: 0.2, emissive: 0xaa7700, emissiveIntensity: 0.35 });
     var keep = new THREE.Mesh(new THREE.BoxGeometry(9, 7.5, 8), cWallMat); keep.position.y = 3.75; keep.castShadow = true; keep.receiveShadow = true; castle.add(keep);
@@ -222,7 +223,7 @@
       var colP = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.30, 3.4, 10), cWallMat);
       colP.position.set(gx, 1.7, 4.18); castle.add(colP);
     });
-    var cLight = MAY.makeCagedLantern(0xffc2ee, 2.8, 34, false); cLight.position.set(0, 6.4, 5.2); castle.add(cLight);
+    var cLight = MAY.makeCagedLantern(0xffc2ee, 3.4, 36, true); cLight.position.set(0, 6.4, 5.2); castle.add(cLight);
     var roseWin = new THREE.Mesh(new THREE.CircleGeometry(1.5, 20), new THREE.MeshBasicMaterial({ color: 0xffe6aa }));
     roseWin.position.set(0, 5.4, 4.06); castle.add(roseWin);
     var roseFrame = new THREE.Mesh(new THREE.TorusGeometry(1.55, 0.14, 8, 24), cGoldMat);
@@ -232,10 +233,30 @@
     ctx.addGemAltar([0, 18.90, -40]);
     MAY.buildVistaRing(ctx, { count: 18, radius: 145, hMin: 16, hMax: 38, wBase: 36, baseY: -6, color: 0xf4c2e8 });
 
+    /* Tia sáng nắng chiều hồng-vàng xuyên qua Vương Quốc Mây + Đá mây/pha lê vụn quanh Lâu Đài, Cối Xay Gió & Đài Hợp Nhất */
+    var skyRayMat = MAY.makeGodRayMat(0xffe6f4, 0.20);
+    [[0, 22, 0], [-38, 24, 14], [40, 25, 14], [0, 30, -48], [-32, 27, -30], [34, 28, -30]].forEach(function (rp, ri) {
+      var ray = new THREE.Mesh(new THREE.ConeGeometry(3.6 + (ri % 3) * 0.8, 44, 12, 1, true), skyRayMat);
+      ray.position.set(rp[0], rp[1], rp[2]);
+      ray.rotation.z = 0.26;
+      ctx.add(ray);
+    });
+    MAY.scatterPropCluster(ctx, [
+      { x: 0,  z: -48, y: 18.85, rMin: 5.5, rMax: 11.5, count: 22 },
+      { x: 42, z: 14,  y: 13.85, rMin: 2.8, rMax: 6.2,  count: 14 },
+      { x: 0,  z: 0,   y: 12.85, rMin: 3.2, rMax: 7.5,  count: 16 }
+    ], { size: 0.24, color: 0xd8b4fe });
+    if (MAY.add3DLoop) {
+      MAY.add3DLoop([42, 20, 14], { kind: "wind", freq: 540, vol: 0.042, maxDist: 42 });
+      MAY.add3DLoop([0, 14.5, 0], { kind: "crystal", freq: 440, vol: 0.022, maxDist: 36 });
+      MAY.add3DLoop([0, 25.0, -47], { kind: "fire", freq: 820, vol: 0.028, maxDist: 32 });
+    }
+
     /* Cối Xay Gió Gỗ xoay êm trên Đảo Đông (40, 14) */
     var mill = new THREE.Group();
     var woodMat = new THREE.MeshStandardMaterial({ map: MAY.TEX.wood, roughness: 0.82 });
     MAY.attachPhotoPBR("wood", MAY.TEX.wood, [woodMat], { rx: 2, ry: 2, normalStrength: 2.8 });
+    MAY.applyWorldWeathering(woodMat, { macro: 0.12, stain: 0.18, wallGrime: 0.26, stainColor: 0x4b3b4e });
     var mTower = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 2.6, 9, 12), woodMat); mTower.position.y = 4.5; mTower.castShadow = true; mill.add(mTower);
     var blades = new THREE.Group(); blades.position.set(0, 7.6, 2.0);
     for (var bl = 0; bl < 4; bl++) {
@@ -336,8 +357,8 @@
     var ch6St = ctx.story;
     var ch6Sc = MAY.STORY_SCRIPTS.level6;
     ctx.setupAtmosphere(
-      { fog: 0x5c4673, density: 0.0085, sunInt: 0.95, hemiInt: 0.48, zenith: 0x261a44, horizon: 0x8b6a9e },
-      { fog: 0xe6b5de, density: 0.0050, sunInt: 1.62, hemiInt: 0.84, zenith: 0x4b3b9e, horizon: 0xffc1d6 },
+      { fog: 0x5c4673, density: 0.0085, sunInt: 0.95, hemiInt: 0.34, zenith: 0x261a44, horizon: 0x8b6a9e },
+      { fog: 0xe6b5de, density: 0.0050, sunInt: 1.62, hemiInt: 0.54, zenith: 0x4b3b9e, horizon: 0xffc1d6 },
       !!ch6St.bossDown
     );
 

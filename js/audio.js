@@ -1,7 +1,8 @@
 "use strict";
 /* ============================================================================
-   AUDIO.JS — 31 Clip Giọng Đọc Tiếng Việt Offline, Tiếng Bước Chân Theo Chất Liệu
-   (Foley: cỏ, gỗ, cát, tuyết, băng, đá ướt, nước), Nhạc Môi Trường Từng Vùng & SFX Phép Thuật
+   AUDIO.JS — Master Bus (Compressor + Reverb), Biến Thiên Cao Độ/Âm Lượng,
+   Tiếng Nền 3 Lớp Theo Màn, Nguồn Âm 3D Lặp Gắn Vật Thể, Ducking Khi Đọc Thoại
+   & 47 Clip Giọng Đọc Tiếng Việt Offline
    ============================================================================ */
 (function (MAY) {
 
@@ -10,64 +11,174 @@
 
   var AC = null;
   var noiseBuf = null;
+  var pinkBuf = null;
+  var brownBuf = null;
+  var masterGain = null;
+  var sfxBus = null;
+  var ambBus = null;
+  var compressor = null;
+  var reverbNode = null;
+  var reverbSend = null;
+  var isDucked = false;
+
+  function buildReverbIR(ac, seconds, decay) {
+    var rate = ac.sampleRate;
+    var len = Math.floor(rate * seconds);
+    var ir = ac.createBuffer(2, len, rate);
+    for (var ch = 0; ch < 2; ch++) {
+      var data = ir.getChannelData(ch);
+      var lp = 0;
+      for (var i = 0; i < len; i++) {
+        var env = Math.pow(1 - i / len, decay);
+        var n = (Math.random() * 2 - 1) * env;
+        lp = lp * 0.55 + n * 0.45;
+        data[i] = lp * 0.45;
+      }
+    }
+    return ir;
+  }
 
   function getAC() {
-    AC = AC || new (window.AudioContext || window.webkitAudioContext)();
-    if (AC.state === "suspended") AC.resume();
-    if (!noiseBuf) {
+    if (!AC) {
+      AC = new (window.AudioContext || window.webkitAudioContext)();
+      /* Chuỗi âm thanh tổng: [sfxBus / ambBus] -> masterGain -> (Dry + Reverb) -> Compressor -> Loa */
+      masterGain = AC.createGain();
+      masterGain.gain.value = MAY.voiceOn ? 1.0 : 0.0;
+
+      sfxBus = AC.createGain();
+      sfxBus.gain.value = 1.0;
+      sfxBus.connect(masterGain);
+
+      ambBus = AC.createGain();
+      ambBus.gain.value = isDucked ? 0.26 : 1.0;
+      ambBus.connect(masterGain);
+
+      compressor = AC.createDynamicsCompressor();
+      compressor.threshold.value = -18;
+      compressor.knee.value = 16;
+      compressor.ratio.value = 4;
+      compressor.attack.value = 0.008;
+      compressor.release.value = 0.22;
+
+      reverbNode = AC.createConvolver();
+      reverbNode.buffer = buildReverbIR(AC, 1.55, 2.6);
+      reverbSend = AC.createGain();
+      reverbSend.gain.value = 0.22;
+
+      masterGain.connect(compressor);
+      masterGain.connect(reverbSend);
+      reverbSend.connect(reverbNode);
+      reverbNode.connect(compressor);
+      compressor.connect(AC.destination);
+
+      /* Bộ đệm nhiễu dùng chung: Trắng, Hồng, Nâu */
       var len = 2 * AC.sampleRate;
       noiseBuf = AC.createBuffer(1, len, AC.sampleRate);
-      var d = noiseBuf.getChannelData(0);
-      for (var i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+      pinkBuf = AC.createBuffer(1, len, AC.sampleRate);
+      brownBuf = AC.createBuffer(1, len, AC.sampleRate);
+      var wd = noiseBuf.getChannelData(0);
+      var pd = pinkBuf.getChannelData(0);
+      var bd = brownBuf.getChannelData(0);
+      var b0 = 0, b1 = 0, b2 = 0, lastB = 0;
+      for (var i = 0; i < len; i++) {
+        var w = Math.random() * 2 - 1;
+        wd[i] = w;
+        b0 = 0.99765 * b0 + w * 0.099046;
+        b1 = 0.96300 * b1 + w * 0.2965164;
+        b2 = 0.57000 * b2 + w * 1.0526913;
+        pd[i] = (b0 + b1 + b2 + w * 0.1848) * 0.16;
+        lastB = (lastB + 0.02 * w) / 1.02;
+        bd[i] = lastB * 3.2;
+      }
     }
+    if (AC.state === "suspended") AC.resume();
     return AC;
   }
 
-  /* ---- Âm thanh tổng hợp cơ bản + Nhạc chuông ngũ cung ---- */
-  MAY.beep = function (f, d, type, vol) {
+  function varyPitch(f, spread) {
+    var s = spread !== undefined ? spread : 0.035;
+    return f * (1 + (Math.random() * 2 - 1) * s);
+  }
+  function varyVol(v, spread) {
+    var s = spread !== undefined ? spread : 0.08;
+    return Math.max(0.002, v * (1 + (Math.random() * 2 - 1) * s));
+  }
+
+  /* Nút âm lượng tổng (Master Mute / Volume) — tắt sạch mọi tiếng beep, SFX, reverb, nền & nguồn 3D! */
+  MAY.setMasterMute = function (muted) {
+    MAY.voiceOn = !muted;
+    if (!AC || !masterGain) return;
+    try {
+      var now = AC.currentTime;
+      masterGain.gain.cancelScheduledValues(now);
+      masterGain.gain.setValueAtTime(masterGain.gain.value, now);
+      masterGain.gain.linearRampToValueAtTime(muted ? 0.0 : 1.0, now + 0.06);
+    } catch (e) {}
+  };
+
+  /* Giảm nhạc nền & nguồn 3D mượt mà khi giọng đọc đang phát (Audio Ducking) */
+  function setVoiceDuck(active) {
+    isDucked = !!active;
+    if (!AC || !ambBus) return;
+    try {
+      var now = AC.currentTime;
+      ambBus.gain.cancelScheduledValues(now);
+      ambBus.gain.setValueAtTime(ambBus.gain.value, now);
+      ambBus.gain.linearRampToValueAtTime(active ? 0.26 : 1.0, now + (active ? 0.14 : 0.45));
+    } catch (e) {}
+  }
+
+  /* ---- Âm thanh tổng hợp cơ bản + Nhạc chuông ngũ cung (đều qua masterGain & có biến thiên tự nhiên) ---- */
+  MAY.beep = function (f, d, type, vol, opts) {
+    if (!MAY.voiceOn) return;
     try {
       var ac = getAC();
+      opts = opts || {};
       var o = ac.createOscillator(), g = ac.createGain();
       o.type = type || "sine";
-      o.frequency.value = f;
-      g.gain.setValueAtTime(vol || 0.10, ac.currentTime);
+      var pSpread = opts.exact ? 0 : (opts.tight ? 0.012 : 0.032);
+      o.frequency.value = varyPitch(f, pSpread);
+      var v0 = varyVol(vol || 0.10, opts.tight ? 0.05 : 0.09);
+      g.gain.setValueAtTime(v0, ac.currentTime);
       g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + d);
-      o.connect(g); g.connect(ac.destination);
+      o.connect(g);
+      g.connect(opts.bus === "amb" ? ambBus : sfxBus);
       o.start(); o.stop(ac.currentTime + d);
     } catch (e) {}
   };
 
   MAY.sndStar = function () {
-    MAY.beep(880, 0.14, "sine", 0.09);
-    setTimeout(function () { MAY.beep(1174, 0.16, "sine", 0.09); }, 95);
-    setTimeout(function () { MAY.beep(1568, 0.30, "triangle", 0.10); }, 200);
+    MAY.beep(880, 0.14, "sine", 0.09, { tight: true });
+    setTimeout(function () { MAY.beep(1174, 0.16, "sine", 0.09, { tight: true }); }, 95);
+    setTimeout(function () { MAY.beep(1568, 0.30, "triangle", 0.10, { tight: true }); }, 200);
   };
   MAY.sndFriend = function () {
-    MAY.beep(523, 0.14, "triangle", 0.09);
-    setTimeout(function () { MAY.beep(659, 0.14, "triangle", 0.09); }, 105);
-    setTimeout(function () { MAY.beep(784, 0.25, "triangle", 0.10); }, 210);
+    MAY.beep(523, 0.14, "triangle", 0.09, { tight: true });
+    setTimeout(function () { MAY.beep(659, 0.14, "triangle", 0.09, { tight: true }); }, 105);
+    setTimeout(function () { MAY.beep(784, 0.25, "triangle", 0.10, { tight: true }); }, 210);
   };
   MAY.sndGem = function () {
     [523, 659, 784, 1046, 1318, 1568, 2093].forEach(function (n, idx) {
-      setTimeout(function () { MAY.beep(n, 0.32, "triangle", 0.11); }, idx * 95);
+      setTimeout(function () { MAY.beep(n, 0.32, "triangle", 0.11, { tight: true }); }, idx * 95);
     });
   };
   MAY.sndBounce = function () {
+    if (!MAY.voiceOn) return;
     try {
       var ac = getAC(), o = ac.createOscillator(), g = ac.createGain();
       o.type = "sine";
-      o.frequency.setValueAtTime(220, ac.currentTime);
-      o.frequency.exponentialRampToValueAtTime(640, ac.currentTime + 0.18);
-      g.gain.setValueAtTime(0.13, ac.currentTime);
+      o.frequency.setValueAtTime(varyPitch(220, 0.05), ac.currentTime);
+      o.frequency.exponentialRampToValueAtTime(varyPitch(640, 0.05), ac.currentTime + 0.18);
+      g.gain.setValueAtTime(varyVol(0.13, 0.08), ac.currentTime);
       g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.22);
-      o.connect(g); g.connect(ac.destination); o.start(); o.stop(ac.currentTime + 0.22);
+      o.connect(g); g.connect(sfxBus); o.start(); o.stop(ac.currentTime + 0.22);
     } catch (e) {}
   };
   MAY.sndChime = function (idx) {
     var scale = [523.25, 587.33, 659.25, 783.99, 880.0, 1046.5];
     var f = scale[idx % scale.length];
-    MAY.beep(f, 0.55, "sine", 0.12);
-    MAY.beep(f * 2, 0.35, "triangle", 0.04);
+    MAY.beep(f, 0.55, "sine", 0.12, { tight: true });
+    MAY.beep(f * 2, 0.35, "triangle", 0.04, { tight: true });
   };
 
   /* ---- Foley: Tiếng bước chân & bơi thay đổi theo chất liệu bề mặt ---- */
@@ -79,13 +190,13 @@
       src.loop = true;
       var filt = ac.createBiquadFilter();
       filt.type = filterType || "bandpass";
-      filt.frequency.value = freq * (0.88 + Math.random() * 0.24);
+      filt.frequency.value = varyPitch(freq, 0.12);
       filt.Q.value = Q || 1.4;
       var g = ac.createGain();
       g.gain.setValueAtTime(0.001, ac.currentTime);
-      g.gain.linearRampToValueAtTime(vol, ac.currentTime + 0.015);
+      g.gain.linearRampToValueAtTime(varyVol(vol, 0.12), ac.currentTime + 0.015);
       g.gain.exponentialRampToValueAtTime(0.0008, ac.currentTime + dur);
-      src.connect(filt); filt.connect(g); g.connect(ac.destination);
+      src.connect(filt); filt.connect(g); g.connect(sfxBus);
       src.start(0, Math.random() * 1.4);
       src.stop(ac.currentTime + dur + 0.02);
     } catch (e) {}
@@ -105,13 +216,15 @@
     } else if (surface === "wetstone") {
       playNoiseBurst(1400, 2.2, 0.09, 0.045, "bandpass");
       MAY.beep(180 + Math.random() * 50, 0.06, "triangle", 0.035);
+    } else if (surface === "stone") {
+      playNoiseBurst(1150, 2.0, 0.075, 0.040, "bandpass");
+      MAY.beep(165 + Math.random() * 35, 0.055, "triangle", 0.030);
     } else if (surface === "wood") {
       MAY.beep(145 + Math.random() * 30, 0.075, "triangle", 0.055);
       playNoiseBurst(750, 1.8, 0.06, 0.025, "bandpass");
     } else if (surface === "cloud") {
       playNoiseBurst(600, 0.8, 0.14, 0.022, "lowpass");
     } else {
-      /* grass */
       playNoiseBurst(920, 1.0, 0.10, 0.032, "bandpass");
     }
   };
@@ -130,13 +243,13 @@
       } else if (spellId === "solar") {
         playNoiseBurst(260, 0.7, 0.75, 0.13, "lowpass");
         var o = ac.createOscillator(), g = ac.createGain();
-        o.type = "sawtooth"; o.frequency.setValueAtTime(140, ac.currentTime);
-        o.frequency.exponentialRampToValueAtTime(42, ac.currentTime + 0.55);
-        g.gain.setValueAtTime(0.09, ac.currentTime); g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.6);
-        o.connect(g); g.connect(ac.destination); o.start(); o.stop(ac.currentTime + 0.62);
+        o.type = "sawtooth"; o.frequency.setValueAtTime(varyPitch(140, 0.04), ac.currentTime);
+        o.frequency.exponentialRampToValueAtTime(varyPitch(42, 0.04), ac.currentTime + 0.55);
+        g.gain.setValueAtTime(varyVol(0.09, 0.08), ac.currentTime); g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.6);
+        o.connect(g); g.connect(sfxBus); o.start(); o.stop(ac.currentTime + 0.62);
         setTimeout(function () { MAY.beep(880, 0.35, "sine", 0.07); }, 120);
       } else if (spellId === "crystal") {
-        [659, 987, 1318, 1568, 1975].forEach(function (f, i) { setTimeout(function () { MAY.beep(f, 0.55, "sine", 0.08); }, i * 45); });
+        [659, 987, 1318, 1568, 1975].forEach(function (f, i) { setTimeout(function () { MAY.beep(f, 0.55, "sine", 0.08, { tight: true }); }, i * 45); });
       } else if (spellId === "frost") {
         playNoiseBurst(3600, 2.0, 0.65, 0.07, "highpass");
         [1568, 1318, 1760, 2093].forEach(function (f, i) { setTimeout(function () { MAY.beep(f, 0.35, "sine", 0.06); }, i * 50); });
@@ -147,7 +260,7 @@
     } catch (e) {}
   };
 
-  /* ---- Âm thanh Không Gian 3D (PositionalAudio PannerNode đồng bộ theo Camera!) ---- */
+  /* ---- Âm thanh Không Gian 3D (PositionalAudio PannerNode đồng bộ theo Camera mỗi frame!) ---- */
   var _fwdVec = new THREE.Vector3(), _upVec = new THREE.Vector3();
   MAY.updateAudioListener = function (cam) {
     if (!AC || !cam) return;
@@ -179,15 +292,107 @@
       if (pan.positionX) { pan.positionX.value = pos.x; pan.positionY.value = pos.y; pan.positionZ.value = pos.z; }
       else if (pan.setPosition) pan.setPosition(pos.x, pos.y, pos.z);
       o.type = type || "triangle";
-      o.frequency.value = freq || 440;
-      g.gain.setValueAtTime(vol || 0.12, ac.currentTime);
+      o.frequency.value = varyPitch(freq || 440, 0.035);
+      g.gain.setValueAtTime(varyVol(vol || 0.12, 0.08), ac.currentTime);
       g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + (dur || 0.35));
-      o.connect(g); g.connect(pan); pan.connect(ac.destination);
+      o.connect(g); g.connect(pan); pan.connect(sfxBus);
       o.start(); o.stop(ac.currentTime + (dur || 0.35));
     } catch (e) {}
   };
 
-  /* ---- Âm thanh Cốt truyện, Giải đố, Hất văng quái & Đấu Trùm (v10.0) ---- */
+  /* ---- Nguồn Âm 3D Lặp Gắn Vào Vật Thể Cụ Thể (đèn lồng lửa, suối/thác nước, pha lê, cối xay gió) ---- */
+  var active3DLoops = [];
+  var pending3DLoops = [];
+
+  function startOne3DLoop(spec) {
+    try {
+      var ac = getAC();
+      var pos = spec.pos;
+      var kind = spec.kind || "water";
+      var vol = spec.vol !== undefined ? spec.vol : 0.045;
+      var pan = ac.createPanner();
+      pan.panningModel = "equalpower";
+      pan.distanceModel = "inverse";
+      pan.refDistance = spec.refDist || 5.5;
+      pan.maxDistance = spec.maxDist || 48;
+      pan.rolloffFactor = spec.rolloff || 1.35;
+      if (pan.positionX) { pan.positionX.value = pos.x; pan.positionY.value = pos.y; pan.positionZ.value = pos.z; }
+      else if (pan.setPosition) pan.setPosition(pos.x, pos.y, pos.z);
+
+      var g = ac.createGain();
+      g.gain.value = vol;
+      g.connect(pan);
+      pan.connect(ambBus);
+
+      var nodesToStop = [];
+      var nodesToDisc = [g, pan];
+
+      if (kind === "fire") {
+        /* Tiếng lửa đèn lồng / đài lửa ấm tách tách dịu nhẹ */
+        var srcF = ac.createBufferSource(); srcF.buffer = pinkBuf; srcF.loop = true;
+        var fltF = ac.createBiquadFilter(); fltF.type = "bandpass"; fltF.frequency.value = spec.freq || 780; fltF.Q.value = 1.6;
+        var lfoF = ac.createOscillator(); lfoF.frequency.value = 4.2 + Math.random() * 2.5;
+        var lfoFG = ac.createGain(); lfoFG.gain.value = vol * 0.38;
+        lfoF.connect(lfoFG); lfoFG.connect(g.gain);
+        srcF.connect(fltF); fltF.connect(g);
+        srcF.start(0, Math.random() * 1.5); lfoF.start();
+        nodesToStop.push(srcF, lfoF); nodesToDisc.push(srcF, fltF, lfoF, lfoFG);
+      } else if (kind === "crystal") {
+        /* Âm ngân pha lê / đền hợp nhất du dương */
+        var f0 = spec.freq || 392;
+        var o1 = ac.createOscillator(), o2 = ac.createOscillator();
+        o1.type = "sine"; o1.frequency.value = f0;
+        o2.type = "sine"; o2.frequency.value = f0 * 1.502;
+        var lfoC = ac.createOscillator(); lfoC.frequency.value = 0.35;
+        var lfoCG = ac.createGain(); lfoCG.gain.value = vol * 0.35;
+        lfoC.connect(lfoCG); lfoCG.connect(g.gain);
+        o1.connect(g); o2.connect(g);
+        o1.start(); o2.start(); lfoC.start();
+        nodesToStop.push(o1, o2, lfoC); nodesToDisc.push(o1, o2, lfoC, lfoCG);
+      } else if (kind === "wind") {
+        /* Tiếng gió quay cối xay / cầu cao trên mây */
+        var srcW = ac.createBufferSource(); srcW.buffer = pinkBuf; srcW.loop = true;
+        var fltW = ac.createBiquadFilter(); fltW.type = "bandpass"; fltW.frequency.value = spec.freq || 520; fltW.Q.value = 2.4;
+        var lfoW = ac.createOscillator(); lfoW.frequency.value = 0.55;
+        var lfoWG = ac.createGain(); lfoWG.gain.value = 140;
+        lfoW.connect(lfoWG); lfoWG.connect(fltW.frequency);
+        srcW.connect(fltW); fltW.connect(g);
+        srcW.start(0, Math.random() * 1.5); lfoW.start();
+        nodesToStop.push(srcW, lfoW); nodesToDisc.push(srcW, fltW, lfoW, lfoWG);
+      } else {
+        /* "water" — tiếng suối chảy / sóng vỗ bờ / hồ nước ngầm */
+        var srcA = ac.createBufferSource(); srcA.buffer = brownBuf; srcA.loop = true;
+        var fltA = ac.createBiquadFilter(); fltA.type = "bandpass"; fltA.frequency.value = spec.freq || 620; fltA.Q.value = 0.85;
+        var lfoA = ac.createOscillator(); lfoA.frequency.value = 0.22 + Math.random() * 0.14;
+        var lfoAG = ac.createGain(); lfoAG.gain.value = vol * 0.35;
+        lfoA.connect(lfoAG); lfoAG.connect(g.gain);
+        srcA.connect(fltA); fltA.connect(g);
+        srcA.start(0, Math.random() * 1.5); lfoA.start();
+        nodesToStop.push(srcA, lfoA); nodesToDisc.push(srcA, fltA, lfoA, lfoAG);
+      }
+
+      active3DLoops.push({ stop: nodesToStop, disc: nodesToDisc });
+    } catch (e) {}
+  }
+
+  MAY.add3DLoop = function (pos, opts) {
+    if (!pos) return;
+    var spec = Object.assign({ pos: pos.clone ? pos.clone() : new THREE.Vector3(pos[0], pos[1], pos[2]) }, opts || {});
+    if (ambStarted && AC) startOne3DLoop(spec);
+    else pending3DLoops.push(spec);
+  };
+
+  MAY.clear3DLoops = function () {
+    pending3DLoops.length = 0;
+    for (var i = 0; i < active3DLoops.length; i++) {
+      var lp = active3DLoops[i];
+      lp.stop.forEach(function (n) { try { n.stop(); } catch (e) {} });
+      lp.disc.forEach(function (n) { try { n.disconnect(); } catch (e) {} });
+    }
+    active3DLoops.length = 0;
+  };
+
+  /* ---- Âm thanh Cốt truyện, Giải đố, Hất văng quái & Đấu Trùm ---- */
   MAY.sndDialogue = function () {
     if (!MAY.voiceOn) return;
     MAY.beep(660, 0.08, "sine", 0.06);
@@ -196,7 +401,7 @@
   MAY.sndSkillUnlock = function () {
     if (!MAY.voiceOn) return;
     [523, 659, 784, 1046, 1318, 1568].forEach(function (f, i) {
-      setTimeout(function () { MAY.beep(f, 0.42, "triangle", 0.11); }, i * 70);
+      setTimeout(function () { MAY.beep(f, 0.42, "triangle", 0.11, { tight: true }); }, i * 70);
     });
   };
   MAY.sndTreeRevive = function (pos) {
@@ -239,11 +444,11 @@
     try {
       var ac = getAC(), o = ac.createOscillator(), g = ac.createGain();
       o.type = "sine";
-      o.frequency.setValueAtTime(280, ac.currentTime);
-      o.frequency.exponentialRampToValueAtTime(1680, ac.currentTime + 0.65);
-      g.gain.setValueAtTime(0.11, ac.currentTime);
+      o.frequency.setValueAtTime(varyPitch(280, 0.04), ac.currentTime);
+      o.frequency.exponentialRampToValueAtTime(varyPitch(1680, 0.04), ac.currentTime + 0.65);
+      g.gain.setValueAtTime(varyVol(0.11, 0.08), ac.currentTime);
       g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.72);
-      o.connect(g); g.connect(ac.destination); o.start(); o.stop(ac.currentTime + 0.75);
+      o.connect(g); g.connect(sfxBus); o.start(); o.stop(ac.currentTime + 0.75);
       setTimeout(function () { MAY.beep(1760, 0.25, "triangle", 0.09); }, 680);
     } catch (e) {}
   };
@@ -252,11 +457,11 @@
     try {
       var ac = getAC(), o = ac.createOscillator(), g = ac.createGain();
       o.type = "sawtooth";
-      o.frequency.setValueAtTime(135, ac.currentTime);
-      o.frequency.exponentialRampToValueAtTime(52, ac.currentTime + 0.75);
-      g.gain.setValueAtTime(0.13, ac.currentTime);
+      o.frequency.setValueAtTime(varyPitch(135, 0.05), ac.currentTime);
+      o.frequency.exponentialRampToValueAtTime(varyPitch(52, 0.05), ac.currentTime + 0.75);
+      g.gain.setValueAtTime(varyVol(0.13, 0.08), ac.currentTime);
       g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.8);
-      o.connect(g); g.connect(ac.destination); o.start(); o.stop(ac.currentTime + 0.82);
+      o.connect(g); g.connect(sfxBus); o.start(); o.stop(ac.currentTime + 0.82);
       playNoiseBurst(240, 0.8, 0.7, 0.11, "lowpass");
     } catch (e) {}
   };
@@ -269,7 +474,7 @@
   MAY.sndBossWin = function () {
     if (!MAY.voiceOn) return;
     [523, 659, 784, 1046, 1174, 1318, 1568, 2093].forEach(function (f, i) {
-      setTimeout(function () { MAY.beep(f, 0.45, "triangle", 0.11); }, i * 85);
+      setTimeout(function () { MAY.beep(f, 0.45, "triangle", 0.11, { tight: true }); }, i * 85);
     });
   };
   MAY.sndHurt = function () {
@@ -283,8 +488,11 @@
     setTimeout(function () { MAY.beep(987, 0.22, "sine", 0.09); }, 90);
   };
 
-  /* ---- Nhạc môi trường & Âm thanh không gian riêng cho từng vùng đất ---- */
-  var ambGain = null, ambFilter = null, ambStarted = false, currentBiome = "hub";
+  /* ---- Nhạc môi trường & Tiếng nền 3 lớp riêng cho từng vùng đất ---- */
+  var ambStarted = false, currentBiome = "hub";
+  var ambLowGain = null, ambLowFilter = null;
+  var ambMidGain = null, ambMidFilter = null;
+  var padOsc1 = null, padOsc2 = null, padFilter = null, padGain = null;
   var musicTimer = null;
 
   var BIOME_SCALES = {
@@ -297,32 +505,61 @@
     level6: [349.2, 440.0, 523.3, 587.3, 659.3, 784.0]
   };
 
+  /* Cấu hình 3 lớp nền (Low bed + Mid wind/water texture + Harmonic Pad + Reverb wet) theo từng vùng */
+  var BIOME_AMBIENCE = {
+    hub:    { lowF: 360, lowV: 0.036, midF: 950,  midQ: 1.1, midV: 0.018, padF: [130.8, 196.0], padLP: 420, padV: 0.011, rev: 0.20 },
+    level1: { lowF: 240, lowV: 0.052, midF: 520,  midQ: 0.8, midV: 0.022, padF: [110.0, 164.8], padLP: 320, padV: 0.013, rev: 0.30 },
+    level2: { lowF: 320, lowV: 0.026, midF: 1450, midQ: 1.5, midV: 0.020, padF: [146.8, 220.0], padLP: 460, padV: 0.012, rev: 0.22 },
+    level3: { lowF: 440, lowV: 0.028, midF: 1180, midQ: 2.2, midV: 0.024, padF: [130.8, 196.0], padLP: 380, padV: 0.010, rev: 0.18 },
+    level4: { lowF: 190, lowV: 0.040, midF: 780,  midQ: 2.8, midV: 0.016, padF: [123.5, 185.0], padLP: 340, padV: 0.015, rev: 0.38 },
+    level5: { lowF: 300, lowV: 0.030, midF: 1750, midQ: 2.4, midV: 0.022, padF: [164.8, 246.9], padLP: 480, padV: 0.012, rev: 0.26 },
+    level6: { lowF: 480, lowV: 0.024, midF: 1320, midQ: 1.4, midV: 0.019, padF: [174.6, 261.6], padLP: 540, padV: 0.014, rev: 0.30 }
+  };
+
+  function applyBiomeAmbience(biomeId, overrideFreq, overrideVol) {
+    var cfg = BIOME_AMBIENCE[biomeId] || BIOME_AMBIENCE.hub;
+    if (!AC) return;
+    var now = AC.currentTime;
+    try {
+      if (ambLowFilter) ambLowFilter.frequency.setTargetAtTime(overrideFreq || cfg.lowF, now, 0.35);
+      if (ambLowGain) ambLowGain.gain.setTargetAtTime(overrideVol !== undefined ? overrideVol : cfg.lowV, now, 0.45);
+      if (ambMidFilter) {
+        ambMidFilter.frequency.setTargetAtTime(cfg.midF, now, 0.35);
+        ambMidFilter.Q.setTargetAtTime(cfg.midQ, now, 0.35);
+      }
+      if (ambMidGain) ambMidGain.gain.setTargetAtTime(cfg.midV, now, 0.45);
+      if (padOsc1 && padOsc2) {
+        padOsc1.frequency.setTargetAtTime(cfg.padF[0], now, 0.5);
+        padOsc2.frequency.setTargetAtTime(cfg.padF[1], now, 0.5);
+      }
+      if (padFilter) padFilter.frequency.setTargetAtTime(cfg.padLP, now, 0.4);
+      if (padGain) padGain.gain.setTargetAtTime(cfg.padV, now, 0.5);
+      if (reverbSend) reverbSend.gain.setTargetAtTime(cfg.rev, now, 0.4);
+    } catch (e) {}
+  }
+
   function tickBiomeSoundscape() {
     if (!MAY.voiceOn || !MAY.started || MAY.modalOpen) return;
     try {
       var scale = BIOME_SCALES[currentBiome] || BIOME_SCALES.hub;
       var f = scale[Math.floor(Math.random() * scale.length)];
       if (currentBiome === "level4") {
-        /* Tiếng giọt nước nhỏ & pha lê vang nhẹ trong hang */
-        MAY.beep(f * 2, 0.65, "sine", 0.032);
-        if (Math.random() < 0.45) setTimeout(function () { MAY.beep(1320 + Math.random() * 450, 0.14, "sine", 0.025); }, 380);
+        MAY.beep(f * 2, 0.65, "sine", 0.030, { tight: true, bus: "amb" });
+        if (Math.random() < 0.45) setTimeout(function () { MAY.beep(1320 + Math.random() * 450, 0.14, "sine", 0.022, { bus: "amb" }); }, 380);
       } else if (currentBiome === "level2") {
-        /* Đàn harp rừng + tiếng chim hót nhẹ */
-        MAY.beep(f, 0.55, "triangle", 0.028);
+        MAY.beep(f, 0.55, "triangle", 0.026, { tight: true, bus: "amb" });
         if (Math.random() < 0.4) {
           setTimeout(function () {
-            MAY.beep(2200 + Math.random() * 700, 0.07, "sine", 0.018);
-            setTimeout(function () { MAY.beep(2600 + Math.random() * 500, 0.09, "sine", 0.016); }, 95);
+            MAY.beep(2200 + Math.random() * 700, 0.07, "sine", 0.016, { bus: "amb" });
+            setTimeout(function () { MAY.beep(2600 + Math.random() * 500, 0.09, "sine", 0.014, { bus: "amb" }); }, 95);
           }, 420);
         }
       } else if (currentBiome === "level5" || currentBiome === "level6") {
-        /* Chuông tuyết / chuông gió trên mây trong trẻo */
-        MAY.beep(f * 2, 0.72, "sine", 0.026);
-        setTimeout(function () { MAY.beep(f * 1.5, 0.6, "triangle", 0.02); }, 240);
+        MAY.beep(f * 2, 0.72, "sine", 0.024, { tight: true, bus: "amb" });
+        setTimeout(function () { MAY.beep(f * 1.5, 0.6, "triangle", 0.018, { tight: true, bus: "amb" }); }, 240);
       } else {
-        /* Hợp âm dịu êm đại dương / đảo / sa mạc */
-        MAY.beep(f, 0.65, "sine", 0.026);
-        setTimeout(function () { MAY.beep(f * 1.5, 0.5, "triangle", 0.018); }, 280);
+        MAY.beep(f, 0.65, "sine", 0.024, { tight: true, bus: "amb" });
+        setTimeout(function () { MAY.beep(f * 1.5, 0.5, "triangle", 0.016, { tight: true, bus: "amb" }); }, 280);
       }
     } catch (e) {}
   }
@@ -332,34 +569,49 @@
     ambStarted = true;
     try {
       var ac = getAC();
-      var len = 2 * ac.sampleRate;
-      var buf = ac.createBuffer(1, len, ac.sampleRate);
-      var d = buf.getChannelData(0), last = 0;
-      for (var i = 0; i < len; i++) {
-        var w = Math.random() * 2 - 1;
-        last = (last + 0.02 * w) / 1.02;
-        d[i] = last * 3.2;
-      }
-      var src = ac.createBufferSource(); src.buffer = buf; src.loop = true;
-      ambFilter = ac.createBiquadFilter(); ambFilter.type = "lowpass"; ambFilter.frequency.value = 380;
-      ambGain = ac.createGain(); ambGain.gain.value = 0;
-      var lfo = ac.createOscillator(); lfo.frequency.value = 0.09;
-      var lfoG = ac.createGain(); lfoG.gain.value = 0.014;
-      lfo.connect(lfoG); lfoG.connect(ambGain.gain); lfo.start();
-      src.connect(ambFilter); ambFilter.connect(ambGain); ambGain.connect(ac.destination);
-      src.start();
-      ambGain.gain.linearRampToValueAtTime(MAY.voiceOn ? 0.04 : 0, ac.currentTime + 1.5);
+      /* Lớp 1: Nền trầm (sóng biển / hầm hang / gió sâu) có LFO nhịp chậm */
+      var srcLow = ac.createBufferSource(); srcLow.buffer = brownBuf; srcLow.loop = true;
+      ambLowFilter = ac.createBiquadFilter(); ambLowFilter.type = "lowpass"; ambLowFilter.frequency.value = 360;
+      ambLowGain = ac.createGain(); ambLowGain.gain.value = 0;
+      var lfo1 = ac.createOscillator(); lfo1.frequency.value = 0.09;
+      var lfo1G = ac.createGain(); lfo1G.gain.value = 0.012;
+      lfo1.connect(lfo1G); lfo1G.connect(ambLowGain.gain); lfo1.start();
+      srcLow.connect(ambLowFilter); ambLowFilter.connect(ambLowGain); ambLowGain.connect(ambBus);
+      srcLow.start();
+
+      /* Lớp 2: Lớp không khí / gió xào xạc / dòng chảy tầm trung (Pink Noise + Bandpass + LFO) */
+      var srcMid = ac.createBufferSource(); srcMid.buffer = pinkBuf; srcMid.loop = true;
+      ambMidFilter = ac.createBiquadFilter(); ambMidFilter.type = "bandpass"; ambMidFilter.frequency.value = 950; ambMidFilter.Q.value = 1.2;
+      ambMidGain = ac.createGain(); ambMidGain.gain.value = 0;
+      var lfo2 = ac.createOscillator(); lfo2.frequency.value = 0.16;
+      var lfo2G = ac.createGain(); lfo2G.gain.value = 180;
+      lfo2.connect(lfo2G); lfo2G.connect(ambMidFilter.frequency); lfo2.start();
+      srcMid.connect(ambMidFilter); ambMidFilter.connect(ambMidGain); ambMidGain.connect(ambBus);
+      srcMid.start();
+
+      /* Lớp 3: Hợp âm nền Pad ấm êm dịu riêng theo từng vùng đất */
+      padOsc1 = ac.createOscillator(); padOsc1.type = "sine"; padOsc1.frequency.value = 130.8;
+      padOsc2 = ac.createOscillator(); padOsc2.type = "triangle"; padOsc2.frequency.value = 196.0;
+      padFilter = ac.createBiquadFilter(); padFilter.type = "lowpass"; padFilter.frequency.value = 420;
+      padGain = ac.createGain(); padGain.gain.value = 0;
+      padOsc1.connect(padFilter); padOsc2.connect(padFilter);
+      padFilter.connect(padGain); padGain.connect(ambBus);
+      padOsc1.start(); padOsc2.start();
+
+      applyBiomeAmbience(currentBiome);
+
+      /* Khởi động các nguồn âm 3D lặp đã đăng ký trước khi người chơi bấm Bắt Đầu */
+      while (pending3DLoops.length) startOne3DLoop(pending3DLoops.shift());
     } catch (e) {}
     if (!musicTimer) musicTimer = setInterval(tickBiomeSoundscape, 2900);
   };
 
   MAY.setAmbientTone = function (freq, vol, biomeId) {
     if (biomeId) currentBiome = biomeId;
-    if (ambFilter) ambFilter.frequency.value = freq || 380;
-    if (ambGain) ambGain.gain.value = MAY.voiceOn ? (vol !== undefined ? vol : 0.04) : 0;
+    if (ambStarted) applyBiomeAmbience(currentBiome, freq, vol);
   };
 
-  /* ---- Giọng đọc tiếng Việt 100% offline (31 MP3 trong assets/voice/ + vi-VN native cho câu đố động) ---- */
+  /* ---- Giọng đọc tiếng Việt 100% offline (47 MP3 trong assets/voice/ + vi-VN native cho câu đố động) ---- */
   var viVoice = null, _speakSeq = 0, _speakTimer = null, _activeUtterance = null, _curAudio = null;
   var _audioCache = {};
 
@@ -448,6 +700,7 @@
     if (_curAudio) { try { _curAudio.pause(); _curAudio.currentTime = 0; } catch (e) {} _curAudio = null; }
     if ("speechSynthesis" in window) { try { speechSynthesis.cancel(); } catch (e) {} }
     _activeUtterance = null;
+    setVoiceDuck(false);
   }
 
   function playLocalVoiceClip(key, seq) {
@@ -456,9 +709,17 @@
     if (!a) { a = new Audio("assets/voice/" + key + ".mp3"); a.preload = "auto"; _audioCache[key] = a; }
     try { a.currentTime = 0; } catch (e) {}
     _curAudio = a;
-    a.onended = function () { if (seq === _speakSeq) _curAudio = null; };
+    setVoiceDuck(true);
+    var release = function () {
+      if (seq === _speakSeq) {
+        _curAudio = null;
+        setVoiceDuck(false);
+      }
+    };
+    a.onended = release;
+    a.onerror = release;
     var p = a.play();
-    if (p && p.catch) p.catch(function () {});
+    if (p && p.catch) p.catch(release);
     return true;
   }
 
@@ -490,7 +751,9 @@
         try {
           var u = new SpeechSynthesisUtterance(clean);
           u.voice = viVoice; u.lang = viVoice.lang || "vi-VN"; u.rate = 0.96; u.pitch = 1.0;
-          _activeUtterance = u; u.onend = u.onerror = function () { _activeUtterance = null; };
+          _activeUtterance = u;
+          setVoiceDuck(true);
+          u.onend = u.onerror = function () { _activeUtterance = null; if (seq === _speakSeq) setVoiceDuck(false); };
           speechSynthesis.speak(u);
         } catch (e) {}
       }, 45);
@@ -506,7 +769,9 @@
         try {
           var u2 = new SpeechSynthesisUtterance(clean);
           u2.voice = viVoice; u2.lang = viVoice.lang || "vi-VN"; u2.rate = 0.98; u2.pitch = 1.0;
-          _activeUtterance = u2; u2.onend = u2.onerror = function () { _activeUtterance = null; };
+          _activeUtterance = u2;
+          setVoiceDuck(true);
+          u2.onend = u2.onerror = function () { _activeUtterance = null; if (seq === _speakSeq) setVoiceDuck(false); };
           speechSynthesis.speak(u2);
         } catch (e) {}
       }, 45);

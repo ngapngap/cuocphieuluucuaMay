@@ -19,7 +19,7 @@
     MAY.sun.intensity = 1.78;
     MAY.hemiLight.color.setHex(0xc8f5c4);
     MAY.hemiLight.groundColor.setHex(0x2d4f28);
-    MAY.hemiLight.intensity = 0.72;
+    MAY.hemiLight.intensity = 0.46;
     MAY.diveLight.intensity = 0.12;
     MAY.diveLight.castShadow = false;
     MAY.setAmbientTone(520, 0.032, "level2");
@@ -106,6 +106,7 @@
     /* Cầu gỗ có đèn lồng ấm bắc qua suối tại x = 0 */
     var woodMat = new THREE.MeshStandardMaterial({ map: MAY.TEX.wood, roughness: 0.86 });
     MAY.attachPhotoPBR("wood", MAY.TEX.wood, [woodMat], { rx: 2, ry: 2, normalStrength: 3.0 });
+    MAY.applyWorldWeathering(woodMat, { waterY: 0.25, caustics: 0.0, macro: 0.14, stain: 0.26, wallGrime: 0.24, stainColor: 0x2c3b24 });
     var bridgeZ = streamCenterZ(0);
     var bridge = new THREE.Group();
     for (var bi = -6; bi <= 6; bi++) {
@@ -136,15 +137,20 @@
       roughnessMap: MAY.PBR.bark.roughnessMap, roughness: 0.95,
       color: ctx.story.bossDown ? 0xffffff : 0x6b6460
     });
+    MAY.applyWorldWeathering(barkMat, { macro: 0.14, stain: 0.20, wallGrime: 0.34, stainColor: 0x2a3b20 });
     var trPts = [new THREE.Vector2(3.8, 0), new THREE.Vector2(3.1, 2.2), new THREE.Vector2(2.4, 6.2), new THREE.Vector2(2.05, 10.2), new THREE.Vector2(2.25, 11.8), new THREE.Vector2(1.45, 13.2), new THREE.Vector2(0.55, 14.0), new THREE.Vector2(0.02, 14.3)];
     var aTrunk = new THREE.Mesh(new THREE.LatheGeometry(trPts, 18), barkMat);
     aTrunk.castShadow = true; aTrunk.receiveShadow = true; ancient.add(aTrunk);
-    /* Cổng vòm hốc cây cổ tích + đèn lồng treo + 5 cành đại thụ uốn cong + cành ngọn vươn cao */
+    /* Cổng vòm hốc cây cổ tích + đèn lồng treo đổ bóng thật + 5 cành đại thụ uốn cong + cành ngọn vươn cao */
     var hollow = new THREE.Mesh(new THREE.CircleGeometry(1.15, 16, 0, Math.PI), new THREE.MeshBasicMaterial({ color: 0xffe49e }));
     hollow.position.set(0, 0.9, 3.32); ancient.add(hollow);
     var archFrame = new THREE.Mesh(new THREE.TorusGeometry(1.18, 0.22, 8, 18, Math.PI), barkMat);
     archFrame.position.set(0, 0.9, 3.30); ancient.add(archFrame);
-    var mLan = MAY.makeCagedLantern(0xffd480, 2.0, 20, false); mLan.position.set(0, 2.65, 3.55); ancient.add(mLan);
+    var mLan = MAY.makeCagedLantern(0xffd480, 2.6, 24, true); mLan.position.set(0, 2.65, 3.55); ancient.add(mLan);
+    if (MAY.add3DLoop) {
+      MAY.add3DLoop([0, ay + 2.65, 25.55], { kind: "fire", vol: 0.032, maxDist: 28 });
+      MAY.add3DLoop([0, 0.9, bridgeZ], { kind: "water", freq: 680, vol: 0.055, maxDist: 44 });
+    }
     for (var bh = 0; bh < 5; bh++) {
       var ba = (bh / 5) * Math.PI * 2 + 0.4;
       var bCurve = new THREE.CatmullRomCurve3([
@@ -204,6 +210,11 @@
       return ctx.groundH(x, z) > 1.0 && Math.hypot(x, z - 22) > 5.2;
     }, { spread: 80, color: 0x8be068, w: 0.96, h: 0.88, flowers: true });
     MAY.scatterDebris(ctx, 180, function (x, z) { return ctx.groundH(x, z) > 0.3; }, { spread: 78, size: 0.24, color: 0x6f7d69 });
+    MAY.scatterPropCluster(ctx, [
+      { x: 0, z: 22, rMin: 4.5, rMax: 8.5, count: 26 },
+      { x: 0, z: bridgeZ + 8.5, rMin: 2.6, rMax: 5.2, count: 14 },
+      { x: 0, z: bridgeZ - 8.5, rMin: 2.6, rMax: 5.2, count: 14 }
+    ], { size: 0.25, color: 0x5c6b54 });
     MAY.buildVistaRing(ctx, { count: 22, radius: 138, hMin: 22, hMax: 48, wBase: 30, baseY: -2, color: 0x38664b });
 
     var rockMat = new THREE.MeshStandardMaterial({ map: MAY.TEX.rock, color: 0x8ea88b, roughness: 0.9 });
@@ -341,8 +352,8 @@
     var ch2St = ctx.story;
     var ch2Sc = MAY.STORY_SCRIPTS.level2;
     ctx.setupAtmosphere(
-      { fog: 0x6f7f78, density: 0.0115, sunInt: 1.05, hemiInt: 0.45, zenith: 0x4b5c66, horizon: 0x9aa8a0 },
-      { fog: 0x9ed6ad, density: 0.0075, sunInt: 1.82, hemiInt: 0.74, zenith: 0x2c82c9, horizon: 0xc2ebd0 },
+      { fog: 0x6f7f78, density: 0.0115, sunInt: 1.05, hemiInt: 0.32, zenith: 0x4b5c66, horizon: 0x9aa8a0 },
+      { fog: 0x9ed6ad, density: 0.0075, sunInt: 1.82, hemiInt: 0.50, zenith: 0x2c82c9, horizon: 0xc2ebd0 },
       !!ch2St.bossDown
     );
 

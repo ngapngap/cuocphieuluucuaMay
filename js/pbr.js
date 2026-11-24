@@ -1,6 +1,6 @@
 "use strict";
 /* ============================================================================
-   PBR & SHADERS v9.0 — Chuẩn "The Hall" + "Fable 5.2":
+   PBR & SHADERS v11.0 — Chuẩn "The Hall" + "Fable 5.2":
    - Texture PBR 512x512 + Anti-Tiling Macro Weathering + Bờ ẩm ướt tự động
    - Phản chiếu mặt phẳng thời gian thực (Planar Reflections cho Nước, Băng & Vũng đá ướt)
    - Hậu kỳ Depth-Buffer SSAO (tối khe góc) + DoF nhẹ + Bloom + Film Grain + Spell Flash
@@ -383,13 +383,16 @@
     }
   };
 
-  /* ---- Shader Anti-Tiling Macro Weathering + Mép Bờ Ẩm Ướt + Caustics Dưới Nước ---- */
+  /* ---- Shader Anti-Tiling Macro Weathering + Vết Bẩn Không Lặp Nền/Tường + Mép Bờ Ẩm Ướt + Caustics ---- */
   MAY.applyWorldWeathering = function (mat, opts) {
     opts = opts || {};
     var wy = opts.waterY !== undefined ? opts.waterY : -999.0;
     var caustStr = opts.caustics || 0.0;
     var macroAmt = opts.macro !== undefined ? opts.macro : 0.16;
     var wetBand = opts.wetShore !== false && wy > -500 ? 1.5 : 0.0;
+    var stainAmt = opts.stain !== undefined ? opts.stain : 0.24;
+    var wallGrime = opts.wallGrime !== undefined ? opts.wallGrime : 0.28;
+    var stainCol = new THREE.Color(opts.stainColor || 0x3b352c);
 
     mat.onBeforeCompile = function (shader) {
       shader.uniforms.uTime = MAY.shaderUniforms.uTime;
@@ -397,16 +400,41 @@
       shader.uniforms.uCaustStr = { value: caustStr };
       shader.uniforms.uMacroAmt = { value: macroAmt };
       shader.uniforms.uWetBand = { value: wetBand };
+      shader.uniforms.uStainAmt = { value: stainAmt };
+      shader.uniforms.uWallGrime = { value: wallGrime };
+      shader.uniforms.uStainCol = { value: stainCol };
       shader.vertexShader = shader.vertexShader
         .replace("#include <common>", "#include <common>\nvarying vec3 vMWPos;\nvarying vec3 vMWNorm;")
         .replace("#include <project_vertex>", "#include <project_vertex>\nvMWPos = (modelMatrix * vec4(transformed, 1.0)).xyz;\nvMWNorm = normalize(mat3(modelMatrix) * objectNormal);");
       shader.fragmentShader = shader.fragmentShader
-        .replace("#include <common>", "#include <common>\nuniform float uTime, uWaterY, uCaustStr, uMacroAmt, uWetBand;\nvarying vec3 vMWPos, vMWNorm;")
+        .replace("#include <common>", [
+          "#include <common>",
+          "uniform float uTime, uWaterY, uCaustStr, uMacroAmt, uWetBand, uStainAmt, uWallGrime;",
+          "uniform vec3 uStainCol;",
+          "varying vec3 vMWPos, vMWNorm;",
+          "float wwHash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }",
+          "float wwNoise(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.0-2.0*f); return mix(mix(wwHash(i),wwHash(i+vec2(1,0)),f.x),mix(wwHash(i+vec2(0,1)),wwHash(i+vec2(1,1)),f.x),f.y); }",
+          "float wwFbm(vec2 p){ float s=0.0, a=0.5; for(int k=0;k<3;k++){ s+=wwNoise(p)*a; p=p*2.07+vec2(13.7,29.3); a*=0.5; } return s; }"
+        ].join("\n"))
         .replace("#include <output_fragment>", [
           "/* 1. Pha màu quy mô lớn triệt tiêu vết lặp ô texture */",
           "float mac = sin(vMWPos.x * 0.065 + sin(vMWPos.z * 0.048) * 1.4) * cos(vMWPos.z * 0.058 + cos(vMWPos.x * 0.042) * 1.3);",
           "float mac2 = sin((vMWPos.x + vMWPos.z) * 0.17) * cos((vMWPos.x - vMWPos.z) * 0.14);",
           "outgoingLight *= (1.0 + (mac * 0.65 + mac2 * 0.35) * uMacroAmt);",
+          "/* 1b. Vết bẩn / rêu mốc / vệt mưa không lặp theo tọa độ thế giới (nền & tường) */",
+          "if (uStainAmt > 0.01 || uWallGrime > 0.01) {",
+          "  vec3 wn = normalize(vMWNorm);",
+          "  float upMask = smoothstep(0.45, 0.78, abs(wn.y));",
+          "  float flBlotch = wwFbm(vMWPos.xz * 0.13 + vec2(3.1, 7.7));",
+          "  float flDetail = wwFbm(vMWPos.xz * 0.43 + vec2(11.4, 2.3));",
+          "  float flStain = smoothstep(0.44, 0.78, flBlotch * 0.65 + flDetail * 0.35) * upMask * uStainAmt;",
+          "  vec2 wallUv = vec2((vMWPos.x + vMWPos.z) * 0.38, vMWPos.y * 0.14);",
+          "  float streak = wwFbm(vec2(wallUv.x * 2.4, wallUv.y * 0.55));",
+          "  float wPatch = wwFbm(wallUv * 1.15 + vec2(5.2, 1.9));",
+          "  float wallStain = smoothstep(0.42, 0.78, streak * 0.58 + wPatch * 0.42) * (1.0 - upMask) * uWallGrime;",
+          "  float totalGrime = clamp(flStain + wallStain, 0.0, 0.52);",
+          "  outgoingLight = mix(outgoingLight, outgoingLight * (0.48 + uStainCol * 0.52), totalGrime);",
+          "}",
           "/* 2. Dải mép bờ ẩm ướt sẫm màu hơn ngay sát mặt nước */",
           "if (uWetBand > 0.01) {",
           "  float hAbove = vMWPos.y - uWaterY;",
@@ -431,7 +459,7 @@
           "#include <output_fragment>"
         ].join("\n"));
     };
-    mat.customProgramCacheKey = function () { return "ww_" + wy + "_" + caustStr + "_" + macroAmt; };
+    mat.customProgramCacheKey = function () { return "ww_" + wy + "_" + caustStr + "_" + macroAmt + "_" + stainAmt + "_" + wallGrime + "_" + stainCol.getHex(); };
     return mat;
   };
   MAY.applyCaustics = function (mat, waterY, intensity) {
@@ -988,6 +1016,48 @@
       var s = 0.55 + Math.random() * 1.15;
       dum.position.set(pts[i][0], pts[i][1] + (opts.yOff || 0.06), pts[i][2]);
       dum.scale.set(s * 1.25, s * 0.65, s);
+      dum.rotation.set(Math.random() * 3, Math.random() * 6, Math.random() * 3);
+      dum.updateMatrix();
+      im.setMatrixAt(i, dum.matrix);
+    }
+    im.instanceMatrix.needsUpdate = true;
+    im.castShadow = !!opts.castShadow;
+    im.receiveShadow = true;
+    ctx.add(im);
+    return im;
+  };
+
+  /* ---- Rải Vật Vụn Quanh Chân Công Trình (gạch vỡ, đá cuội, mảnh tinh thể, khối tuyết — 1 draw call!) ---- */
+  MAY.scatterPropCluster = function (ctx, centers, opts) {
+    opts = opts || {};
+    var perCenter = opts.perCenter || 18;
+    var pts = [];
+    for (var ci = 0; ci < centers.length; ci++) {
+      var c = centers[ci];
+      var rMin = c.rMin !== undefined ? c.rMin : 3.2;
+      var rMax = c.rMax !== undefined ? c.rMax : 7.5;
+      var n = c.count || perCenter;
+      for (var k = 0; k < n; k++) {
+        var ang = (k / n) * Math.PI * 2 + Math.random() * 0.55;
+        var rad = rMin + Math.random() * (rMax - rMin);
+        var x = c.x + Math.cos(ang) * rad;
+        var z = c.z + Math.sin(ang) * rad;
+        var y = c.y !== undefined ? c.y : ctx.groundH(x, z);
+        if (y < -200) continue;
+        pts.push([x, y, z, 0.45 + Math.random() * 1.15]);
+      }
+    }
+    if (!pts.length) return null;
+    var geo = opts.geo || new THREE.DodecahedronGeometry(opts.size || 0.26, 0);
+    var mat = opts.mat || new THREE.MeshStandardMaterial({
+      color: opts.color || 0x7e7a72, roughness: opts.roughness !== undefined ? opts.roughness : 0.88, flatShading: true
+    });
+    var im = new THREE.InstancedMesh(geo, mat, pts.length);
+    var dum = new THREE.Object3D();
+    for (var i = 0; i < pts.length; i++) {
+      var s = pts[i][3];
+      dum.position.set(pts[i][0], pts[i][1] + (opts.yOff || 0.07), pts[i][2]);
+      dum.scale.set(s * 1.3, s * 0.68, s);
       dum.rotation.set(Math.random() * 3, Math.random() * 6, Math.random() * 3);
       dum.updateMatrix();
       im.setMatrixAt(i, dum.matrix);

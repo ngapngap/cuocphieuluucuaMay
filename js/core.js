@@ -543,7 +543,7 @@
       var ch = worldRoot.children[0];
       worldRoot.remove(ch);
       ch.traverse(function (o) {
-        if (o.isMesh) {
+        if (o.isMesh || o.isPoints || o.isLine) {
           if (o.geometry && o.geometry !== sharedStarGeo && o.geometry !== burstGeo && !o.userData.sharedGeo) {
             try { o.geometry.dispose(); } catch (e) {}
           }

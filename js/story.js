@@ -844,7 +844,6 @@
     /* ---- F. Cập nhật mỗi frame cho Toàn Bộ Động Cơ Cốt Truyện ---- */
     ctx.updateStory = function (dt, t) {
       if (invulnT > 0) invulnT -= dt;
-      if (MAY.updateAudioListener) MAY.updateAudioListener(MAY.camera);
       var pPos = MAY.player.pos;
 
       /* Thực thi sự kiện hẹn giờ an toàn (chỉ chạy khi không bị tạm dừng bởi hộp thoại/modal) */

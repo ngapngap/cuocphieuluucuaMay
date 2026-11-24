@@ -19,7 +19,7 @@
     MAY.sun.intensity = 1.78;
     MAY.hemiLight.color.setHex(0xfff0cc);
     MAY.hemiLight.groundColor.setHex(0xb88b52);
-    MAY.hemiLight.intensity = 0.82;
+    MAY.hemiLight.intensity = 0.46;
     MAY.diveLight.intensity = 0.12;
     MAY.diveLight.castShadow = false;
     MAY.setAmbientTone(640, 0.032, "level3");
@@ -86,15 +86,23 @@
     });
     oasisWater.position.set(OAS.x, 0.15, OAS.z);
 
-    /* Hạt cát vàng bay lất phất trong gió sa mạc */
+    /* Tia nắng vàng xuyên bụi sa mạc (giống mẫu level1_ocean.js) + Hạt cát vàng bay trong gió */
+    var rayMat = MAY.makeGodRayMat(0xffe099, 0.20);
+    [[-32, 24], [28, 18], [0, -14], [-22, -44], [26, -42], [6, 36]].forEach(function (rp, ri) {
+      var ray = new THREE.Mesh(new THREE.ConeGeometry(3.2 + (ri % 3) * 0.9, 40, 12, 1, true), rayMat);
+      ray.position.set(rp[0], 20, rp[1]);
+      ray.rotation.z = 0.30;
+      ctx.add(ray);
+    });
     ctx.addAmbientParticles({ count: 280, spread: 120, minY: 0.5, maxY: 16, vy: -0.15, vx: 2.4, color: 0xffe4a0, size: 0.16, opacity: 0.55 });
 
-    /* ---- Kim Tự Tháp Đá Sa Thạch Bậc Thang (0, -48) ---- */
+    /* ---- Kim Tự Tháp Đá Sa Thạch Bậc Thang (0, -48) có vết phong hóa không lặp ---- */
     var sandstoneMat = new THREE.MeshStandardMaterial({
       map: MAY.PBR.stoneWall.map, normalMap: MAY.PBR.stoneWall.normalMap,
       normalScale: new THREE.Vector2(1.35, 1.35), roughnessMap: MAY.PBR.stoneWall.roughnessMap,
       color: 0xe6be7a, roughness: 0.88
     });
+    MAY.applyWorldWeathering(sandstoneMat, { macro: 0.15, stain: 0.22, wallGrime: 0.34, stainColor: 0x6b4b26 });
     var pyrGroup = new THREE.Group();
     for (var tier = 0; tier < 9; tier++) {
       var side = PYR.half * 2 * (1 - tier / 9);
@@ -104,22 +112,31 @@
       pyrGroup.add(block);
     }
     pyrGroup.position.set(PYR.x, 0, PYR.z);
-    /* Đỉnh chóp vàng Kim Tự Tháp + Đôi cột tháp Obelisk Ai Cập + Đài lửa cổ hai bên lối lên */
+    /* Đỉnh chóp vàng Kim Tự Tháp + Đôi cột tháp Obelisk Ai Cập + Đài lửa cổ (đài chính đổ bóng thật!) */
     var goldMat = new THREE.MeshPhysicalMaterial({ color: 0xffd93d, emissive: 0xcc8800, emissiveIntensity: 0.45, metalness: 0.85, roughness: 0.18, clearcoat: 1.0 });
     var capstone = new THREE.Mesh(new THREE.ConeGeometry(2.6, 2.8, 4), goldMat);
     capstone.rotation.y = Math.PI / 4; capstone.position.set(0, 19.8, 0); pyrGroup.add(capstone);
-    [-6.0, 6.0].forEach(function (bx) {
+    [-6.0, 6.0].forEach(function (bx, bIdx) {
       var obShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.85, 6.5, 4), sandstoneMat);
       obShaft.rotation.y = Math.PI / 4; obShaft.position.set(bx, 6.2, PYR.half + 2.2); obShaft.castShadow = true; pyrGroup.add(obShaft);
       var obTip = new THREE.Mesh(new THREE.ConeGeometry(0.46, 1.1, 4), goldMat);
       obTip.rotation.y = Math.PI / 4; obTip.position.set(bx, 10.0, PYR.half + 2.2); pyrGroup.add(obTip);
-      var br = MAY.makeCagedLantern(0xffa438, 2.8, 24, false);
+      var br = MAY.makeCagedLantern(0xffa438, 3.2, 26, bIdx === 0);
       br.position.set(bx * 0.72, 5.2, PYR.half + 1.4); pyrGroup.add(br);
     });
     ctx.add(pyrGroup);
+    if (MAY.add3DLoop) {
+      MAY.add3DLoop([0, 5.2, PYR.z + PYR.half + 1.4], { kind: "fire", freq: 720, vol: 0.036, maxDist: 36 });
+      MAY.add3DLoop([OAS.x, 0.6, OAS.z], { kind: "water", freq: 560, vol: 0.042, maxDist: 34 });
+    }
 
-    /* Sỏi đá sa mạc & Rặng núi cồn cát tầm xa chân trời */
+    /* Sỏi đá sa mạc, mảnh sa thạch vụn quanh chân Kim Tự Tháp/Obelisk & Rặng núi cồn cát tầm xa */
     MAY.scatterDebris(ctx, 180, function (x, z) { return Math.hypot(x - OAS.x, z - OAS.z) > 15; }, { spread: 86, size: 0.26, color: 0xb9925c });
+    MAY.scatterPropCluster(ctx, [
+      { x: -6.0, z: PYR.z + PYR.half + 2.2, rMin: 1.5, rMax: 4.8, count: 16 },
+      { x: 6.0,  z: PYR.z + PYR.half + 2.2, rMin: 1.5, rMax: 4.8, count: 16 },
+      { x: 0,    z: PYR.z + PYR.half + 4.0, rMin: 2.5, rMax: 7.5, count: 20 }
+    ], { size: 0.28, color: 0xa67c46 });
     MAY.buildVistaRing(ctx, { count: 20, radius: 142, hMin: 18, hMax: 42, wBase: 34, baseY: -1, color: 0xc29356 });
 
     /* Bệ Ngọc Vàng Nắng trên đỉnh Kim Tự Tháp! */
@@ -244,8 +261,8 @@
     var ch3St = ctx.story;
     var ch3Sc = MAY.STORY_SCRIPTS.level3;
     ctx.setupAtmosphere(
-      { fog: 0x9b8875, density: 0.0095, sunInt: 1.05, hemiInt: 0.50, zenith: 0x5c5b66, horizon: 0xbda98e },
-      { fog: 0xebc98f, density: 0.0054, sunInt: 1.82, hemiInt: 0.84, zenith: 0x2574c4, horizon: 0xf7d694 },
+      { fog: 0x9b8875, density: 0.0095, sunInt: 1.05, hemiInt: 0.34, zenith: 0x5c5b66, horizon: 0xbda98e },
+      { fog: 0xebc98f, density: 0.0054, sunInt: 1.82, hemiInt: 0.52, zenith: 0x2574c4, horizon: 0xf7d694 },
       !!ch3St.bossDown
     );
 

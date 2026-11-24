@@ -1,6 +1,6 @@
 "use strict";
 /* ============================================================================
-   GAME.JS — Khởi chạy Cuộc Phiêu Lưu Của Mây v8.0 (6 Vùng Đất + Đảo Mây + PBR)
+   GAME.JS — Khởi chạy Cuộc Phiêu Lưu Của Mây v11.0 (6 Vùng Đất + Đảo Mây + PBR)
    ============================================================================ */
 (function (MAY) {
 
@@ -27,6 +27,7 @@
   MAY.enterLevel = function (levelId, silent) {
     if (!MAY.LEVELS || !MAY.LEVELS[levelId]) levelId = "hub";
     if (MAY.closeDialogue) MAY.closeDialogue();
+    if (MAY.clear3DLoops) MAY.clear3DLoops();
     if (MAY.VFX) MAY.VFX.clear();
     if (MAY.PlanarReflector) MAY.PlanarReflector.clear();
     MAY.clearWorld();
@@ -110,7 +111,7 @@
   document.getElementById("btn-voice").onclick = function () {
     MAY.voiceOn = !MAY.voiceOn;
     document.getElementById("btn-voice").textContent = MAY.voiceOn ? "🔊" : "🔇";
-    MAY.setAmbientTone(420, MAY.voiceOn ? 0.045 : 0);
+    if (MAY.setMasterMute) MAY.setMasterMute(!MAY.voiceOn);
     if (!MAY.voiceOn && MAY.stopSpeech) MAY.stopSpeech();
     if (MAY.voiceOn) MAY.speak("Mây sẽ đọc to cho bé nghe nhé!");
   };
@@ -186,6 +187,7 @@
       }
     }
 
+    if (MAY.updateAudioListener) MAY.updateAudioListener(MAY.camera);
     var camUnderwater = !!(ctx && ctx.waterLevel !== undefined && MAY.camera.position.y < ctx.waterLevel);
     MAY.renderFrame(dt, camUnderwater);
 
