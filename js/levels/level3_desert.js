@@ -1,0 +1,452 @@
+"use strict";
+/* ============================================================================
+   MÀN 3 — SA MẠC KIM TỰ THÁP (Sa mạc — Viên Ngọc Vàng Nắng 🟡)
+   Cồn cát gợn sóng PBR bắt nắng, Kim Tự Tháp bậc thang leo lên đỉnh,
+   Ốc Đảo có hồ bơi trong vắt + rương ngầm, Tàn tích cột đá & Bình gốm cổ
+   ============================================================================ */
+(function (MAY) {
+  MAY.LEVELS = MAY.LEVELS || {};
+
+  MAY.LEVELS.level3 = function () {
+    var ctx = MAY.createWorldCtx("level3");
+    ctx.mode = "land";
+    ctx.waterLevel = 0.15;
+    ctx.worldRadius = 100;
+    ctx.minimapBg = "rgba(156,108,42,0.92)";
+
+    MAY.setSunOffset(42, 38, -24);
+    MAY.sun.color.setHex(0xffe9b5);
+    MAY.sun.intensity = 1.78;
+    MAY.hemiLight.color.setHex(0xfff0cc);
+    MAY.hemiLight.groundColor.setHex(0xb88b52);
+    MAY.hemiLight.intensity = 0.82;
+    MAY.diveLight.intensity = 0.12;
+    MAY.diveLight.castShadow = false;
+    MAY.setAmbientTone(640, 0.032, "level3");
+    MAY.setPostGrade({ tint: 0xfffaf0, vignette: 0.22, bloom: 0.30, ssao: 0.50 });
+    ctx.getSurface = function (x, z) {
+      return Math.hypot(x - OAS.x, z - OAS.z) < 20 && ctx.groundH(x, z) > 0.5 ? "grass" : "sand";
+    };
+
+    ctx.landFog = { color: 0xebc98f, density: 0.0056 };
+    ctx.underwaterFog = { color: 0x0b758a, density: 0.032 };
+    MAY.scene.fog = new THREE.FogExp2(ctx.landFog.color, ctx.landFog.density);
+    MAY.scene.background = new THREE.Color(ctx.landFog.color);
+
+    ctx.addSky({
+      zenith: 0x2574c4, horizon: 0xf7d694, ground: 0xb6813e,
+      sunDir: new THREE.Vector3(42, 38, -24), sunColor: 0xfff2b2, cloudColor: 0xfff5dc, cloudAmt: 0.22
+    });
+
+    /* Tọa độ Kim Tự Tháp (0, -48) & Hồ Ốc Đảo (0, 10) */
+    var PYR = { x: 0, z: -48, half: 18 };
+    var OAS = { x: 0, z: 10, r: 15 };
+
+    ctx.groundH = function (x, z) {
+      /* Kim Tự Tháp bậc thang leo lên đỉnh được! */
+      var px = Math.abs(x - PYR.x), pz = Math.abs(z - PYR.z);
+      var pm = Math.max(px, pz);
+      if (pm < PYR.half) {
+        var frac = 1 - pm / PYR.half;
+        var tier = Math.floor(frac * 9) / 9;
+        return 3.0 + tier * 15.5;
+      }
+      /* Cồn cát lượn sóng mềm mại */
+      var dune = Math.sin(x * 0.055 + Math.cos(z * 0.04) * 1.6) * 2.8 +
+                 Math.cos(z * 0.065) * 1.7 +
+                 Math.sin((x - z) * 0.12) * 0.45;
+      var h = 3.2 + dune;
+      /* Lòng hồ Ốc Đảo xanh mát */
+      var od = Math.hypot(x - OAS.x, z - OAS.z);
+      if (od < OAS.r) {
+        var ot = 1 - od / OAS.r;
+        h = h * (1 - ot) + (-3.2) * ot * ot;
+      }
+      return h;
+    };
+
+    /* Cát sa mạc gợn sóng mịn màng bắt ánh nắng chiều */
+    var sandMat = new THREE.MeshStandardMaterial({
+      map: MAY.PBR.sandRipple.map,
+      normalMap: MAY.PBR.sandRipple.normalMap,
+      normalScale: new THREE.Vector2(0.42, 0.42),
+      roughnessMap: MAY.PBR.sandRipple.roughnessMap,
+      color: 0xeec882,
+      roughness: 0.88
+    });
+    MAY.applyCaustics(sandMat, 0.15, 0.72);
+    ctx.buildTerrain(240, 124, sandMat);
+
+    /* Hồ Ốc Đảo nước ngọc bích bơi lặn được */
+    var oasisWater = ctx.addWater({
+      width: 34, height: 34, segs: 42, y: 0.15, offsetX: OAS.x, offsetZ: OAS.z,
+      sunDir: new THREE.Vector3(42, 38, -24),
+      deepColor: 0x05586b, shallowColor: 0x1fc4c4, skyColor: 0xf7d694,
+      foamCenter: new THREE.Vector3(OAS.x, 0.15, OAS.z), foamRadius: 11.2, waveAmp: 0.07
+    });
+    oasisWater.position.set(OAS.x, 0.15, OAS.z);
+
+    /* Hạt cát vàng bay lất phất trong gió sa mạc */
+    ctx.addAmbientParticles({ count: 280, spread: 120, minY: 0.5, maxY: 16, vy: -0.15, vx: 2.4, color: 0xffe4a0, size: 0.16, opacity: 0.55 });
+
+    /* ---- Kim Tự Tháp Đá Sa Thạch Bậc Thang (0, -48) ---- */
+    var sandstoneMat = new THREE.MeshStandardMaterial({
+      map: MAY.PBR.stoneWall.map, normalMap: MAY.PBR.stoneWall.normalMap,
+      normalScale: new THREE.Vector2(1.35, 1.35), roughnessMap: MAY.PBR.stoneWall.roughnessMap,
+      color: 0xe6be7a, roughness: 0.88
+    });
+    var pyrGroup = new THREE.Group();
+    for (var tier = 0; tier < 9; tier++) {
+      var side = PYR.half * 2 * (1 - tier / 9);
+      var block = new THREE.Mesh(new THREE.BoxGeometry(side, 1.78, side), sandstoneMat);
+      block.position.y = 3.0 + tier * 1.72 + 0.85;
+      block.castShadow = true; block.receiveShadow = true;
+      pyrGroup.add(block);
+    }
+    pyrGroup.position.set(PYR.x, 0, PYR.z);
+    /* Hai đài lửa cổ ấm rực hai bên lối lên Kim Tự Tháp */
+    [-5.5, 5.5].forEach(function (bx) {
+      var ped = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.72, 2.2, 10), sandstoneMat);
+      ped.position.set(bx, 4.1, PYR.half + 1.4); ped.castShadow = true; pyrGroup.add(ped);
+      var br = MAY.makeCagedLantern(0xffa438, 2.8, 24, false);
+      br.position.set(bx, 5.5, PYR.half + 1.4); pyrGroup.add(br);
+    });
+    ctx.add(pyrGroup);
+
+    /* Sỏi đá sa mạc & Rặng núi cồn cát tầm xa chân trời */
+    MAY.scatterDebris(ctx, 180, function (x, z) { return Math.hypot(x - OAS.x, z - OAS.z) > 15; }, { spread: 86, size: 0.26, color: 0xb9925c });
+    MAY.buildVistaRing(ctx, { count: 20, radius: 142, hMin: 18, hMax: 42, wBase: 34, baseY: -1, color: 0xc29356 });
+
+    /* Bệ Ngọc Vàng Nắng trên đỉnh Kim Tự Tháp! */
+    ctx.addGemAltar([PYR.x, 18.6, PYR.z]);
+
+    /* Quanh Ốc Đảo: Cây dừa thật + Bụi cỏ xanh + Đèn lồng trại + Cá nhỏ trong hồ */
+    [[14, 15, 1.15], [-14, 14, 1.05], [12, -3, 1.0], [-13, -2, 1.1], [3, 24, 0.95]].forEach(function (p) {
+      var pm = MAY.makeRealisticPalm(p[2]);
+      pm.position.set(p[0], ctx.groundH(p[0], p[1]) - 0.1, p[1]);
+      pm.rotation.y = p[0]; ctx.add(pm);
+    });
+    MAY.scatterLushMeadow(ctx, 420, function (x, z) {
+      var d = Math.hypot(x - OAS.x, z - OAS.z);
+      return d > 11.5 && d < 22;
+    }, { spread: 36, color: 0x7fd666, w: 0.9, h: 0.75, flowers: true });
+
+    var oasisFish = [];
+    for (var ofi = 0; ofi < 6; ofi++) {
+      var fg = MAY.fishBody(ofi % 2 === 0 ? 0xffc83d : 0x38bdf8, 0.95, ofi % 3);
+      ctx.add(fg);
+      oasisFish.push({ g: fg, a: ofi * 1.05, r: 3.5 + (ofi % 3) * 2.1 });
+    }
+
+    /* Tàn tích cột đá cổ sa mạc ở phía Tây (-42, 6) + Va chạm 3D */
+    [[-46, 0], [-46, 8], [-46, 16], [-34, 0], [-34, 8], [-34, 16]].forEach(function (cp, idx) {
+      var h = idx === 2 ? 4.5 : 7.8;
+      var col = new THREE.Mesh(new THREE.CylinderGeometry(0.75, 0.92, h, 12), sandstoneMat);
+      col.position.set(cp[0], ctx.groundH(cp[0], cp[1]) + h / 2, cp[1]);
+      col.castShadow = true; col.receiveShadow = true; ctx.add(col);
+      ctx.addCollider(cp[0], cp[1], 1.1);
+    });
+    var lintel = new THREE.Mesh(new THREE.BoxGeometry(14, 1.4, 2.2), sandstoneMat);
+    lintel.position.set(-40, ctx.groundH(-40, 0) + 8.2, 0);
+    lintel.castShadow = true; lintel.receiveShadow = true; ctx.add(lintel);
+
+    /* ---- 10 Đá Mặt Trời (Nhiệm vụ chính) ---- */
+    var sunStoneGeo = new THREE.OctahedronGeometry(0.78, 0);
+    var sunStoneMat = new THREE.MeshPhysicalMaterial({ color: 0xffd633, emissive: 0xff8c00, emissiveIntensity: 0.95, roughness: 0.15, metalness: 0.3, clearcoat: 1.0 });
+    ctx.addCollectibles([
+      [18, 22], [-22, 24], [38, 12], [-40, 8], [52, -16],
+      [-54, -22], [32, -40], [-30, -44], [0, 3.6, -34], [4, 46]
+    ], { color: 0xffd633, icon: "☀️", yOff: 1.35, makeMesh: function () { return new THREE.Mesh(sunStoneGeo, sunStoneMat); } });
+
+    /* ---- 5 Bạn Sa Mạc + Lạc Đà Nhí Kiki ---- */
+    ctx.addFriends([
+      { name: "Lạc Đà Nhí Kiki", kind: "camel",   pos: [14, 20],  isCompanion: true, greet: "🐪 Kiki cõng nắng đi cùng Mây băng qua sa mạc nè!" },
+      { name: "Cáo Tai To",      kind: "fennec",  pos: [-28, 18], greet: "🦊 Cáo Fennec vẫy đôi tai siêu to chào Mây!" },
+      { name: "Thằn Lằn Cát",    kind: "lizard",  pos: [42, -8],  greet: "🦎 Thằn lằn cát chạy zích zắc chào Mây!" },
+      { name: "Chồn Đất Nhí",    kind: "meerkat", pos: [-38, -26],greet: "🐾 Chồn đất đứng thẳng vẫy tay chào Mây!" },
+      { name: "Đại Bàng Vàng",   kind: "eagle",   pos: [24, 11.5, -24], behavior: "fly", orbitR: 12, opts: { scale: 1.25 }, greet: "🦅 Đại bàng vàng sải cánh chào nhà thám hiểm Mây!" }
+    ]);
+
+    /* ---- 3 Rương (1 dưới đáy hồ Ốc Đảo!), 4 Bình Gốm Cổ (amphora.glb), 5 Xương Rồng nở hoa ---- */
+    ctx.addChests([[OAS.x, -2.5, OAS.z], [-40, 8], [46, -28]], 0xd9a441);
+
+    ctx.addSouvenirs([[-36, 4], [28, 26], [-24, -36], [34, -18]].map(function (p, i) {
+      var m = new THREE.Group();
+      var glb = MAY.modelsReady ? MAY.cloneProp("amphora", 0xd99b52, 1.15) : null;
+      if (glb) m.add(glb);
+      else {
+        var vase = new THREE.Mesh(new THREE.LatheGeometry([new THREE.Vector2(0.25, 0), new THREE.Vector2(0.45, 0.5), new THREE.Vector2(0.2, 1.0), new THREE.Vector2(0.32, 1.25)], 12),
+          new THREE.MeshStandardMaterial({ color: 0xc97b42, roughness: 0.75 }));
+        m.add(vase);
+      }
+      return { id: "amp" + i, pos: p, mesh: m, color: 0xffd080, msg: "Nhặt được bình gốm cổ cho Ốc Đảo" };
+    }));
+
+    function makeCactus(x, z, interactive) {
+      var g = new THREE.Group();
+      var cm = new THREE.MeshStandardMaterial({ color: 0x3b8a4b, roughness: 0.85, normalMap: MAY.PBR.bark.normalMap });
+      var main = new THREE.Mesh(new THREE.CapsuleGeometry(0.36, 2.5, 6, 12), cm); main.position.y = 1.5; g.add(main);
+      var a1 = new THREE.Mesh(new THREE.CapsuleGeometry(0.24, 1.0, 5, 10), cm); a1.position.set(0.65, 1.9, 0); a1.rotation.z = -0.35; g.add(a1);
+      var a2 = new THREE.Mesh(new THREE.CapsuleGeometry(0.22, 0.85, 5, 10), cm); a2.position.set(-0.62, 1.4, 0.1); a2.rotation.z = 0.4; g.add(a2);
+      if (interactive) {
+        var fl = new THREE.Mesh(new THREE.SphereGeometry(0.32, 10, 8), new THREE.MeshStandardMaterial({ color: 0xff5c97, emissive: 0xff3b7f, emissiveIntensity: 0.7 }));
+        fl.position.y = 3.1; fl.scale.setScalar(0.01); g.add(fl);
+        g.userData.flower = fl;
+      }
+      g.position.set(x, ctx.groundH(x, z), z);
+      g.rotation.y = x * 0.6;
+      g.traverse(function (o) { if (o.isMesh) o.castShadow = true; });
+      return g;
+    }
+    [[-18, 34], [26, 36], [56, 8], [-58, 4], [48, -42], [-48, -46], [24, -62], [-18, -68]].forEach(function (p) {
+      ctx.add(makeCactus(p[0], p[1], false));
+    });
+    ctx.addInteractProps([[22, 6], [-22, 6], [30, -10], [-28, -14], [14, 34]].map(function (p, i) {
+      var cg = makeCactus(p[0], p[1], true);
+      return {
+        id: "cac" + i, obj: cg, label: "Chạm xương rồng nở hoa", burstColor: 0xff6b9d,
+        toastText: "Cây xương rồng nở hoa hồng rực rỡ!",
+        onActivate: function (obj) { obj.userData.flower.scale.setScalar(1.35); }
+      };
+    }));
+
+    /* Bảo vật ẩn: Bọ Hung Vàng giấu phía sau Kim Tự Tháp */
+    var scarab = new THREE.Mesh(new THREE.SphereGeometry(0.65, 14, 10),
+      new THREE.MeshPhysicalMaterial({ color: 0xffd700, emissive: 0xcc8800, emissiveIntensity: 0.9, metalness: 0.9, roughness: 0.15, clearcoat: 1.0 }));
+    scarab.scale.set(0.85, 0.55, 1.35);
+    ctx.addHiddenTreasure([0, ctx.groundH(0, -72) + 1.0, -72], {
+      name: "Bọ Hung Vàng May Mắn",
+      hint: "Có báu vật vàng óng giấu phía sau lưng Kim Tự Tháp...",
+      mesh: scarab
+    });
+
+    /* 3 Thử thách Màn 3 */
+    ctx.addRingsChallenge([[28, 16], [36, 0], [32, -16], [20, -28], [6, -32]], { title: "5 vòng nắng cồn cát", color: 0xffca3a });
+    ctx.addRaceChallenge([-12, 26], [[-32, 16], [-32, -16], [16, -24], [24, 14]], { title: "Đua cùng Cáo Tai To", time: 58 });
+    ctx.addQuizStation([0, -24], { label: "Nhân Sư Đố Vui" });
+
+    ctx.addPortal([0, 56], "hub", "🏝️ Về Đảo Mây", 0xfacc15);
+
+    ctx.minimapDrawExtra = function (mm, C, K) {
+      mm.fillStyle = "#22d3ee";
+      mm.beginPath(); mm.arc(C + OAS.x * K, C + OAS.z * K, OAS.r * K, 0, 6.29); mm.fill();
+      mm.fillStyle = "#eab308";
+      mm.fillRect(C + (PYR.x - PYR.half) * K, C + (PYR.z - PYR.half) * K, PYR.half * 2 * K, PYR.half * 2 * K);
+    };
+
+    /* ---- CỐT TRUYỆN CHƯƠNG 3: Lạc Đà Kiki (!) -> Hồi sinh Cây Chà Là (🌿) -> Học Tia Nắng (☀️) -> 3 Đài Gương Laser -> Trùm Bọ Cạp Sa Mạc! ---- */
+    ctx.checkpoint = new THREE.Vector3(0, ctx.groundH(0, 44) + 1.1, 44);
+    var ch3St = ctx.story;
+    var ch3Sc = MAY.STORY_SCRIPTS.level3;
+    ctx.setupAtmosphere(
+      { fog: 0x9b8875, density: 0.0095, sunInt: 1.05, hemiInt: 0.50, zenith: 0x5c5b66, horizon: 0xbda98e },
+      { fog: 0xebc98f, density: 0.0054, sunInt: 1.82, hemiInt: 0.84, zenith: 0x2574c4, horizon: 0xf7d694 },
+      !!ch3St.bossDown
+    );
+
+    /* Phong ấn Bóng Tối trên đỉnh Kim Tự Tháp (vỡ tan khi 3 Đài Gương chiếu hội tụ!) */
+    var pyrPeak = new THREE.Vector3(PYR.x, 20.5, PYR.z);
+    var darkSeal = new THREE.Mesh(
+      new THREE.OctahedronGeometry(3.8, 0),
+      new THREE.MeshPhysicalMaterial({ color: 0x241338, emissive: 0x6b21a8, emissiveIntensity: 0.75, transparent: true, opacity: 0.78, flatShading: true })
+    );
+    darkSeal.position.copy(pyrPeak);
+    darkSeal.visible = ch3St.stage < 3 && !ch3St.bossDown;
+    ctx.add(darkSeal);
+
+    /* Cây Chà Là Khô bên bờ Ốc Đảo (dùng 🌿 Nở Hoa hồi sinh mở Đĩa Mặt Trời!) */
+    var oasisTree = MAY.buildDeadTree(ctx, 13, 19, { scale: 0.95, blossomColor: 0x52c45a, flowerColor: 0xffd93d, spawnBounce: false });
+    if (ch3St.steps.oasisRevived) oasisTree.revive(true);
+
+    /* 3 Đài Gương Mặt Trời quanh sa mạc (đốt bóng tối bằng ☀️ -> bắn 3 tia laser vàng lên đỉnh Kim Tự Tháp!) */
+    var mirrorCoords = [[-32, 12], [32, 4], [-18, -32]];
+    var mirrors = mirrorCoords.map(function (c, i) {
+      var mr = MAY.buildSolarMirror(ctx, c[0], c[1], pyrPeak);
+      if (ch3St.steps["mir" + i]) mr.activate(true);
+      return mr;
+    });
+
+    /* 4 Bọ Cạp Cát Xám canh giữ các Đài Gương */
+    if (!ch3St.bossDown) {
+      [[-26, 14], [26, 8], [-14, -26], [16, -24]].forEach(function (ep, i) {
+        ctx.addEnemy({ id: "l3_scorp_" + i, kind: "sandscorpion", name: "Bọ Cạp Cát Xám", pos: ep, weakSpell: "solar", speed: 3.6, patrolR: 7 });
+      });
+    }
+
+    /* TRÙM CHƯƠNG 3: 🦂 Bọ Cạp Sa Mạc Khổng Lồ */
+    var scorpBossMesh = MAY.makeMonsterMesh("sandscorpion", 2.45);
+    var ch3Npc;
+    var ch3Boss = ctx.setBoss({
+      name: "Bọ Cạp Sa Mạc Khổng Lồ", icon: "🦂",
+      pos: new THREE.Vector3(0, ctx.groundH(0, -22), -22), arenaR: 26, maxHp: 3, mesh: scorpBossMesh,
+      startActive: ch3St.stage === 3 && !ch3St.bossDown,
+      tipFn: function () { return "💡 Né vệt cát đỏ khi Bọ Cạp lao tới rồi tung ☀️ Tia Nắng Rực Rỡ (Phím 3 + R) làm vỡ giáp cát!"; },
+      onTick: function (dt, t, bs) {
+        var ang = Math.atan2(MAY.player.pos.x - bs.pos.x, MAY.player.pos.z - bs.pos.z);
+        bs.mesh.rotation.y = ang + Math.PI;
+        bs.atkT -= dt;
+        if (bs.atkT <= 0 && bs.pos.distanceTo(MAY.player.pos) < 34) {
+          bs.atkT = 3.2;
+          var targetP = MAY.player.pos.clone();
+          targetP.y = ctx.groundH(targetP.x, targetP.z);
+          MAY.VFX.spawnTelegraph(targetP, 4.2, 1.0, 0xff9f1c);
+          MAY.toast("🦂 Bọ Cạp đang lặn cát lao tới vị trí Mây đứng! Chạy né khỏi vòng cam!");
+          setTimeout(function () {
+            if (!bs.active || bs.defeated || MAY.modalOpen) return;
+            bs.pos.set(targetP.x, targetP.y, targetP.z);
+            MAY.burstAt(bs.pos.clone().add(new THREE.Vector3(0, 1.2, 0)), 0xeec882, 20);
+            if (MAY.player.pos.distanceTo(bs.pos) < 4.2) {
+              MAY.damagePlayer(1, bs.pos, "Bọ Cạp trồi lên từ cát! Dùng ☀️ Tia Nắng làm chói mắt nó!");
+            }
+          }, 1000);
+        }
+      },
+      onSpellHit: function (spellId, castPos, bs) {
+        if (spellId === "solar") {
+          bs.damage("☀️ Tia Nắng Rực Rỡ nổ chói làm vỡ tan lớp giáp cát của Bọ Cạp!");
+        } else {
+          MAY.toast("💡 Lớp giáp cát rất cứng! Hãy dùng ☀️ Tia Nắng Rực Rỡ (Phím 3 + R) làm chói mắt vỡ giáp!");
+        }
+      },
+      onDefeat: function () {
+        ch3St.stage = 4; MAY.persist();
+        ch3Npc.setMarker("★");
+        ctx.setObjective("★", "QUAY LẠI GẶP LẠC ĐÀ KIKI NHẬN 🟡 NGỌC VÀNG NẮNG!", ch3Npc.pos);
+        MAY.toast("☀️ Bão cát tan biến! Quay về gặp Lạc Đà Kiki (★) nhận thưởng!", "Hoan hô! Mây đã đánh bại Trùm và thanh tẩy Màn Sương Xám!");
+      }
+    });
+
+    function updateCh3Story() {
+      if (ch3St.rewarded || ctx.save.gem) {
+        ch3Npc.setMarker("♥");
+        ctx.setObjective("🟡", "SA MẠC ĐÃ RỰC NẮNG — SANG CHƯƠNG 4 HANG PHA LÊ (PHÍM M)", null);
+        return;
+      }
+      if (ch3St.bossDown) {
+        ch3Npc.setMarker("★");
+        ctx.setObjective("★", "QUAY LẠI GẶP LẠC ĐÀ KIKI NHẬN 🟡 NGỌC VÀNG NẮNG!", ch3Npc.pos);
+        return;
+      }
+      if (ch3St.stage === 0) {
+        ch3Npc.setMarker("!");
+        ctx.setObjective("💬", "TRÒ CHUYỆN VỚI LẠC ĐÀ KIKI BÊN ỐC ĐẢO (!)", ch3Npc.pos);
+        return;
+      }
+      if (!ch3St.steps.oasisRevived) {
+        ch3Npc.setMarker("?");
+        ctx.setObjective("🌿", "DÙNG 🌿 NỞ HOA (2+R) HỒI SINH CÂY CHÀ LÀ ỐC ĐẢO", oasisTree.pos);
+        return;
+      }
+      if (ch3St.stage < 2) {
+        ch3Npc.setMarker("!");
+        ctx.setObjective("💬", "QUAY LẠI LẠC ĐÀ KIKI NHẬN PHÉP ☀️ TIA NẮNG (!)", ch3Npc.pos);
+        return;
+      }
+      var litCount = 0;
+      for (var i = 0; i < 3; i++) if (ch3St.steps["mir" + i]) litCount++;
+      if (litCount < 3) {
+        ch3Npc.setMarker("?");
+        var nextM = mirrors[0].pos;
+        for (var j = 0; j < 3; j++) if (!ch3St.steps["mir" + j]) { nextM = mirrors[j].pos; break; }
+        ctx.setObjective("☀️", "DÙNG ☀️ TIA NẮNG (3+R) THẮP 3 ĐÀI GƯƠNG LASER (" + litCount + "/3)", nextM);
+      } else {
+        ch3St.stage = 3; MAY.persist();
+        if (darkSeal.visible) {
+          darkSeal.visible = false;
+          MAY.VFX.spawnShatterBurst(pyrPeak, 0xffd93d);
+          MAY.sndShatter(pyrPeak);
+        }
+        ch3Npc.setMarker("?");
+        if (!ch3Boss.active) {
+          ch3Boss.activate();
+          MAY.openDialogue({
+            name: ch3Sc.npcName, role: ch3Sc.npcRole, icon: ch3Sc.npcIcon, color: ch3Sc.npcColor,
+            pages: ch3Sc.bossIntro, endBtn: "🦂 Chiến đấu với Bọ Cạp Sa Mạc!", voiceClip: "boss_appear"
+          });
+        }
+        ctx.setObjective("🦂", "DÙNG ☀️ TIA NẮNG ĐÁNH BẠI BỌ CẠP SA MẠC!", ch3Boss.pos);
+      }
+    }
+
+    ctx.addSkillTarget({
+      id: "l3_oasis", pos: oasisTree.pos, radius: 8.5, reqSpell: "growth",
+      hint: "🌿 Hồi sinh Cây Chà Là Ốc Đảo!", done: !!ch3St.steps.oasisRevived,
+      isActive: function () { return ch3St.stage >= 1 && !ch3St.steps.oasisRevived; },
+      onHit: function (sp, tg) {
+        ch3St.steps.oasisRevived = true; MAY.persist();
+        oasisTree.revive(false);
+        tg.markDone();
+        MAY.toast("🌴 Ốc Đảo xanh mát làm lộ Đĩa Mặt Trời Cổ! Quay lại gặp Lạc Đà Kiki nhận ☀️ Tia Nắng!", "Kỳ diệu quá! Cây cổ thụ đã hồi sinh nở hoa rực rỡ rồi!");
+        updateCh3Story();
+      }
+    });
+
+    mirrors.forEach(function (mr, idx) {
+      ctx.addSkillTarget({
+        id: "l3_mir_" + idx, pos: mr.pos, radius: 9.0, reqSpell: "solar",
+        hint: "☀️ Thắp Đài Gương Nắng (" + (idx + 1) + "/3)", done: !!ch3St.steps["mir" + idx],
+        isActive: function () { return ch3St.stage >= 2 && !ch3St.steps["mir" + idx]; },
+        onHit: function (sp, tg) {
+          ch3St.steps["mir" + idx] = true; MAY.persist();
+          mr.activate(false);
+          tg.markDone();
+          MAY.toast("☀️ Đài Gương " + (idx + 1) + "/3 bắn tia nắng vàng rực lên đỉnh Kim Tự Tháp!", "Đài Gương Mặt Trời đã sáng rực, bắn tia nắng vàng thẳng lên Kim Tự Tháp!");
+          updateCh3Story();
+        }
+      });
+    });
+
+    ch3Npc = ctx.addQuestNPC({
+      kind: "camel", name: ch3Sc.npcName, icon: ch3Sc.npcIcon,
+      pos: [6, 35], rotY: 0, scale: 1.15, labelY: 2.8, autoGreet: ch3St.stage === 0,
+      onTalk: function () {
+        if (ch3St.rewarded || ctx.save.gem) {
+          MAY.openDialogue({ name: ch3Sc.npcName, role: ch3Sc.npcRole, icon: ch3Sc.npcIcon, color: ch3Sc.npcColor, pages: ch3Sc.complete, endBtn: "💎 Tới Chương 4: Hang Pha Lê", onDone: function () { MAY.enterLevel("level4"); } });
+        } else if (ch3St.bossDown) {
+          MAY.openDialogue({
+            name: ch3Sc.npcName, role: ch3Sc.npcRole, icon: ch3Sc.npcIcon, color: ch3Sc.npcColor,
+            pages: ch3Sc.reward, endBtn: ch3Sc.rewardBtn, voiceClip: "gem_win",
+            onDone: function () { ch3St.rewarded = true; MAY.persist(); updateCh3Story(); ctx.awardGem(); }
+          });
+        } else if (ch3St.stage === 0) {
+          MAY.openDialogue({
+            name: ch3Sc.npcName, role: ch3Sc.npcRole, icon: ch3Sc.npcIcon, color: ch3Sc.npcColor,
+            pages: ch3Sc.intro, endBtn: ch3Sc.introBtn, voiceClip: "npc_ch3",
+            onDone: function () {
+              ch3St.stage = 1; MAY.persist();
+              if (!MAY.isSpellUnlocked("growth")) MAY.unlockSpell("growth", true);
+              updateCh3Story();
+            }
+          });
+        } else if (ch3St.steps.oasisRevived && ch3St.stage < 2) {
+          MAY.openDialogue({
+            name: ch3Sc.npcName, role: ch3Sc.npcRole, icon: ch3Sc.npcIcon, color: ch3Sc.npcColor,
+            pages: ch3Sc.stage2GiveSkill, endBtn: ch3Sc.stage2Btn,
+            onDone: function () {
+              ch3St.stage = 2; MAY.persist();
+              MAY.unlockSpell("solar");
+              updateCh3Story();
+            }
+          });
+        } else {
+          MAY.openDialogue({ name: ch3Sc.npcName, role: ch3Sc.npcRole, icon: ch3Sc.npcIcon, color: ch3Sc.npcColor, pages: ch3Sc.inProgress, endBtn: "☀️ Đi thắp Đài Gương!" });
+        }
+      }
+    });
+    updateCh3Story();
+
+    ctx.onUpdate = function (dt, t) {
+      oasisTree.update(dt);
+      if (darkSeal.visible) { darkSeal.rotation.y += dt * 1.4; darkSeal.rotation.x += dt * 0.8; }
+      oasisFish.forEach(function (of) {
+        of.a += dt * 0.55;
+        of.g.position.set(OAS.x + Math.cos(of.a) * of.r, -1.2, OAS.z + Math.sin(of.a) * of.r);
+        of.g.rotation.y = -of.a - Math.PI / 2;
+      });
+    };
+
+    MAY.player.spawnAt(0, ctx.groundH(0, 44) + 1.05, 44, 0, false);
+    return ctx;
+  };
+
+})(window.MAY);

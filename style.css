@@ -1,0 +1,362 @@
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
+body {
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  background: #06283d; color: #eef7fc;
+}
+#view { position: fixed; inset: 0; display: block; touch-action: none; }
+#mask, #grade { position: fixed; inset: 0; z-index: 2; pointer-events: none; transition: opacity .4s ease; opacity: 0; }
+
+/* HUD */
+.hud { position: fixed; z-index: 5; pointer-events: none; }
+#obj {
+  top: 12px; left: 12px;
+  background: rgba(5, 22, 38, .48);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,.22);
+  border-radius: 16px; padding: 8px 14px;
+}
+#obj .t1 { font-size: 11px; letter-spacing: .16em; color: #9fd8ef; font-weight: 800; }
+#obj .t2 { font-size: 20px; font-weight: 900; letter-spacing: .04em; color: #fff; text-shadow: 0 2px 6px rgba(0,0,0,.55); }
+#obj .t2 .star { color: #ffd93d; }
+
+/* Thanh 6 Phép Thuật Nguyên Tố (phong cách Fable 5.2) */
+#spellbar { top: 82px; left: 12px; pointer-events: auto; }
+.spell-row { display: flex; align-items: center; gap: 6px; }
+.spell-slot {
+  position: relative; width: 38px; height: 38px; border-radius: 50%;
+  border: 2px solid rgba(255,255,255,.32); background: rgba(6, 22, 40, .65);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  color: #fff; font-size: 17px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: transform .14s ease, border-color .15s ease, box-shadow .15s ease;
+}
+.spell-slot kbd {
+  position: absolute; right: -3px; bottom: -3px; font-size: 9px; font-weight: 900; font-family: inherit;
+  background: rgba(10, 26, 44, .92); color: #cde8f6; border: 1px solid rgba(255,255,255,.35);
+  border-radius: 50%; width: 15px; height: 15px; line-height: 13px; text-align: center;
+}
+.spell-slot:hover { transform: scale(1.08); }
+.spell-slot.active {
+  border-color: #ffd93d; background: rgba(255, 217, 61, .28);
+  box-shadow: 0 0 12px rgba(255, 217, 61, .65); transform: scale(1.12);
+}
+.spell-cast {
+  height: 36px; padding: 0 12px; border-radius: 999px; border: 2px solid #ffd93d;
+  background: linear-gradient(135deg, rgba(255,217,61,.9), rgba(255,159,67,.9));
+  color: #162436; font-weight: 900; font-size: 13px; cursor: pointer; font-family: inherit;
+  box-shadow: 0 3px 10px rgba(0,0,0,.35);
+}
+.spell-cast:active { transform: scale(.95); }
+#spell-name {
+  margin-top: 5px; font-size: 11px; font-weight: 800; letter-spacing: .24em;
+  color: #ffe8a3; text-shadow: 0 2px 6px rgba(0,0,0,.85); padding-left: 4px;
+}
+
+#fr {
+  top: 12px; right: 12px; text-align: right;
+  display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 6px;
+  max-width: 62vw;
+}
+#fr .pill {
+  display: inline-block;
+  background: rgba(5, 24, 42, .56);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,.28);
+  border-radius: 999px; padding: 6px 12px; font-size: 15px; font-weight: 800;
+}
+#fr .gem-pill { background: linear-gradient(135deg, rgba(168,85,247,.48), rgba(56,189,248,.48)); border-color: rgba(255,217,61,.6); }
+#zone-pill { background: rgba(255,217,61,.25) !important; border-color: rgba(255,217,61,.55) !important; }
+#fr .hbtn {
+  pointer-events: auto;
+  background: rgba(5, 26, 46, .65);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,.4);
+  color: #fff; font-size: 17px; width: 40px; height: 40px; border-radius: 50%;
+  cursor: pointer; transition: transform .12s ease, background .15s ease;
+}
+#fr .hbtn:hover { background: rgba(255,217,61,.32); transform: scale(1.06); }
+
+/* La bàn */
+#compass {
+  top: 66px; left: 50%; transform: translateX(-50%); width: min(400px, 50vw); height: 34px;
+  overflow: hidden; border-bottom: 2px solid rgba(255,255,255,.38);
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent);
+}
+#compass .tick { position: absolute; top: 0; font-size: 12px; font-weight: 700; color: rgba(232,244,250,.8); transform: translateX(-50%); }
+#compass .tick b { display: block; text-align: center; font-size: 13px; color: #fff; }
+#compass .mark { position: absolute; top: 1px; font-size: 15px; transform: translateX(-50%); text-align: center; }
+#compass .mark small { display: block; font-size: 10px; font-weight: 800; color: #ffd93d; }
+#compass .needle { position: absolute; left: 50%; top: 0; transform: translateX(-50%); color: #ffd93d; font-size: 11px; }
+
+#dot {
+  position: fixed; left: 50%; top: 50%; width: 6px; height: 6px; margin: -3px 0 0 -3px;
+  border-radius: 50%; background: rgba(255,255,255,.85); z-index: 4; pointer-events: none;
+  box-shadow: 0 0 6px rgba(0,0,0,.85);
+}
+
+#big { right: 16px; bottom: 16px; text-align: right; }
+#big .n { font-size: 48px; font-weight: 900; color: #ffd93d; line-height: .95; text-shadow: 0 3px 12px rgba(0,0,0,.65); }
+#big .l { font-size: 12px; letter-spacing: .2em; color: #cfeefc; font-weight: 800; }
+
+#toast {
+  position: fixed; left: 50%; top: 112px; transform: translateX(-50%) scale(.92); z-index: 8;
+  background: rgba(255,217,61,.96); color: #083452; font-weight: 900; font-size: 18px;
+  padding: 10px 22px; border-radius: 999px; opacity: 0; transition: all .28s ease; pointer-events: none;
+  box-shadow: 0 6px 20px rgba(0,0,0,.38); white-space: nowrap; max-width: 92vw;
+  overflow: hidden; text-overflow: ellipsis;
+}
+#toast.show { opacity: 1; transform: translateX(-50%) scale(1); }
+
+#hint {
+  position: fixed; left: 50%; transform: translateX(-50%); bottom: 14px; z-index: 5;
+  background: rgba(4, 24, 42, .62); backdrop-filter: blur(6px);
+  border: 1px solid rgba(255,255,255,.18);
+  border-radius: 999px; padding: 7px 16px; font-size: 13px; font-weight: 700;
+  pointer-events: none; white-space: nowrap;
+}
+
+#diver-id { position: fixed; left: 16px; bottom: 16px; z-index: 5; text-align: center; pointer-events: none; }
+#diver-id img { width: 62px; height: 62px; object-fit: cover; object-position: top center; border-radius: 50%; border: 3px solid #ffd93d; box-shadow: 0 4px 12px rgba(0,0,0,.45); display: block; margin: 0 auto 3px; }
+#diver-id div { font-size: 11px; font-weight: 800; letter-spacing: .14em; color: #dff4ff; text-shadow: 0 1px 4px rgba(0,0,0,.85); }
+body.touch #diver-id { display: none; }
+
+#minimap-wrap {
+  position: fixed; right: 14px; top: 112px; z-index: 5; width: 126px; height: 126px;
+  border-radius: 50%; border: 3px solid rgba(255,255,255,.72); overflow: hidden; pointer-events: none;
+  background: rgba(3,40,60,.58); box-shadow: 0 6px 16px rgba(0,0,0,.4);
+}
+#minimap { width: 126px; height: 126px; display: block; }
+
+#interact {
+  position: fixed; left: 50%; top: 62%; transform: translateX(-50%); z-index: 6;
+  background: rgba(255,217,61,.96); color: #083b5c; font-weight: 800; font-size: 16px;
+  padding: 8px 18px; border-radius: 999px; display: none; pointer-events: none;
+  box-shadow: 0 4px 14px rgba(0,0,0,.35); white-space: nowrap;
+}
+
+/* Cảm ứng */
+#joy {
+  position: fixed; left: 18px; bottom: 22px; width: 124px; height: 124px; z-index: 5;
+  border-radius: 50%; background: rgba(13,80,120,.42); border: 2px solid rgba(255,255,255,.75); display: none;
+}
+#stick {
+  position: absolute; left: 50%; top: 50%; width: 56px; height: 56px; margin: -28px 0 0 -28px;
+  border-radius: 50%; background: #ffd93d; box-shadow: 0 4px 10px rgba(0,0,0,.35);
+}
+#vert { position: fixed; right: 18px; bottom: 22px; z-index: 5; display: none; flex-direction: column; gap: 8px; }
+#vert button {
+  width: 58px; height: 58px; border-radius: 50%; font-size: 24px; font-weight: 900;
+  border: 2px solid #d9a400; background: #ffd93d; color: #083b5c; cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0,0,0,.35);
+}
+body.touch #joy { display: block; }
+body.touch #vert { display: flex; }
+body.touch #hint { bottom: 166px; }
+body.touch #big { display: none; }
+
+/* Overlays & Modals */
+.overlay {
+  position: fixed; inset: 0; z-index: 10; display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(180deg, rgba(4, 24, 46, .74), rgba(6, 54, 86, .78)); padding: 16px;
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+}
+.overlay.hidden { display: none; }
+.panel {
+  max-width: 560px; width: 100%; max-height: 94vh; overflow-y: auto; text-align: center;
+  background: rgba(12, 34, 58, .84); border: 1px solid rgba(255,255,255,.28); border-radius: 22px;
+  padding: 16px 18px; box-shadow: 0 16px 40px rgba(0,12,30,.55);
+}
+.panel.wide { max-width: 700px; }
+.panel h1 { font-size: clamp(22px, 4.5vw, 32px); margin: 4px 0; line-height: 1.15; letter-spacing: .03em; text-shadow: 0 3px 0 rgba(0,30,60,.65); }
+.ver-tag { font-size: 12px; background: rgba(255,217,61,.22); border: 1px solid #ffd93d; color: #ffd93d; border-radius: 999px; padding: 2px 9px; vertical-align: middle; }
+.panel p { font-size: 14px; line-height: 1.45; margin: 6px 0; }
+.story-lead { background: rgba(255,255,255,.08); border-radius: 12px; padding: 8px 12px; }
+
+.hero-img { width: 88px; height: 88px; object-fit: cover; object-position: top center; border-radius: 50%; border: 3px solid #ffd93d; box-shadow: 0 6px 18px rgba(0,0,0,.45); }
+.hero-img.small { width: 82px; height: 82px; }
+
+.outfits { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 10px 0 6px; }
+.outfits.outfits-6 { grid-template-columns: repeat(3, 1fr); }
+.outfit {
+  background: rgba(255,255,255,.1); border: 2px solid rgba(255,255,255,.26); border-radius: 14px;
+  padding: 6px 4px; cursor: pointer; color: #fff; font-family: inherit; transition: transform .12s ease;
+}
+.outfit:hover { transform: translateY(-2px); }
+.outfit img { width: 100%; height: 76px; object-fit: cover; object-position: top center; border-radius: 10px; display: block; }
+.outfit span { display: block; font-size: 12px; font-weight: 800; margin-top: 5px; }
+.outfit.sel { border-color: #ffd93d; background: rgba(255,217,61,.24); box-shadow: 0 0 0 2px #ffd93d; }
+.outfit.locked { opacity: .55; filter: grayscale(.6); }
+.outfit-label { font-size: 14px; font-weight: 800; margin: 10px 0 0; }
+
+.quick-worlds { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin: 10px 0; }
+.qworld {
+  background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.3); color: #fff;
+  border-radius: 999px; padding: 6px 12px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit;
+}
+.qworld:hover { background: rgba(255,217,61,.28); border-color: #ffd93d; }
+
+.keys { font-size: 13px; background: rgba(0,22,42,.5); border-radius: 14px; padding: 10px 12px; margin: 10px 0; text-align: left; }
+.keys b { color: #ffd93d; }
+
+.qrow { margin-top: 10px; font-size: 14px; font-weight: 700; color: #cfeefc; }
+.qbtn {
+  margin: 0 3px; padding: 6px 14px; border-radius: 999px; border: 2px solid #7ec8e8;
+  background: rgba(255,255,255,.12); color: #fff; font-weight: 800; cursor: pointer; font-family: inherit;
+}
+.qbtn.sel { background: #ffd93d; border-color: #ffd93d; color: #1b2838; }
+
+.btn {
+  display: inline-block; border: none; cursor: pointer; font-family: inherit; font-size: 19px; font-weight: 800;
+  color: #083b5c; background: #ffd93d; padding: 13px 28px; border-radius: 999px;
+  box-shadow: 0 5px 0 #d9a400, 0 8px 18px rgba(0,0,0,.35);
+}
+.btn:active { transform: translateY(3px); box-shadow: 0 2px 0 #d9a400; }
+.btn.blue { background: #7fe3ff; box-shadow: 0 5px 0 #2a9dc4, 0 8px 16px rgba(0,0,0,.3); color: #074a68; }
+.btn.small { font-size: 15px; padding: 10px 18px; }
+.btn:disabled { opacity: .52; cursor: default; }
+
+.boot-bar { width: 260px; height: 8px; background: rgba(255,255,255,.2); border-radius: 99px; margin: 14px auto 6px; overflow: hidden; }
+.boot-bar i { display: block; height: 100%; width: 0%; background: linear-gradient(90deg, #ffd93d, #7fe3ff); transition: width .35s ease; }
+#boot-msg { font-size: 13px; letter-spacing: .08em; color: #9fd8ef; font-weight: 700; }
+.big { font-size: 44px; }
+
+/* Bản đồ 6 Vùng Đất */
+.map-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px; margin-top: 12px; text-align: left; }
+.map-card {
+  position: relative; background: rgba(255,255,255,.1); border: 2px solid rgba(255,255,255,.3);
+  border-radius: 16px; padding: 12px 14px; color: #fff; cursor: pointer; font-family: inherit;
+  transition: transform .14s ease, background .15s ease;
+}
+.map-card:hover { background: rgba(255,255,255,.2); transform: translateY(-2px); }
+.map-card.cur { background: rgba(255,217,61,.18); box-shadow: 0 0 0 2px #ffd93d; }
+.map-card .mtop { display: flex; align-items: center; gap: 10px; }
+.map-card .mico { font-size: 28px; }
+.map-card .mname { font-size: 15px; font-weight: 800; }
+.map-card .msub { font-size: 12px; color: #cde8f6; margin-top: 3px; }
+.mbadge {
+  display: inline-block; margin-top: 7px; font-size: 11px; font-weight: 800;
+  padding: 3px 9px; border-radius: 999px;
+}
+.mbadge.here { background: #ffd93d; color: #083b5c; }
+.mbadge.done { background: rgba(74,222,128,.28); color: #86efac; border: 1px solid #4ade80; }
+.mbadge.rec  { background: rgba(56,189,248,.28); color: #bae6fd; border: 1px solid #38bdf8; }
+
+/* Sổ tay */
+.alb-sec { text-align: left; font-size: 14px; font-weight: 800; color: #9fd8ef; margin: 12px 0 6px; letter-spacing: .04em; }
+.alb-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.alb-chip {
+  background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.18); border-radius: 12px;
+  padding: 8px 6px; text-align: center; opacity: .55;
+}
+.alb-chip.got { opacity: 1; background: rgba(255,217,61,.16); border-color: rgba(255,217,61,.55); }
+.alb-chip .aico { display: block; font-size: 22px; }
+.alb-chip b { display: block; font-size: 12px; margin-top: 2px; }
+.alb-chip small { display: block; font-size: 10px; color: #cfe8f5; margin-top: 2px; line-height: 1.25; }
+
+#quiz-ans button {
+  padding: 13px; font-size: 22px; font-weight: 900; border-radius: 14px;
+  border: 2px solid #ffd93d; background: rgba(255,255,255,.14); color: #fff; cursor: pointer; font-family: inherit;
+}
+#quiz-ans button:hover, #quiz-ans button:active { background: #ffd93d; color: #083b5c; }
+
+#err {
+  position: fixed; inset: 0; z-index: 20; display: none; align-items: center; justify-content: center;
+  background: #083b5c; color: #fff; font-size: 18px; padding: 24px; text-align: center;
+}
+
+@media (max-width: 720px) {
+  #obj .t2 { font-size: 16px; }
+  .obj-word { display: none; }
+  #fr { max-width: 68vw; gap: 4px; }
+  #fr .pill { font-size: 12px; padding: 4px 8px; }
+  #fr .hbtn { width: 35px; height: 35px; font-size: 15px; }
+  #compass { top: 76px; width: 58vw; }
+  #toast { top: 118px; font-size: 15px; }
+  #hint { font-size: 11px; white-space: normal; text-align: center; max-width: 92vw; }
+  #minimap-wrap { width: 98px; height: 98px; top: 112px; }
+  #minimap { width: 98px; height: 98px; }
+  .alb-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+
+/* ============================================================================
+   v10.0 — HUD CỐT TRUYỆN, 3 TRÁI TIM, HỘP THOẠI NPC, THANH MÁU TRÙM & BANNER PHÉP
+   ============================================================================ */
+.obj-top { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+#hearts-hud { font-size: 16px; letter-spacing: 2px; filter: drop-shadow(0 2px 4px rgba(0,0,0,.55)); transition: transform .2s ease; }
+#hearts-hud.hurt { transform: scale(1.25); filter: drop-shadow(0 0 10px #ff3b5c); }
+#obj .t2 { font-size: 15px; max-width: min(410px, 44vw); line-height: 1.25; }
+.obj-substep { font-size: 11px; color: #b9e4f8; font-weight: 700; margin-top: 3px; opacity: .88; }
+#spellbar { top: 116px; }
+.spell-slot.locked {
+  opacity: .38; filter: grayscale(.85); cursor: not-allowed;
+  border-style: dashed; border-color: rgba(255,255,255,.25);
+}
+.spell-slot.locked::after {
+  content: "🔒"; position: absolute; left: -3px; top: -4px; font-size: 10px;
+}
+
+/* Boss HP Bar */
+#boss-hud {
+  top: 106px; left: 50%; transform: translateX(-50%);
+  width: min(460px, 74vw); z-index: 7;
+  background: rgba(24, 10, 32, .82); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  border: 2px solid rgba(255, 92, 138, .75); border-radius: 16px; padding: 9px 14px;
+  box-shadow: 0 8px 26px rgba(0, 0, 0, .55), 0 0 20px rgba(255, 77, 130, .28);
+}
+#boss-hud.hidden { display: none; }
+.boss-head { display: flex; justify-content: space-between; align-items: center; font-weight: 900; font-size: 14px; letter-spacing: .05em; color: #ffd6e6; margin-bottom: 5px; }
+#boss-phase { font-size: 12px; background: rgba(255, 92, 138, .35); border: 1px solid #ff7aa2; padding: 2px 9px; border-radius: 999px; color: #fff; }
+.boss-bar { width: 100%; height: 11px; background: rgba(255,255,255,.15); border-radius: 999px; overflow: hidden; border: 1px solid rgba(255,255,255,.25); }
+.boss-bar i { display: block; height: 100%; background: linear-gradient(90deg, #ff3b6b, #ff9f43, #ffd93d); transition: width .35s ease; box-shadow: 0 0 10px rgba(255, 90, 120, .8); }
+#boss-tip { margin-top: 5px; font-size: 12px; font-weight: 700; color: #ffe8a3; text-align: center; }
+
+/* Skill Unlock Banner */
+#skill-banner {
+  position: fixed; left: 50%; top: 158px; transform: translateX(-50%); z-index: 12;
+  display: flex; align-items: center; gap: 14px; max-width: min(520px, 90vw);
+  background: linear-gradient(135deg, rgba(16, 40, 68, .94), rgba(52, 24, 82, .94));
+  border: 2px solid #ffd93d; border-radius: 20px; padding: 14px 20px;
+  box-shadow: 0 12px 34px rgba(0,0,0,.6), 0 0 28px rgba(255,217,61,.45);
+  animation: sbPop .35s ease;
+}
+#skill-banner.hidden { display: none; }
+.sb-ico { font-size: 40px; width: 58px; height: 58px; border-radius: 50%; background: rgba(255,217,61,.18); border: 2px solid #ffd93d; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.sb-kicker { font-size: 11px; font-weight: 900; letter-spacing: .16em; color: #ffd93d; }
+.sb-title { font-size: 19px; font-weight: 900; color: #fff; margin: 2px 0; }
+.sb-desc { font-size: 13px; color: #d5f0ff; line-height: 1.35; }
+@keyframes sbPop { from { opacity: 0; transform: translateX(-50%) scale(.86); } to { opacity: 1; transform: translateX(-50%) scale(1); } }
+
+/* NPC Story Dialogue Box */
+#dialogue-box {
+  position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%); z-index: 15;
+  width: min(720px, 94vw); pointer-events: auto;
+  animation: dlgSlide .26s ease;
+}
+#dialogue-box.hidden { display: none; }
+.dlg-card {
+  display: flex; align-items: flex-start; gap: 16px;
+  background: linear-gradient(160deg, rgba(8, 28, 50, .95), rgba(14, 38, 66, .95));
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  border: 2px solid rgba(255, 217, 61, .78); border-radius: 22px; padding: 16px 20px;
+  box-shadow: 0 16px 44px rgba(0, 0, 0, .65), 0 0 22px rgba(255, 217, 61, .22);
+}
+.dlg-avatar {
+  width: 72px; height: 72px; border-radius: 50%; flex-shrink: 0;
+  background: rgba(255, 255, 255, .12); border: 3px solid #ffd93d;
+  display: flex; align-items: center; justify-content: center; font-size: 38px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, .4);
+}
+.dlg-body { flex: 1; min-width: 0; }
+.dlg-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; margin-bottom: 7px; }
+#dlg-name { font-size: 19px; font-weight: 900; color: #ffd93d; }
+#dlg-role { font-size: 12px; font-weight: 700; color: #9fd8ef; background: rgba(255,255,255,.1); padding: 2px 9px; border-radius: 999px; }
+#dlg-page { margin-left: auto; font-size: 12px; font-weight: 800; color: #cde8f6; }
+#dlg-text { font-size: 16px; line-height: 1.5; color: #f5fbff; min-height: 50px; }
+.dlg-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 12px; }
+.dlg-key { font-size: 12px; color: #9ec8de; font-weight: 700; }
+@keyframes dlgSlide { from { opacity: 0; transform: translateX(-50%) translateY(18px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+
+#interact { pointer-events: auto; cursor: pointer; }
+#interact:hover { transform: translateX(-50%) scale(1.05); }

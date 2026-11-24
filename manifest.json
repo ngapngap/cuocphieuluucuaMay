@@ -1,0 +1,24 @@
+{
+  "name": "Cuộc Phiêu Lưu Của Mây — 6 Vùng Đất Kỳ Diệu",
+  "short_name": "Phiêu Lưu Mây",
+  "description": "Bé Mây cùng Cá heo Bubi & Cún Milo vượt qua 6 vùng đất 3D PBR chân thực đi tìm 6 Viên Ngọc Cầu Vồng.",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#075a88",
+  "theme_color": "#075a88",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
