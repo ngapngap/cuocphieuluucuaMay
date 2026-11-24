@@ -444,7 +444,7 @@
 
     if (staffGemNode) {
       var sgHalo = new THREE.Sprite(new THREE.SpriteMaterial({
-        map: MAY.TEX.glow, color: 0x4ade80, transparent: true, opacity: 0.72,
+        map: MAY.TEX.glow, color: 0x38bdf8, transparent: true, opacity: 0.72,
         blending: THREE.AdditiveBlending, depthWrite: false
       }));
       sgHalo.scale.set(0.45, 0.45, 1);
@@ -635,10 +635,21 @@
     var kLow = (e.key || "").toLowerCase();
     if (KEY_ALIAS[kLow]) P.keys[KEY_ALIAS[kLow]] = true;
     if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space"].indexOf(e.code) !== -1) e.preventDefault();
-    if (e.code === "Escape" && MAY.modalOpen) {
-      if (MAY.closeDialogue) MAY.closeDialogue();
-      if (MAY.closeAllModals) MAY.closeAllModals();
-      return;
+    if (e.code === "Escape") {
+      if (MAY.Cutscene && MAY.Cutscene.isPlaying && MAY.Cutscene.isPlaying()) {
+        MAY.Cutscene.skip();
+        return;
+      }
+      if (MAY.dialogueOpen) {
+        if (MAY.finishDialogue) MAY.finishDialogue();
+        return;
+      }
+      if (MAY.modalOpen) {
+        var qOv = document.getElementById("quiz-ov");
+        if (qOv && !qOv.classList.contains("hidden") && MAY.closeQuiz) MAY.closeQuiz();
+        else if (MAY.closeAllModals) MAY.closeAllModals();
+        return;
+      }
     }
     if (!MAY.started || MAY.modalOpen) return;
     if (e.code === "KeyF" || kLow === "f") MAY.cycleCam();
@@ -891,18 +902,78 @@
     playerPos.x += vel.x * dt;
     playerPos.z += vel.z * dt;
 
-    /* Va chạm rắn 3D (chặn đi xuyên tường pha lê nứt, bùn chắn, thân cây cổ thụ, cột đá, lâu đài, lều tuyết!) */
+    /* Va chạm rắn 3D đa hình dạng (OBB hộp xoay, Cylinder trụ, Sphere cầu/vòm — giải lặp 2 vòng + trượt mượt dọc tường!) */
     if (ctx.colliders && ctx.colliders.length) {
-      for (var ci = 0; ci < ctx.colliders.length; ci++) {
-        var col = ctx.colliders[ci];
-        if (col.maxY !== undefined && playerPos.y - 0.9 > col.maxY) continue;
-        if (col.minY !== undefined && playerPos.y + 0.6 < col.minY) continue;
-        var cdx = playerPos.x - col.x, cdz = playerPos.z - col.z;
-        var cdist = Math.hypot(cdx, cdz);
-        var minD = (col.r || 1.2) + 0.52;
-        if (cdist < minD && cdist > 0.001) {
-          playerPos.x = col.x + (cdx / cdist) * minD;
-          playerPos.z = col.z + (cdz / cdist) * minD;
+      var pRad = 0.50;
+      for (var iter = 0; iter < 2; iter++) {
+        var pFeet = playerPos.y - 0.92;
+        var pHead = playerPos.y + 0.65;
+        for (var ci = 0; ci < ctx.colliders.length; ci++) {
+          var col = ctx.colliders[ci];
+          /* Bỏ qua va chạm ngang nếu Mây đang đứng cao hơn đỉnh hoặc chui hẳn dưới gầm (ví dụ vòm cổng / dầm đá) */
+          if (col.maxY !== undefined && pFeet >= col.maxY - (col.walkable ? 0.35 : 0.08)) continue;
+          if (col.minY !== undefined && pHead <= col.minY + 0.05) continue;
+
+          if (col.shape === "box") {
+            var rot = col.rotY || 0;
+            var cs = Math.cos(-rot), sn = Math.sin(-rot);
+            var dx = playerPos.x - col.x, dz = playerPos.z - col.z;
+            var lx = dx * cs - dz * sn;
+            var lz = dx * sn + dz * cs;
+            var cx = Math.max(-col.hx, Math.min(col.hx, lx));
+            var cz = Math.max(-col.hz, Math.min(col.hz, lz));
+            var rx = lx - cx, rz = lz - cz;
+            var d2 = rx * rx + rz * rz;
+            if (d2 < pRad * pRad) {
+              var nLx = 0, nLz = 0, push = 0;
+              if (d2 > 1e-6) {
+                var dd = Math.sqrt(d2);
+                nLx = rx / dd; nLz = rz / dd;
+                push = pRad - dd;
+              } else {
+                /* Tâm Mây rơi vào trong hộp -> đẩy ra theo mặt gần nhất */
+                var ox = col.hx - Math.abs(lx), oz = col.hz - Math.abs(lz);
+                if (ox < oz) { nLx = lx >= 0 ? 1 : -1; push = ox + pRad; }
+                else { nLz = lz >= 0 ? 1 : -1; push = oz + pRad; }
+              }
+              var wcs = Math.cos(rot), wsn = Math.sin(rot);
+              var nWx = nLx * wcs - nLz * wsn;
+              var nWz = nLx * wsn + nLz * wcs;
+              playerPos.x += nWx * push;
+              playerPos.z += nWz * push;
+              /* Triệt tiêu thành phần vận tốc đâm vào tường để trượt mượt dọc mép tường */
+              var vn = vel.x * nWx + vel.z * nWz;
+              if (vn < 0) { vel.x -= vn * nWx; vel.z -= vn * nWz; }
+            }
+          } else if (col.shape === "sphere") {
+            var sy = col.y !== undefined ? col.y : 0;
+            var dy = (playerPos.y - 0.15) - sy;
+            var rSq = (col.r + pRad) * (col.r + pRad) - dy * dy;
+            if (rSq > 0.001) {
+              var effR = Math.sqrt(rSq);
+              var sdx = playerPos.x - col.x, sdz = playerPos.z - col.z;
+              var sdist = Math.hypot(sdx, sdz);
+              if (sdist < effR && sdist > 0.0005) {
+                var snx = sdx / sdist, snz = sdz / sdist;
+                playerPos.x = col.x + snx * effR;
+                playerPos.z = col.z + snz * effR;
+                var svn = vel.x * snx + vel.z * snz;
+                if (svn < 0) { vel.x -= svn * snx; vel.z -= svn * snz; }
+              }
+            }
+          } else {
+            /* Cylinder 3D có chặn độ cao [minY, maxY] */
+            var cdx = playerPos.x - col.x, cdz = playerPos.z - col.z;
+            var cdist = Math.hypot(cdx, cdz);
+            var minD = (col.r || 1.2) + pRad;
+            if (cdist < minD && cdist > 0.0005) {
+              var cnx = cdx / cdist, cnz = cdz / cdist;
+              playerPos.x = col.x + cnx * minD;
+              playerPos.z = col.z + cnz * minD;
+              var cvn = vel.x * cnx + vel.z * cnz;
+              if (cvn < 0) { vel.x -= cvn * cnx; vel.z -= cvn * cnz; }
+            }
+          }
         }
       }
     }
@@ -915,6 +986,10 @@
     }
 
     ghNow = ctx.groundH(playerPos.x, playerPos.z);
+    if (ctx.getColliderTopY) {
+      var colTop = ctx.getColliderTopY(playerPos.x, playerPos.z, playerPos.y - 0.98);
+      if (colTop > ghNow) ghNow = colTop;
+    }
     var vyInput = 0;
     P.gliding = false;
 

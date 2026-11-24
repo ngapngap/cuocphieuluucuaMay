@@ -1,6 +1,6 @@
 "use strict";
 /* ============================================================================
-   GAME.JS — Khởi chạy Cuộc Phiêu Lưu Của Mây v12.0 (6 Vùng Đất + Đảo Mây + PBR + Rigged GLB)
+   GAME.JS — Khởi chạy Cuộc Phiêu Lưu Của Mây v13.0 (6 Vùng Đất + PBR + 34 GLB Rig/CC0)
    ============================================================================ */
 (function (MAY) {
 
@@ -26,13 +26,15 @@
   /* ---- Chuyển màn chơi mượt mà & dọn rác tài nguyên màn cũ ---- */
   MAY.enterLevel = function (levelId, silent) {
     if (!MAY.LEVELS || !MAY.LEVELS[levelId]) levelId = "hub";
-    if (MAY.closeDialogue) MAY.closeDialogue();
+    if (MAY.Cutscene && MAY.Cutscene.cancelSilent) MAY.Cutscene.cancelSilent();
+    if (MAY.closeDialogue) MAY.closeDialogue(false);
     if (MAY.currentCtx && MAY.currentCtx.save && !MAY.currentCtx.save.gem && MAY.currentCtx.playSecs > 0) {
       MAY.currentCtx.save.playSecs = Math.round(MAY.currentCtx.playSecs);
     }
     if (MAY.clear3DLoops) MAY.clear3DLoops();
     if (MAY.VFX) MAY.VFX.clear();
     if (MAY.PlanarReflector) MAY.PlanarReflector.clear();
+    document.body.classList.remove("boss-active");
     MAY.clearWorld();
     MAY.currentLevelId = levelId;
     MAY.save.currentLevel = levelId;
@@ -51,7 +53,15 @@
 
     if (!silent) {
       var m = MAY.getMeta(levelId);
-      MAY.toast(m.icon + " " + m.title, m.intro);
+      if (MAY.started && MAY.Cutscene && MAY.Cutscene.playWorldIntro && MAY.currentCtx && MAY.currentCtx.save && !MAY.currentCtx.save.introSeen) {
+        MAY.currentCtx.save.introSeen = true;
+        MAY.persist();
+        MAY.Cutscene.playWorldIntro(MAY.currentCtx, function () {
+          MAY.toast(m.icon + " " + m.title, m.intro);
+        });
+      } else {
+        MAY.toast(m.icon + " " + m.title, m.intro);
+      }
     }
   };
 
@@ -111,7 +121,15 @@
       MAY.enterLevel(targetLevel, false);
     } else {
       var m = MAY.getMeta(MAY.currentLevelId);
-      MAY.toast(m.icon + " " + m.title, m.intro);
+      if (MAY.Cutscene && MAY.Cutscene.playWorldIntro && MAY.currentCtx && MAY.currentCtx.save && !MAY.currentCtx.save.introSeen) {
+        MAY.currentCtx.save.introSeen = true;
+        MAY.persist();
+        MAY.Cutscene.playWorldIntro(MAY.currentCtx, function () {
+          MAY.toast(m.icon + " " + m.title, m.intro);
+        });
+      } else {
+        MAY.toast(m.icon + " " + m.title, m.intro);
+      }
     }
   }
 
@@ -165,11 +183,32 @@
   document.getElementById("map-close").onclick = function () { MAY.closeAllModals(); };
   document.getElementById("album-close").onclick = function () { MAY.closeAllModals(); };
   document.getElementById("btn-win-stay").onclick = function () { MAY.closeAllModals(); };
+  var btnFinaleReplay = document.getElementById("btn-finale-replay");
+  if (btnFinaleReplay) btnFinaleReplay.onclick = function () {
+    if (MAY.showGrandFinale) MAY.showGrandFinale();
+  };
   document.getElementById("btn-finale-hub").onclick = function () {
     MAY.closeAllModals();
     MAY.enterLevel("hub");
   };
+  var btnFinaleMap = document.getElementById("btn-finale-map");
+  if (btnFinaleMap) btnFinaleMap.onclick = function () {
+    MAY.closeAllModals();
+    if (MAY.openMap) MAY.openMap();
+  };
   document.getElementById("btn-finale-stay").onclick = function () { MAY.closeAllModals(); };
+
+  /* Nút phục hồi Global Error Boundary */
+  var btnErrResume = document.getElementById("err-resume");
+  if (btnErrResume) btnErrResume.onclick = function () {
+    if (MAY.ErrorBoundary) MAY.ErrorBoundary.dismiss();
+  };
+  var btnErrHub = document.getElementById("err-hub");
+  if (btnErrHub) btnErrHub.onclick = function () {
+    if (MAY.ErrorBoundary) MAY.ErrorBoundary.recoverToHub();
+  };
+  var btnErrReload = document.getElementById("err-reload");
+  if (btnErrReload) btnErrReload.onclick = function () { location.reload(); };
 
   /* ---- Khôi phục cài đặt đã lưu (đồ họa, âm thanh, camera) & khởi tạo màn đầu ---- */
   MAY.voiceOn = MAY.save.voiceOn !== undefined ? !!MAY.save.voiceOn : true;
@@ -200,71 +239,132 @@
       setBoot("Đang tải mô hình 3D (" + done + "/" + total + ")…", 84 + Math.round(16 * done / total));
     },
     function () {
-      if (MAY.currentCtx && MAY.currentCtx.upgradeRiggedCompanion) {
-        try { MAY.currentCtx.upgradeRiggedCompanion(); } catch (e) {}
-      }
-      if (MAY.currentCtx && MAY.currentCtx.onModelsReady) {
-        try { MAY.currentCtx.onModelsReady(); } catch (e) {}
+      if (!MAY.started) {
+        try { MAY.enterLevel(MAY.currentLevelId, true); } catch (e) {}
+      } else {
+        if (MAY.currentCtx && MAY.currentCtx.upgradeRiggedCompanion) {
+          try { MAY.currentCtx.upgradeRiggedCompanion(); } catch (e) {}
+        }
+        if (MAY.currentCtx && MAY.currentCtx.onModelsReady) {
+          try { MAY.currentCtx.onModelsReady(); } catch (e) {}
+        }
       }
       maybeEnablePlay();
     }
   );
 
-  /* ---- Vòng lặp chính ---- */
+  /* ---- Vòng lặp chính (được bọc Error Boundary chống treo toàn cục) ---- */
   var clock = new THREE.Clock();
   var frames = 0;
 
   MAY.renderer.setAnimationLoop(function () {
-    var dt = Math.min(clock.getDelta(), 0.05);
-    var t = clock.elapsedTime;
-    MAY.shaderUniforms.uTime.value = t;
-    MAY.ensureEnv();
+    if (MAY.ErrorBoundary && MAY.ErrorBoundary.paused) return;
+    try {
+      var dt = Math.min(clock.getDelta(), 0.05);
+      var t = clock.elapsedTime;
+      MAY.shaderUniforms.uTime.value = t;
+      MAY.ensureEnv();
 
-    var ctx = MAY.currentCtx;
-    if (ctx) {
-      if (MAY.started) {
-        MAY.player.update(dt, t, ctx);
-        ctx.updateAll(dt, t);
-        MAY.updateBursts(dt);
-      } else {
-        MAY.player.updateIdleOrbit(t, dt);
-        if (ctx.onUpdate) ctx.onUpdate(dt, t);
-        MAY.updateSunFollow(MAY.player.pos);
+      var ctx = MAY.currentCtx;
+      var inCutscene = !!(MAY.Cutscene && MAY.Cutscene.isPlaying());
+      if (ctx) {
+        document.body.classList.toggle("boss-active", !!(ctx.boss && ctx.boss.active && !ctx.boss.defeated));
+        if (inCutscene) {
+          MAY.Cutscene.update(dt, t, ctx);
+          if (ctx.onUpdate) ctx.onUpdate(dt, t);
+          if (MAY.VFX && MAY.VFX.update) MAY.VFX.update(dt, t, ctx);
+          MAY.updateBursts(dt);
+          if (ctx.waterMeshes) {
+            for (var wi = 0; wi < ctx.waterMeshes.length; wi++) {
+              var wu = ctx.waterMeshes[wi].userData.waterUniforms;
+              if (wu && wu.uPlayerPos && MAY.player) wu.uPlayerPos.value.copy(MAY.player.pos);
+            }
+          }
+        } else if (MAY.started) {
+          MAY.player.update(dt, t, ctx);
+          ctx.updateAll(dt, t);
+          MAY.updateBursts(dt);
+        } else {
+          MAY.player.updateIdleOrbit(t, dt);
+          if (ctx.onUpdate) ctx.onUpdate(dt, t);
+          MAY.updateSunFollow(MAY.player.pos);
+        }
       }
-    }
 
-    if (MAY.updateAudioListener) MAY.updateAudioListener(MAY.camera);
-    var camUnderwater = !!(ctx && ctx.waterLevel !== undefined && MAY.camera.position.y < ctx.waterLevel);
-    MAY.renderFrame(dt, camUnderwater);
+      if (MAY.updateAudioListener) MAY.updateAudioListener(MAY.camera);
+      var camUnderwater = !!(ctx && ctx.waterLevel !== undefined && MAY.camera.position.y < ctx.waterLevel);
+      MAY.renderFrame(dt, camUnderwater);
+      if (MAY.ErrorBoundary) MAY.ErrorBoundary.consecutiveFrameErrors = 0;
 
-    frames++;
-    if (frames === 3) {
-      window.__ready = true;
-      window.__loadLevel = function (id) {
-        document.getElementById("ov-start").classList.add("hidden");
-        MAY.started = true;
-        MAY.closeAllModals();
-        MAY.enterLevel(id, true);
-      };
-      window.__state = function () {
-        var c = MAY.currentCtx;
-        var ls = MAY.getLevelSave(MAY.currentLevelId);
-        return {
-          level: MAY.currentLevelId,
-          gems: MAY.save.gems.length,
-          items: ls.items.length,
-          friends: ls.friends.length,
-          treasures: ls.treasures.length,
-          challenges: Object.keys(ls.challenges).filter(function (k) { return ls.challenges[k]; }).length,
-          onLand: MAY.player.onLand,
-          camDist: MAY.player.camDist,
-          quality: MAY.quality,
-          modelsReady: MAY.modelsReady,
-          pos: [MAY.player.pos.x.toFixed(1), MAY.player.pos.y.toFixed(1), MAY.player.pos.z.toFixed(1)],
-          yaw: MAY.player.yaw.toFixed(2),
-          sceneChildren: MAY.worldRoot.children.length
+      frames++;
+      if (frames === 3) {
+        window.__ready = true;
+        window.__loadLevel = function (id) {
+          document.getElementById("ov-start").classList.add("hidden");
+          MAY.started = true;
+          MAY.closeAllModals();
+          MAY.enterLevel(id, true);
         };
-      };
+        window.__playFinale = function () {
+          document.getElementById("ov-start").classList.add("hidden");
+          MAY.started = true;
+          if (MAY.showGrandFinale) MAY.showGrandFinale();
+        };
+        window.__playIntro = function () {
+          if (MAY.Cutscene && MAY.currentCtx) MAY.Cutscene.playWorldIntro(MAY.currentCtx);
+        };
+        window.__state = function () {
+          var c = MAY.currentCtx;
+          var ls = MAY.getLevelSave(MAY.currentLevelId);
+          var lmCount = 0;
+          if (MAY.worldRoot) {
+            MAY.worldRoot.traverse(function (o) {
+              if (o.isMesh && o.material && o.material.lightMap) lmCount++;
+            });
+          }
+          var colShapes = { box: 0, sphere: 0, cylinder: 0 };
+          if (c && c.colliders) {
+            c.colliders.forEach(function (col) {
+              var k = col.shape || "cylinder";
+              if (colShapes[k] !== undefined) colShapes[k]++;
+            });
+          }
+          return {
+            level: MAY.currentLevelId,
+            gems: MAY.save.gems.length,
+            items: ls.items.length,
+            friends: ls.friends.length,
+            treasures: ls.treasures.length,
+            challenges: Object.keys(ls.challenges).filter(function (k) { return ls.challenges[k]; }).length,
+            onLand: MAY.player.onLand,
+            camDist: MAY.player.camDist,
+            quality: MAY.quality,
+            modelsReady: MAY.modelsReady,
+            pos: [MAY.player.pos.x.toFixed(1), MAY.player.pos.y.toFixed(1), MAY.player.pos.z.toFixed(1)],
+            yaw: MAY.player.yaw.toFixed(2),
+            sceneChildren: MAY.worldRoot.children.length,
+            depthMode: MAY.getDepthMode ? MAY.getDepthMode() : "unknown",
+            panningModel: MAY.getPanningModel ? MAY.getPanningModel() : "unknown",
+            ambienceMode: MAY.ambienceSourceMode || "unknown",
+            colliders: c && c.colliders ? c.colliders.length : 0,
+            colliderShapes: colShapes,
+            hasLightProbe: !!(c && c.lightProbe),
+            lightmapMeshes: lmCount,
+            waterRefract: !!(MAY.WaterRefractor && MAY.WaterRefractor.hasValidFrame),
+            hasSideQuest: !!(c && c.sideQuest),
+            sideQuestDone: !!(ls.sideQuest && ls.sideQuest.done),
+            cutscenePlaying: !!(MAY.Cutscene && MAY.Cutscene.isPlaying()),
+            errorCount: MAY.ErrorBoundary ? MAY.ErrorBoundary.history.length : 0
+          };
+        };
+      }
+    } catch (err) {
+      if (MAY.ErrorBoundary) {
+        MAY.ErrorBoundary.consecutiveFrameErrors++;
+        MAY.reportError(err, "renderLoop", { pause: MAY.ErrorBoundary.consecutiveFrameErrors >= 3 });
+      } else if (window.console) {
+        console.error(err);
+      }
     }
   });
 

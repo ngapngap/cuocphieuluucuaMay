@@ -23,7 +23,7 @@
     MAY.diveLight.intensity = 0.12;
     MAY.diveLight.castShadow = false;
     MAY.setAmbientTone(380, 0.04, "hub");
-    MAY.setPostGrade({ tint: 0xfffdf8, vignette: 0.22, bloom: 0.30, ssao: 0.50 });
+    MAY.setPostGrade({ tint: 0xfffdf8, vignette: 0.22, bloom: 0.30, ssao: 0.50, godRay: 0.34, godRayColor: 0xfff4d0 });
 
     ctx.getSurface = function (x, z) {
       if (Math.abs(x) < 3.4 && z > 21 && z < 36) return "wood";
@@ -84,6 +84,18 @@
     }
     tGeo.setAttribute("color", new THREE.BufferAttribute(cols, 3));
     tGeo.computeVertexNormals();
+    if (MAY.bakeTerrainLightmap) {
+      MAY.bakeTerrainLightmap(tGeo, islandMat, {
+        size: 170, groundH: hubTerrainH,
+        skyColor: 0xb7e4f8, bounceColor: 0x6b8c58, sunColor: 0xfff6d4,
+        sunDir: new THREE.Vector3(36, 44, 26), intensity: 0.72,
+        staticLights: [
+          { x: 0, z: 4.4, r: 1.0, g: 0.82, b: 0.48, radius: 14, intensity: 0.45 },
+          { x: 11, z: -7, r: 1.0, g: 0.78, b: 0.45, radius: 11, intensity: 0.35 },
+          { x: 0, z: 29, r: 1.0, g: 0.80, b: 0.45, radius: 12, intensity: 0.35 }
+        ]
+      });
+    }
     MAY.applyCaustics(islandMat, 0.0, 0.55);
     var islandMesh = new THREE.Mesh(tGeo, islandMat);
     islandMesh.receiveShadow = true;
@@ -148,74 +160,75 @@
       bol.position.set(bx, 2.45, 32.5); bol.castShadow = true; pier.add(bol);
     });
     ctx.add(pier);
+    [-2.6, 2.6].forEach(function (px) {
+      [24, 29, 34].forEach(function (pz) {
+        ctx.addCollider(px, pz, 0.28, "pier_post", { minY: -0.5, maxY: 3.4 });
+      });
+    });
 
-    /* Con thuyền gỗ có mái che neo cạnh bến đá */
+    /* Con thuyền buồm gỗ (CC0 Quaternius GLB hoặc fallback thủ tục) neo cạnh bến đá */
     var boat = new THREE.Group();
-    var hullDark = new THREE.MeshStandardMaterial({ map: MAY.TEX.wood, color: 0x4f3b2b, roughness: 0.78 });
-    MAY.attachPhotoPBR("wood", MAY.TEX.wood, [hullDark], { rx: 2, ry: 2, normalStrength: 2.8 });
-    var hullBody = new THREE.Mesh(new THREE.BoxGeometry(2.8, 1.15, 7.2), hullDark);
-    hullBody.position.y = 0.25; boat.add(hullBody);
-    var bow = new THREE.Mesh(new THREE.ConeGeometry(1.55, 2.5, 4), hullDark);
-    bow.rotation.x = Math.PI / 2; bow.rotation.y = Math.PI / 4; bow.scale.set(1.25, 1, 0.52); bow.position.set(0, 0.35, 4.7);
-    boat.add(bow);
-    var cabin = new THREE.Mesh(new THREE.BoxGeometry(2.1, 1.35, 3.2), new THREE.MeshStandardMaterial({ color: 0xebe6dc, roughness: 0.7 }));
-    cabin.position.set(0, 1.35, -0.4); boat.add(cabin);
-    var roof = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.14, 4.2), new THREE.MeshStandardMaterial({ color: 0x2c4b68, roughness: 0.55 }));
-    roof.position.set(0, 2.1, -0.2); boat.add(roof);
-    /* Đèn mũi thuyền ấm + Cột buồm nhỏ trên thuyền gỗ */
+    var boatGlb = MAY.cloneLandmark ? MAY.cloneLandmark("cc0_boat") : null;
+    if (boatGlb) {
+      boatGlb.position.y = -0.35;
+      boat.add(boatGlb);
+    } else {
+      var hullDark = new THREE.MeshStandardMaterial({ map: MAY.TEX.wood, color: 0x4f3b2b, roughness: 0.78 });
+      MAY.attachPhotoPBR("wood", MAY.TEX.wood, [hullDark], { rx: 2, ry: 2, normalStrength: 2.8 });
+      var hullBody = new THREE.Mesh(new THREE.BoxGeometry(2.8, 1.15, 7.2), hullDark);
+      hullBody.position.y = 0.25; boat.add(hullBody);
+      var bow = new THREE.Mesh(new THREE.ConeGeometry(1.55, 2.5, 4), hullDark);
+      bow.rotation.x = Math.PI / 2; bow.rotation.y = Math.PI / 4; bow.scale.set(1.25, 1, 0.52); bow.position.set(0, 0.35, 4.7);
+      boat.add(bow);
+      var cabin = new THREE.Mesh(new THREE.BoxGeometry(2.1, 1.35, 3.2), new THREE.MeshStandardMaterial({ color: 0xebe6dc, roughness: 0.7 }));
+      cabin.position.set(0, 1.35, -0.4); boat.add(cabin);
+      var roof = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.14, 4.2), new THREE.MeshStandardMaterial({ color: 0x2c4b68, roughness: 0.55 }));
+      roof.position.set(0, 2.1, -0.2); boat.add(roof);
+      boat.traverse(function (o) { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+    }
     var boatLan = MAY.makeCagedLantern(0xffe094, 1.5, 14, false);
-    boatLan.position.set(0, 2.55, 1.9); boat.add(boatLan);
-    boat.traverse(function (o) { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+    boatLan.position.set(0, 2.45, 1.6); boat.add(boatLan);
     boat.position.set(-8.5, -0.1, 35.5); boat.rotation.y = 0.45;
     ctx.add(boat);
+    ctx.addBoxCollider(-8.5, 35.5, 2.9, 7.8, -0.8, 2.15, 0.45, "hub_boat", { walkable: true });
 
-    /* ---- NGỌN HẢI ĐĂNG CẦU VỒNG (Trung tâm cốt truyện 6 Viên Ngọc!) ---- */
+    /* ---- NGỌN HẢI ĐĂNG CẦU VỒNG (Blender Hero GLB + 6 Hốc Ngọc + Tia Sáng) ---- */
     var lh = new THREE.Group();
     var lhY = ctx.groundH(0, 0);
     lh.position.set(0, lhY, 0);
 
-    var lhBase = new THREE.Mesh(new THREE.CylinderGeometry(3.8, 4.5, 2.4, 16), quayMat);
-    lhBase.position.y = 1.2; lhBase.castShadow = true; lhBase.receiveShadow = true; lh.add(lhBase);
-
-    var stripeCols = [0xf5f5f5, 0xe6495c, 0xf5f5f5, 0xe6495c, 0xf5f5f5];
-    for (var st = 0; st < 5; st++) {
-      var rBot = 2.9 - st * 0.22, rTop = 2.68 - st * 0.22;
-      var segMat = new THREE.MeshStandardMaterial({ color: stripeCols[st], roughness: 0.65 });
-      MAY.applyWorldWeathering(segMat, { macro: 0.10, stain: 0.12, wallGrime: 0.30, stainColor: 0x3b444d });
-      var seg = new THREE.Mesh(new THREE.CylinderGeometry(rTop, rBot, 2.3, 18), segMat);
-      seg.position.y = 3.5 + st * 2.3; seg.castShadow = true; seg.receiveShadow = true;
-      lh.add(seg);
+    var lhGlb = MAY.cloneLandmark ? MAY.cloneLandmark("hero_lighthouse") : null;
+    if (lhGlb) {
+      lh.add(lhGlb);
+    } else {
+      var lhBase = new THREE.Mesh(new THREE.CylinderGeometry(3.8, 4.5, 2.4, 16), quayMat);
+      lhBase.position.y = 1.2; lhBase.castShadow = true; lhBase.receiveShadow = true; lh.add(lhBase);
+      var stripeCols = [0xf5f5f5, 0xe6495c, 0xf5f5f5, 0xe6495c, 0xf5f5f5];
+      for (var st = 0; st < 5; st++) {
+        var rBot = 2.9 - st * 0.22, rTop = 2.68 - st * 0.22;
+        var segMat = new THREE.MeshStandardMaterial({ color: stripeCols[st], roughness: 0.65 });
+        MAY.applyWorldWeathering(segMat, { macro: 0.10, stain: 0.12, wallGrime: 0.30, stainColor: 0x3b444d });
+        var seg = new THREE.Mesh(new THREE.CylinderGeometry(rTop, rBot, 2.3, 18), segMat);
+        seg.position.y = 3.5 + st * 2.3; seg.castShadow = true; seg.receiveShadow = true;
+        lh.add(seg);
+      }
+      var gallery = new THREE.Mesh(new THREE.CylinderGeometry(2.45, 2.1, 0.5, 18), new THREE.MeshStandardMaterial({ color: 0x2a3b4c, metalness: 0.4, roughness: 0.4 }));
+      gallery.position.y = 14.0; lh.add(gallery);
+      var lanternGlass = new THREE.Mesh(new THREE.CylinderGeometry(1.55, 1.55, 2.3, 16),
+        new THREE.MeshPhysicalMaterial({ color: 0xfff6cc, emissive: 0xffd93d, emissiveIntensity: 0.7 + MAY.save.gems.length * 0.2, roughness: 0.08, clearcoat: 1.0, transparent: true, opacity: 0.85 }));
+      lanternGlass.position.y = 15.4; lh.add(lanternGlass);
+      var dome = new THREE.Mesh(new THREE.ConeGeometry(2.05, 1.8, 16), new THREE.MeshStandardMaterial({ color: 0xd94848, roughness: 0.45 }));
+      dome.position.y = 17.4; lh.add(dome);
+      var lhDoor = new THREE.Mesh(new THREE.BoxGeometry(1.4, 2.2, 0.35), new THREE.MeshStandardMaterial({ color: 0x4b3220, roughness: 0.85 }));
+      lhDoor.position.set(0, 1.1, 4.15); lh.add(lhDoor);
     }
-    var gallery = new THREE.Mesh(new THREE.CylinderGeometry(2.45, 2.1, 0.5, 18), new THREE.MeshStandardMaterial({ color: 0x2a3b4c, metalness: 0.4, roughness: 0.4 }));
-    gallery.position.y = 14.0; lh.add(gallery);
-    /* Lan can sắt mỹ thuật bao quanh ban công Hải Đăng + 3 cửa sổ tròn phát sáng ấm dọc thân tháp */
-    var railMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.78, roughness: 0.32 });
-    var topRail = new THREE.Mesh(new THREE.TorusGeometry(2.36, 0.06, 8, 24), railMat);
-    topRail.rotation.x = Math.PI / 2; topRail.position.y = 15.05; lh.add(topRail);
-    for (var rp = 0; rp < 12; rp++) {
-      var rpa = (rp / 12) * Math.PI * 2;
-      var rPost = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.85, 6), railMat);
-      rPost.position.set(Math.cos(rpa) * 2.36, 14.62, Math.sin(rpa) * 2.36); lh.add(rPost);
-    }
-    [5.5, 8.8, 11.8].forEach(function (wy, wi) {
-      var wa = wi * 1.4 - 0.5, wr = 2.74 - wi * 0.28;
-      var rim = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.08, 8, 16), railMat);
-      var glass = new THREE.Mesh(new THREE.CircleGeometry(0.38, 14), new THREE.MeshBasicMaterial({ color: 0xffe49e }));
-      rim.position.set(Math.sin(wa) * wr, wy, Math.cos(wa) * wr); rim.rotation.y = wa; lh.add(rim);
-      glass.position.set(Math.sin(wa) * (wr + 0.04), wy, Math.cos(wa) * (wr + 0.04)); glass.rotation.y = wa; lh.add(glass);
-    });
-    var lanternGlass = new THREE.Mesh(new THREE.CylinderGeometry(1.55, 1.55, 2.3, 16),
-      new THREE.MeshPhysicalMaterial({ color: 0xfff6cc, emissive: 0xffd93d, emissiveIntensity: 0.7 + MAY.save.gems.length * 0.2, roughness: 0.08, clearcoat: 1.0, transparent: true, opacity: 0.85 }));
-    lanternGlass.position.y = 15.4; lh.add(lanternGlass);
-    var dome = new THREE.Mesh(new THREE.ConeGeometry(2.05, 1.8, 16), new THREE.MeshStandardMaterial({ color: 0xd94848, roughness: 0.45 }));
-    dome.position.y = 17.4; lh.add(dome);
 
     var lhLight = new THREE.PointLight(0xffe699, 1.2 + MAY.save.gems.length * 0.35, 38);
-    lhLight.position.y = 15.5; lh.add(lhLight);
+    lhLight.position.y = 16.0; lh.add(lhLight);
 
     /* Chùm tia hải đăng xoay */
     var beamPivot = new THREE.Group();
-    beamPivot.position.y = 15.4;
+    beamPivot.position.y = 16.0;
     var beamMat = MAY.makeGodRayMat(0xfff1a8, 0.22 + MAY.save.gems.length * 0.05);
     var beamCone = new THREE.Mesh(new THREE.ConeGeometry(4.5, 34, 14, 1, true), beamMat);
     beamCone.rotation.z = -Math.PI / 2; beamCone.position.x = 18;
@@ -226,7 +239,7 @@
     var gemOrbs = [];
     MAY.LEVEL_META.slice(1).forEach(function (m, idx) {
       var a = (idx / 6) * Math.PI * 2 - Math.PI / 2;
-      var gx = Math.cos(a) * 4.4, gz = Math.sin(a) * 4.4;
+      var gx = Math.cos(a) * 4.85, gz = Math.sin(a) * 4.85;
       var ped = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.58, 1.3, 10), quayMat);
       ped.position.set(gx, 0.65, gz); ped.castShadow = true; lh.add(ped);
       var has = MAY.save.gems.indexOf(m.num) !== -1;
@@ -243,14 +256,11 @@
     });
 
     var lhSign = MAY.makeLabel("🌈 HẢI ĐĂNG CẦU VỒNG (" + MAY.save.gems.length + "/6)", { w: 460, sx: 5.5, sy: 1.0 });
-    lhSign.position.set(0, 19.6, 0); lh.add(lhSign);
+    lhSign.position.set(0, 21.4, 0); lh.add(lhSign);
     ctx.trackLabel(lhSign, 30);
-    /* Vòng Rune chân Hải Đăng + Cửa vòm đá có khung */
-    var lhRune = MAY.VFX.makeRunePlane(5.8, 0xffd93d, 0.42); lhRune.position.y = 0.14; lh.add(lhRune);
-    var lhDoor = new THREE.Mesh(new THREE.BoxGeometry(1.4, 2.2, 0.35), new THREE.MeshStandardMaterial({ color: 0x4b3220, roughness: 0.85 }));
-    lhDoor.position.set(0, 1.1, 4.15); lh.add(lhDoor);
+    var lhRune = MAY.VFX.makeRunePlane(6.1, 0xffd93d, 0.42); lhRune.position.y = 0.14; lh.add(lhRune);
     var lhDoorLan = MAY.makeCagedLantern(0xffd480, 2.4, 20, true);
-    lhDoorLan.position.set(0, 2.6, 4.4); lh.add(lhDoorLan);
+    lhDoorLan.position.set(0, 3.05, 4.45); lh.add(lhDoorLan);
     ctx.add(lh);
     ctx.addCollider(0, 0, 4.5, "lighthouse");
     if (MAY.add3DLoop) {
@@ -348,51 +358,57 @@
       var spirit = MAY.makeAnimal("windspirit", { scale: 1.15 });
       spirit.position.set(4.5, ctx.groundH(4.5, 7) + 1.2, 7);
       ctx.add(spirit);
-      var spLb = MAY.makeLabel("🌬️ Làn Gió Mát (Bạn thân Mây!)", { w: 400, sx: 4.5, sy: 0.95 });
+      var spLb = MAY.makeLabel("🌬️ Làn Gió Mát (Xem lại Lễ Hội 3D!)", { w: 460, sx: 4.5, sy: 0.92, bg: "rgba(38,16,68,0.88)", color: "#ffd93d" });
       spLb.position.set(4.5, ctx.groundH(4.5, 7) + 3.6, 7);
       ctx.add(spLb);
+      ctx.interactives.push({
+        obj: spirit, label: "🎬 Xem lại Lễ Hội Cầu Vồng 3D",
+        onInteract: function () { if (MAY.showGrandFinale) MAY.showGrandFinale(); }
+      });
     }
 
-    /* ---- Nhà gỗ của Mây & Khung ảnh "Nhà của Mây" ---- */
+    /* ---- Nhiệm Vụ Phụ Tương Tác Đảo Mây: Ngọn Đèn Bến Cảng & Chai Thư Biển ---- */
+    ctx.setupSideQuest({
+      npcPos: [6.2, 20.5], npcRotY: -0.45, npcScale: 1.15, labelY: 2.1,
+      tasks: [
+        { id: "bottle", kind: "bottle", label: "Nhặt Chai Thư Biển gần thuyền gỗ", pos: [-5.4, 2.38, 31.8], color: 0x38bdf8 },
+        { id: "lan_l",  kind: "lantern", label: "Thắp Trụ Đèn Bến Cảng Trái",     pos: [-3.4, 2.25, 26.5], color: 0xffd93d },
+        { id: "lan_r",  kind: "lantern", label: "Thắp Trụ Đèn Bến Cảng Phải",     pos: [3.4, 2.25, 31.0],  color: 0xffd93d }
+      ]
+    });
+
+    /* ---- Nhà gỗ của Mây (CC0 Storybook Cottage GLB hoặc fallback thủ tục) ---- */
     var cabinG = new THREE.Group();
     var cabX = 11, cabZ = -7, cabY = ctx.groundH(cabX, cabZ);
-    var cabWalls = new THREE.Mesh(new THREE.BoxGeometry(4.4, 2.8, 3.8), dockWoodMat);
-    cabWalls.position.y = 1.4; cabWalls.castShadow = true; cabWalls.receiveShadow = true; cabinG.add(cabWalls);
-    var cabRoof = new THREE.Mesh(new THREE.ConeGeometry(3.8, 2.2, 4), new THREE.MeshStandardMaterial({ color: 0xc26d3a, roughness: 0.85 }));
-    cabRoof.position.y = 3.8; cabRoof.rotation.y = Math.PI / 4; cabRoof.castShadow = true; cabinG.add(cabRoof);
-    var cabWin = new THREE.Mesh(new THREE.PlaneGeometry(1.15, 1.05), new THREE.MeshBasicMaterial({ color: 0xffe49e }));
-    cabWin.position.set(0, 1.5, 1.92); cabinG.add(cabWin);
-    /* Khung cửa sổ & hiên nhà gỗ chi tiết + đèn lồng treo hiên */
-    var trimM = new THREE.MeshStandardMaterial({ color: 0x4b3220, roughness: 0.88 });
-    var mullH = new THREE.Mesh(new THREE.BoxGeometry(1.22, 0.08, 0.08), trimM); mullH.position.set(0, 1.5, 1.95); cabinG.add(mullH);
-    var mullV = new THREE.Mesh(new THREE.BoxGeometry(0.08, 1.12, 0.08), trimM); mullV.position.set(0, 1.5, 1.95); cabinG.add(mullV);
-    var porch = new THREE.Mesh(new THREE.BoxGeometry(4.5, 0.25, 1.6), dockWoodMat); porch.position.set(0, 0.15, 2.6); porch.receiveShadow = true; cabinG.add(porch);
-    /* Ống khói đá + bồn hoa nở trước cửa sổ + 2 cột hiên gỗ chi tiết cho Nhà Gỗ của Mây */
-    var chimney = new THREE.Mesh(new THREE.BoxGeometry(0.75, 2.6, 0.75), quayMat); chimney.position.set(-1.35, 3.8, -0.75); chimney.castShadow = true; cabinG.add(chimney);
-    var fbox = new THREE.Mesh(new THREE.BoxGeometry(1.35, 0.28, 0.34), trimM); fbox.position.set(0, 0.85, 2.08); cabinG.add(fbox);
-    [-0.4, 0, 0.4].forEach(function (fx, fi) {
-      var fl = new THREE.Mesh(new THREE.SphereGeometry(0.16, 8, 6), new THREE.MeshStandardMaterial({ color: [0xff6b9d, 0xffd93d, 0x38bdf8][fi], roughness: 0.5 }));
-      fl.position.set(fx, 1.08, 2.08); cabinG.add(fl);
-    });
-    [-2.0, 2.0].forEach(function (px) {
-      var pPost = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.12, 2.6, 8), trimM);
-      pPost.position.set(px, 1.45, 3.2); pPost.castShadow = true; cabinG.add(pPost);
-    });
-    var cabLan = MAY.makeCagedLantern(0xffd27d, 1.9, 18, false); cabLan.position.set(1.6, 2.4, 2.6); cabinG.add(cabLan);
-    cabinG.add(MAY.makeContactShadow(3.6, 0.55));
+    var cabGlb = MAY.cloneLandmark ? MAY.cloneLandmark("cc0_cabin") : null;
+    if (cabGlb) {
+      cabGlb.position.y = -0.1;
+      cabinG.add(cabGlb);
+    } else {
+      var cabWalls = new THREE.Mesh(new THREE.BoxGeometry(4.4, 2.8, 3.8), dockWoodMat);
+      cabWalls.position.y = 1.4; cabWalls.castShadow = true; cabWalls.receiveShadow = true; cabinG.add(cabWalls);
+      var cabRoof = new THREE.Mesh(new THREE.ConeGeometry(3.8, 2.2, 4), new THREE.MeshStandardMaterial({ color: 0xc26d3a, roughness: 0.85 }));
+      cabRoof.position.y = 3.8; cabRoof.rotation.y = Math.PI / 4; cabRoof.castShadow = true; cabinG.add(cabRoof);
+      var cabWin = new THREE.Mesh(new THREE.PlaneGeometry(1.15, 1.05), new THREE.MeshBasicMaterial({ color: 0xffe49e }));
+      cabWin.position.set(0, 1.5, 1.92); cabinG.add(cabWin);
+    }
+    var cabLan = MAY.makeCagedLantern(0xffd27d, 2.1, 18, false); cabLan.position.set(1.8, 2.5, 2.8); cabinG.add(cabLan);
+    cabinG.add(MAY.makeContactShadow(3.8, 0.55));
     cabinG.position.set(cabX, cabY, cabZ); cabinG.rotation.y = -0.6;
     ctx.add(cabinG);
-    ctx.addCollider(cabX, cabZ, 2.75, "cabin", { maxY: cabY + 5.2 });
+    ctx.addBoxCollider(cabX, cabZ, 4.6, 4.2, cabY - 0.5, cabY + 5.2, -0.6, "cabin");
 
     /* Khung ảnh bé Mây */
     var frameG = new THREE.Group();
     var frBox = new THREE.Mesh(new THREE.BoxGeometry(2.5, 3.2, 0.16), new THREE.MeshStandardMaterial({ color: 0xd9a400, roughness: 0.3, metalness: 0.7 }));
     var frPic = new THREE.Mesh(new THREE.PlaneGeometry(2.15, 2.85), new THREE.MeshBasicMaterial({ map: MAY.TEX.hero }));
     frPic.position.z = 0.09;
-    var frLb = MAY.makeLabel("📷 Nhà của Mây", { sx: 3.2, sy: 0.9 }); frLb.position.y = 2.1;
+    var frLb = MAY.makeLabel("📷 Nhà của Mây", { sx: 3.2, sy: 0.9, bg: "rgba(10,32,56,0.82)", color: "#ffe8a3" }); frLb.position.y = 2.1;
     frameG.add(frBox, frPic, frLb);
-    frameG.position.set(8.5, ctx.groundH(8.5, -2) + 1.8, -2); frameG.rotation.y = -0.8;
+    var frY = ctx.groundH(8.5, -2);
+    frameG.position.set(8.5, frY + 1.8, -2); frameG.rotation.y = -0.8;
     ctx.add(frameG);
+    ctx.addBoxCollider(8.5, -2, 2.6, 0.5, frY, frY + 3.5, -0.8, "photo_frame");
 
     /* Cây dừa chân thực + Cây tán lá + 360 bụi cỏ gió thổi + Đá bờ biển */
     [[-14, 12, 1.15], [16, 10, 1.05], [-16, -9, 1.1], [14, -15, 1.0], [-5, 18, 0.95], [7, 17, 1.05]].forEach(function (p) {
@@ -438,7 +454,7 @@
       rm.position.set(rx, ctx.groundH(rx, rz) + rs * 0.25, rz);
       rm.rotation.y = ri; rm.castShadow = true; rm.receiveShadow = true;
       ctx.add(rm);
-      ctx.addCollider(rx, rz, rs * 0.85, "rock", { maxY: ctx.groundH(rx, rz) + rs * 0.85 });
+      ctx.addSphereCollider(rx, ctx.groundH(rx, rz) + rs * 0.25, rz, rs * 0.92, "rock", { maxY: ctx.groundH(rx, rz) + rs * 0.95 });
     }
 
     /* ---- 6 Cổng Ánh Sáng dẫn thẳng tới 6 Màn Chơi ---- */

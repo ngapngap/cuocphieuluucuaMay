@@ -32,7 +32,7 @@
     MAY.diveLight.color.setHex(0xc8f4ff);
     MAY.diveLight.castShadow = false;
     MAY.setAmbientTone(360, 0.052, "level1");
-    MAY.setPostGrade({ tint: 0xf4feff, vignette: 0.28, bloom: 0.36, ssao: 0.54 });
+    MAY.setPostGrade({ tint: 0xf4feff, vignette: 0.28, bloom: 0.36, ssao: 0.54, godRay: 0.44, godRayColor: 0xb8f6ff });
     ctx.getSurface = function () { return "sand"; };
 
     ctx.underwaterFog = { color: 0x065c78, density: 0.0175 };
@@ -79,9 +79,14 @@
       roughness: 0.90
     });
     MAY.applyCaustics(floorMat, 14.0, 0.78);
-    ctx.buildTerrain(250, 128, floorMat);
+    ctx.buildTerrain(250, 128, floorMat, {
+      staticLights: [
+        { x: -60, z: -40, r: 1.0, g: 0.72, b: 0.38, radius: 18, intensity: 0.48 },
+        { x: -30, z: 30,  r: 0.32, g: 0.78, b: 1.0, radius: 16, intensity: 0.40 }
+      ]
+    });
 
-    /* Mặt biển Gerstner 2 chiều (Snell's Window ngọc lam từ dưới lên + phản chiếu mây từ trên xuống) */
+    /* Mặt biển Gerstner 2 chiều (Snell's Window + True Screen-Space Refraction + phản chiếu mây từ trên xuống) */
     ctx.addWater({
       width: 280, height: 280, segs: 88, y: 14.0,
       sunDir: new THREE.Vector3(24, 48, 14),
@@ -90,14 +95,8 @@
       underFogColor: 0x065c78, underFogDensity: 0.0175
     });
 
-    /* Tia nắng khối xuyên xuống đáy biển */
-    var rayMat = MAY.makeGodRayMat(0xb8f6ff, 0.22);
-    for (var ri = 0; ri < 12; ri++) {
-      var ray = new THREE.Mesh(new THREE.ConeGeometry(2.2 + (ri % 4) * 0.8, 30, 12, 1, true), rayMat);
-      ray.position.set(-64 + ri * 12.5, 8.5, -48 + (ri % 4) * 26);
-      ray.rotation.z = 0.22;
-      ctx.add(ray);
-    }
+    /* Tia nắng khối Screen-Space Volumetric God Rays (đã thay thế hoàn toàn các hình nón additive tĩnh!) */
+    if (MAY.setGodRays) MAY.setGodRays({ color: 0xb8f6ff, strength: 0.44, density: 0.94, decay: 0.94 });
 
     /* Tuyết biển (marine snow) lơ lửng chân thực */
     ctx.addAmbientParticles({ count: 420, spread: 110, minY: 0.6, maxY: 13.6, vy: -0.28, color: 0xdaf8ff, size: 0.13, opacity: 0.55 });
@@ -122,20 +121,25 @@
     seaWall.position.set(16, 7.6, 82); seaWall.rotation.y = -0.25;
     seaWall.castShadow = true; seaWall.receiveShadow = true;
     ctx.add(seaWall);
-    [[8.2, 84.0], [16.0, 82.0], [23.8, 80.0]].forEach(function (wp) {
-      ctx.addCollider(wp[0], wp[1], 2.4, "seawall", { maxY: 16.0 });
-    });
+    ctx.addBoxCollider(16, 82, 22.0, 4.6, -1.0, 16.0, -0.25, "seawall", { walkable: true });
 
     var diveBoat = new THREE.Group();
-    var bHull = new THREE.Mesh(new THREE.BoxGeometry(2.8, 1.1, 7.0), new THREE.MeshStandardMaterial({ map: MAY.TEX.wood, color: 0x4b3828, roughness: 0.75 }));
-    bHull.position.y = 0.25; diveBoat.add(bHull);
-    var bCab = new THREE.Mesh(new THREE.BoxGeometry(2.0, 1.25, 2.8), new THREE.MeshStandardMaterial({ color: 0xf1ece3, roughness: 0.7 }));
-    bCab.position.set(0, 1.28, -0.3); diveBoat.add(bCab);
-    var bTop = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.14, 4.0), new THREE.MeshStandardMaterial({ color: 0x264c69, roughness: 0.5 }));
-    bTop.position.set(0, 1.98, -0.2); diveBoat.add(bTop);
+    var dbGlb = MAY.cloneLandmark ? MAY.cloneLandmark("cc0_boat") : null;
+    if (dbGlb) {
+      dbGlb.position.y = -0.35;
+      diveBoat.add(dbGlb);
+    } else {
+      var bHull = new THREE.Mesh(new THREE.BoxGeometry(2.8, 1.1, 7.0), new THREE.MeshStandardMaterial({ map: MAY.TEX.wood, color: 0x4b3828, roughness: 0.75 }));
+      bHull.position.y = 0.25; diveBoat.add(bHull);
+      var bCab = new THREE.Mesh(new THREE.BoxGeometry(2.0, 1.25, 2.8), new THREE.MeshStandardMaterial({ color: 0xf1ece3, roughness: 0.7 }));
+      bCab.position.set(0, 1.28, -0.3); diveBoat.add(bCab);
+      var bTop = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.14, 4.0), new THREE.MeshStandardMaterial({ color: 0x264c69, roughness: 0.5 }));
+      bTop.position.set(0, 1.98, -0.2); diveBoat.add(bTop);
+      diveBoat.traverse(function (o) { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+    }
     diveBoat.position.set(2, 13.9, 75); diveBoat.rotation.y = 0.6;
-    diveBoat.traverse(function (o) { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
     ctx.add(diveBoat);
+    ctx.addBoxCollider(2, 75, 2.9, 7.2, 13.0, 16.1, 0.6, "dive_boat", { walkable: true });
 
     /* Cây dừa trên bờ bãi + Cổng về Đảo Mây */
     [[-6, 94, 1.05], [7, 98, 1.0]].forEach(function (p) {
@@ -159,7 +163,7 @@
       rm.rotation.y = rk * 1.3; rm.castShadow = true; rm.receiveShadow = true;
       ctx.add(rm);
       if (sc >= 1.4 && Math.hypot(rx, rz - 10) > 4.5 && Math.hypot(rx - 16, rz + 10) > 4.5) {
-        ctx.addCollider(rx, rz, sc * 0.78, "rock", { maxY: ry + sc * 0.9 });
+        ctx.addSphereCollider(rx, ry + sc * 0.3, rz, sc * 0.85, "rock", { maxY: ry + sc * 0.95 });
       }
     }
     for (var sp = 0; sp < 8; sp++) {
@@ -170,43 +174,41 @@
       ctx.add(sm);
     }
 
-    /* Cổng đá cổ (-30, 30) — nơi đặt Bệ Ngọc Xanh Dương */
+    /* Cổng đá cổ (-30, 30) — hộp 3D OBB 2 trụ & dầm ngang trên cao (chui qua gầm được!) */
     [-3.4, 3.4].forEach(function (dx) {
       var py = ctx.groundH(-30 + dx, 30);
       var p = new THREE.Mesh(new THREE.BoxGeometry(1.8, 7.6, 2.5), wallMat);
       p.position.set(-30 + dx, py + 3.6, 30);
       p.castShadow = true; p.receiveShadow = true; ctx.add(p);
-      ctx.addCollider(-30 + dx, 30, 1.15, "arch_pillar", { maxY: py + 7.6 });
+      ctx.addBoxCollider(-30 + dx, 30, 1.85, 2.55, py - 0.5, py + 7.5, 0, "arch_pillar");
     });
+    var archY = ctx.groundH(-30, 30);
     var archTop = new THREE.Mesh(new THREE.BoxGeometry(10.2, 2.0, 2.6), wallMat);
-    archTop.position.set(-30, ctx.groundH(-30, 30) + 8.0, 30);
+    archTop.position.set(-30, archY + 8.0, 30);
     archTop.castShadow = true; archTop.receiveShadow = true; ctx.add(archTop);
+    ctx.addBoxCollider(-30, 30, 10.2, 2.6, archY + 7.0, archY + 9.1, 0, "arch_top", { walkable: true });
     ctx.addGemAltar([-30, 30]);
 
-    /* ---- Tàu Đắm Cổ (-60, -40) ---- */
+    /* ---- Tàu Đắm Cổ (-60, -40) — CC0 Sailing Galleon GLB hoặc fallback ---- */
     var wreck = new THREE.Group();
-    var hull = new THREE.Mesh(new THREE.BoxGeometry(10.5, 2.4, 3.5), woodMat); hull.position.y = 1.2; hull.rotation.z = 0.12; wreck.add(hull);
-    var bow = new THREE.Mesh(new THREE.ConeGeometry(1.75, 3.2, 4), woodMat); bow.rotation.z = -Math.PI / 2; bow.position.set(6.5, 1.2, 0); bow.scale.set(1, 1, 2); wreck.add(bow);
-    var mast = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.22, 7.6, 10), woodMat); mast.position.set(-1, 5.2, 0); mast.rotation.z = 0.24; wreck.add(mast);
-    var nest = new THREE.Mesh(new THREE.CylinderGeometry(0.72, 0.52, 0.55, 10), woodMat); nest.position.set(-1.9, 8.6, 0); wreck.add(nest);
-    var sailShape = new THREE.Shape(); sailShape.moveTo(0, 0); sailShape.lineTo(0, 3.6); sailShape.lineTo(2.7, 0.5); sailShape.closePath();
-    var sail = new THREE.Mesh(new THREE.ShapeGeometry(sailShape), new THREE.MeshStandardMaterial({ color: 0xe6dcc8, roughness: 0.95, side: THREE.DoubleSide, transparent: true, opacity: 0.85 }));
-    sail.position.set(-1.3, 4.7, 0); sail.rotation.y = 0.4; wreck.add(sail);
-    var helm = new THREE.Mesh(new THREE.TorusGeometry(0.55, 0.08, 8, 16), woodMat); helm.position.set(-3.2, 3.2, 0); helm.rotation.x = -0.5; wreck.add(helm);
-    var cannonMat = new THREE.MeshStandardMaterial({ color: 0x262c34, roughness: 0.45, metalness: 0.78 });
-    [-1, 1].forEach(function (cs) {
-      var cn = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.3, 1.3, 10), cannonMat);
-      cn.rotation.z = Math.PI / 2; cn.position.set(0.8, 2.7, cs * 1.0); wreck.add(cn);
-    });
+    var wreckGlb = MAY.cloneLandmark ? MAY.cloneLandmark("cc0_shipwreck") : null;
+    if (wreckGlb) {
+      wreckGlb.rotation.y = Math.PI / 2;
+      wreck.add(wreckGlb);
+    } else {
+      var hull = new THREE.Mesh(new THREE.BoxGeometry(10.5, 2.4, 3.5), woodMat); hull.position.y = 1.2; hull.rotation.z = 0.12; wreck.add(hull);
+      var bow = new THREE.Mesh(new THREE.ConeGeometry(1.75, 3.2, 4), woodMat); bow.rotation.z = -Math.PI / 2; bow.position.set(6.5, 1.2, 0); bow.scale.set(1, 1, 2); wreck.add(bow);
+      var mast = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.22, 7.6, 10), woodMat); mast.position.set(-1, 5.2, 0); mast.rotation.z = 0.24; wreck.add(mast);
+      wreck.traverse(function (o) { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+    }
     /* Đèn lồng đồng ấm đổ bóng thật bên trong khoang Tàu Đắm (tương phản ấm/lạnh kiểu The Hall dưới lòng biển!) */
     var wreckLan = MAY.makeCagedLantern(0xffb85c, 3.6, 26, true);
-    wreckLan.position.set(-2.2, 3.6, 0); wreck.add(wreckLan);
+    wreckLan.position.set(-2.2, 3.8, 0); wreck.add(wreckLan);
     var wY = ctx.groundH(-60, -40);
     wreck.position.set(-60, wY, -40); wreck.rotation.y = 0.7; wreck.rotation.z = 0.16;
-    wreck.traverse(function (o) { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
     ctx.add(wreck);
-    ctx.addCollider(-60, -40, 2.1, "wreck", { maxY: wY + 3.0 });
-    ctx.addCollider(-63.4, -42.8, 1.9, "wreck", { maxY: wY + 2.8 });
+    ctx.addBoxCollider(-60, -40, 11.2, 3.7, wY - 0.6, wY + 2.7, 0.7, "wreck", { walkable: true });
+    ctx.addCollider(-60.6, -39.4, 0.45, "wreck_mast", { minY: wY + 2.0, maxY: wY + 9.2 });
     if (MAY.add3DLoop) {
       MAY.add3DLoop([-60, ctx.groundH(-60, -40) + 3.6, -40], { kind: "fire", freq: 620, vol: 0.032, maxDist: 34 });
       MAY.add3DLoop([0, 3.5, -22], { kind: "water", freq: 380, vol: 0.045, maxDist: 52 });
@@ -327,12 +329,25 @@
     });
 
     var whale = new THREE.Group(); whale.rotation.order = "YXZ";
-    var whaleMat = new THREE.MeshStandardMaterial({ color: 0x2b5570, roughness: 0.55 });
-    var wb = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 12), whaleMat); wb.scale.set(6.2, 1.75, 1.75); whale.add(wb);
-    var wt = new THREE.Mesh(new THREE.ConeGeometry(1.3, 2.5, 4), whaleMat); wt.rotation.z = Math.PI / 2; wt.position.x = -6.6; wt.scale.set(1, 1, 0.28); whale.add(wt);
-    var wf = new THREE.Mesh(new THREE.ConeGeometry(0.75, 2.3, 4), whaleMat); wf.rotation.x = Math.PI / 2; wf.position.set(1, -1.4, 0); wf.scale.set(1, 1, 0.3); whale.add(wf);
-    var wbel = new THREE.Mesh(new THREE.SphereGeometry(0.95, 12, 10), new THREE.MeshStandardMaterial({ color: 0xa2c8d8, roughness: 0.7 }));
-    wbel.scale.set(5.4, 1.2, 1.5); wbel.position.set(0.3, -0.7, 0); whale.add(wbel);
+    var whaleRig = MAY.cloneSkinnedGLB("whale");
+    if (whaleRig) {
+      var wr = whaleRig.scene;
+      wr.scale.setScalar(1.65);
+      wr.rotation.y = Math.PI / 2;
+      whale.add(wr);
+      if (whaleRig.animations && whaleRig.animations.length) {
+        var wMix = new THREE.AnimationMixer(wr);
+        wMix.clipAction(whaleRig.animations[0]).play();
+        whale.userData.mixer = wMix;
+      }
+    } else {
+      var whaleMat = new THREE.MeshStandardMaterial({ color: 0x2b5570, roughness: 0.55 });
+      var wb = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 12), whaleMat); wb.scale.set(6.2, 1.75, 1.75); whale.add(wb);
+      var wt = new THREE.Mesh(new THREE.ConeGeometry(1.3, 2.5, 4), whaleMat); wt.rotation.z = Math.PI / 2; wt.position.x = -6.6; wt.scale.set(1, 1, 0.28); whale.add(wt);
+      var wf = new THREE.Mesh(new THREE.ConeGeometry(0.75, 2.3, 4), whaleMat); wf.rotation.x = Math.PI / 2; wf.position.set(1, -1.4, 0); wf.scale.set(1, 1, 0.3); whale.add(wf);
+      var wbel = new THREE.Mesh(new THREE.SphereGeometry(0.95, 12, 10), new THREE.MeshStandardMaterial({ color: 0xa2c8d8, roughness: 0.7 }));
+      wbel.scale.set(5.4, 1.2, 1.5); wbel.position.set(0.3, -0.7, 0); whale.add(wbel);
+    }
     ctx.add(whale);
     var whaleA = 0;
 
@@ -450,6 +465,7 @@
         f.g.add(c);
       });
       ctx.friends.forEach(function (fr) {
+        if (fr.group.userData && fr.group.userData.mixer) return;
         if (fr.kind === "turtle" && MAY.MODEL_T.turtle) {
           while (fr.group.children.length) fr.group.remove(fr.group.children[0]);
           fr.group.add(MAY.MODEL_T.turtle.group.clone(true));
@@ -505,6 +521,7 @@
       whaleA += dt * 0.018;
       whale.position.set(Math.cos(whaleA) * 74, 9.2 + Math.sin(t * 0.4) * 0.8, Math.sin(whaleA) * 74);
       whale.rotation.y = -whaleA - Math.PI / 2;
+      if (whale.userData.mixer) whale.userData.mixer.update(dt);
       mantaA += dt * 0.015;
       mantaHolder.position.set(Math.cos(mantaA) * 48, 8.8 + Math.sin(t * 0.5) * 0.7, Math.sin(mantaA) * 48);
       mantaHolder.rotation.y = -mantaA - Math.PI / 2;
@@ -577,6 +594,7 @@
     bubiCage.add(cageRocks, cageShell);
     bubiCage.visible = !ch1St.steps.bubiFree;
     ctx.add(bubiCage);
+    if (!ch1St.steps.bubiFree) ctx.addSphereCollider(bubiCagePos.x, bubiCagePos.y, bubiCagePos.z, 2.2, "bubi_cage");
 
     var inkCloudPositions = [
       new THREE.Vector3(-24, 4.2, -14),
@@ -698,10 +716,11 @@
         MAY.persist();
         ch1Npc.setMarker("?");
         if (!ch1Boss.active) {
-          ch1Boss.activate();
-          MAY.openDialogue({
-            name: ch1Sc.npcName, role: ch1Sc.npcRole, icon: ch1Sc.npcIcon, color: ch1Sc.npcColor,
-            pages: ch1Sc.bossIntro, endBtn: "🐙 Chiến đấu với Bạch Tuộc Mực!", voiceClip: "boss_appear"
+          ch1Boss.activate(function () {
+            MAY.openDialogue({
+              name: ch1Sc.npcName, role: ch1Sc.npcRole, icon: ch1Sc.npcIcon, color: ch1Sc.npcColor,
+              pages: ch1Sc.bossIntro, endBtn: "🐙 Chiến đấu với Bạch Tuộc Mực!", voiceClip: "boss_appear"
+            });
           });
         }
         ctx.setObjective("🐙", "ĐẨY NGƯỢC NGỌC TRAI ĐEN ĐÁNH BẠI BẠCH TUỘC MỰC!", ch1Boss.pos);
@@ -716,6 +735,7 @@
         ch1St.steps.bubiFree = true;
         MAY.persist();
         bubiCage.visible = false;
+        ctx.removeCollider("bubi_cage");
         if (bubiFriend) {
           bubiFriend.group.visible = true;
           bubiFriend.label.visible = true;
@@ -776,6 +796,16 @@
       }
     });
     updateCh1Story();
+
+    /* ---- Nhiệm Vụ Phụ Tương Tác Chương 1: Bản Hợp Xướng Ốc Biển Hát ---- */
+    ctx.setupSideQuest({
+      npcPos: [-12, 2.8, 12], npcRotY: 0.4, npcScale: 1.2, labelY: 2.0, floating: true,
+      tasks: [
+        { id: "conch1", kind: "conch", label: "Đánh thức Ốc Biển Tàu Đắm",   pos: [-52, 2.4, -44], color: 0x38bdf8 },
+        { id: "conch2", kind: "conch", label: "Đánh thức Ốc Biển Vườn San Hô", pos: [36, 2.6, -24],  color: 0xff7fa5 },
+        { id: "conch3", kind: "conch", label: "Đánh thức Ốc Biển Thềm Đá Đông", pos: [28, 3.6, 14],  color: 0xffd93d }
+      ]
+    });
 
     MAY.player.spawnAt(0, 4.0, 10, 0, true);
     return ctx;

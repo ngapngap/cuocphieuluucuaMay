@@ -67,13 +67,22 @@
       dlgState.idx++;
       renderDialoguePage();
     } else {
-      var cb = dlgState.onDone;
-      MAY.closeDialogue();
-      if (cb) cb();
+      MAY.finishDialogue();
     }
   };
 
-  MAY.closeDialogue = function () {
+  /* Kết thúc hộp thoại và LUÔN chạy onDone (dùng cho nút cuối, Space/Enter trang cuối & phím Esc!) */
+  MAY.finishDialogue = function () {
+    if (!dlgState) return;
+    var cb = dlgState.onDone;
+    MAY.closeDialogue(false);
+    if (cb) {
+      try { cb(); } catch (e) { if (window.console) console.error("Dialogue onDone err:", e); }
+    }
+  };
+
+  MAY.closeDialogue = function (invokeDone) {
+    var cb = (invokeDone && dlgState) ? dlgState.onDone : null;
     dlgState = null;
     MAY.dialogueOpen = false;
     if (MAY.player && MAY.player.clearKeys) MAY.player.clearKeys();
@@ -84,6 +93,9 @@
       return el && !el.classList.contains("hidden");
     });
     if (!anyOther) MAY.modalOpen = false;
+    if (cb) {
+      try { cb(); } catch (e) { if (window.console) console.error("Dialogue onDone err:", e); }
+    }
   };
 
   var dlgBtn = document.getElementById("dlg-next");
@@ -94,6 +106,10 @@
       e.preventDefault();
       e.stopPropagation();
       MAY.advanceDialogue();
+    } else if (e.code === "Escape") {
+      e.preventDefault();
+      e.stopPropagation();
+      MAY.finishDialogue();
     }
   }, true);
 
@@ -370,6 +386,7 @@
     aliveGroup.visible = false;
     root.add(aliveGroup);
     ctx.add(root);
+    if (ctx.addCollider) ctx.addCollider(x, z, 0.92 * sc, opts.tag || "dead_tree", { minY: y - 0.5, maxY: y + 5.6 * sc });
 
     var state = {
       root: root, trunk: trunk, aliveGroup: aliveGroup, revived: false, animT: 0,
@@ -421,6 +438,7 @@
     var shadowCover = new THREE.Mesh(new THREE.DodecahedronGeometry(1.55, 0), stdM(0x281c36, 0.9, { emissive: 0x3b0764, emissiveIntensity: 0.35, flatShading: true }));
     shadowCover.position.y = 2.85; g.add(shadowCover);
     ctx.add(g);
+    if (ctx.addCollider) ctx.addCollider(x, z, 1.35, "solar_mirror", { minY: y - 0.5, maxY: y + 3.8, walkable: true });
 
     var mirror = {
       group: g, lit: false, beam: null,
@@ -458,7 +476,11 @@
       slab.castShadow = true; slab.receiveShadow = true; g.add(slab);
     }
     ctx.add(g);
-    if (tag && ctx.addCollider) ctx.addCollider(x, z, 3.2, tag);
+    if (tag && ctx.addBoxCollider) {
+      ctx.addBoxCollider(x, z, 6.8, 2.2, y - 0.5, y + 5.2, rotY || 0, tag);
+    } else if (tag && ctx.addCollider) {
+      ctx.addCollider(x, z, 3.2, tag);
+    }
     var wall = {
       group: g, broken: false, pos: new THREE.Vector3(x, y + 2.0, z),
       shatter: function (instant) {
@@ -527,15 +549,70 @@
       return p;
     };
 
-    /* Va chạm rắn 3D (hình trụ có giới hạn độ cao tùy chọn để chặn đi xuyên tường/cây/cột mà vẫn nhảy/bơi/bay qua đỉnh được!) */
+    /* Va chạm rắn 3D đa hình dạng: Cylinder (trụ), OBB/AABB (hộp xoay 3D) & Sphere (cầu/vòm), hỗ trợ đi bộ trên đỉnh (walkable)! */
     ctx.addCollider = function (x, z, r, tag, yRange) {
-      if (typeof x !== "number" || typeof z !== "number" || isNaN(x) || isNaN(z)) return;
-      var c = { x: x, z: z, r: r, tag: tag || null };
+      if (typeof x !== "number" || typeof z !== "number" || isNaN(x) || isNaN(z)) return null;
+      var c = { shape: "cylinder", x: x, z: z, r: r, tag: tag || null };
       if (yRange) {
         if (yRange.minY !== undefined) c.minY = yRange.minY;
         if (yRange.maxY !== undefined) c.maxY = yRange.maxY;
+        if (yRange.walkable) c.walkable = true;
       }
       ctx.colliders.push(c);
+      return c;
+    };
+    ctx.addBoxCollider = function (x, z, width, depth, minY, maxY, rotY, tag, opts) {
+      if (typeof x !== "number" || typeof z !== "number" || isNaN(x) || isNaN(z)) return null;
+      opts = opts || {};
+      var c = {
+        shape: "box",
+        x: x, z: z,
+        hx: Math.abs(width || 2) * 0.5,
+        hz: Math.abs(depth || 2) * 0.5,
+        rotY: rotY || 0,
+        minY: minY !== undefined ? minY : -100,
+        maxY: maxY !== undefined ? maxY : 100,
+        walkable: !!opts.walkable,
+        tag: tag || null
+      };
+      ctx.colliders.push(c);
+      return c;
+    };
+    ctx.addSphereCollider = function (x, y, z, r, tag, opts) {
+      if (typeof x !== "number" || typeof z !== "number" || isNaN(x) || isNaN(z)) return null;
+      opts = opts || {};
+      var c = {
+        shape: "sphere",
+        x: x, y: y, z: z,
+        r: Math.abs(r || 1.2),
+        minY: opts.minY !== undefined ? opts.minY : (y - Math.abs(r || 1.2)),
+        maxY: opts.maxY !== undefined ? opts.maxY : (y + Math.abs(r || 1.2)),
+        walkable: !!opts.walkable,
+        tag: tag || null
+      };
+      ctx.colliders.push(c);
+      return c;
+    };
+    ctx.getColliderTopY = function (x, z, curFeetY) {
+      var topY = -999;
+      for (var i = 0; i < ctx.colliders.length; i++) {
+        var col = ctx.colliders[i];
+        if (!col.walkable || col.maxY === undefined) continue;
+        if (curFeetY < col.maxY - 0.65) continue;
+        if (col.shape === "box") {
+          var dx = x - col.x, dz = z - col.z;
+          var cs = Math.cos(-(col.rotY || 0)), sn = Math.sin(-(col.rotY || 0));
+          var lx = dx * cs - dz * sn, lz = dx * sn + dz * cs;
+          if (Math.abs(lx) <= col.hx + 0.35 && Math.abs(lz) <= col.hz + 0.35 && col.maxY > topY) {
+            topY = col.maxY;
+          }
+        } else if (col.shape === "cylinder") {
+          if (Math.hypot(x - col.x, z - col.z) <= (col.r || 1.2) + 0.32 && col.maxY > topY) {
+            topY = col.maxY;
+          }
+        }
+      }
+      return topY;
     };
     ctx.removeCollider = function (tag) {
       for (var i = ctx.colliders.length - 1; i >= 0; i--) {
@@ -662,6 +739,223 @@
         onInteract: function () { if (npc.onTalk) npc.onTalk(npc); }
       });
       return npc;
+    };
+
+    /* ---- A2. HỆ THỐNG NHIỆM VỤ PHỤ TƯƠNG TÁC ĐA BƯỚC (7/7 vùng đất — NPC màu ngọc lam -> Nhiệm vụ 3D -> Trả thưởng!) ---- */
+    ctx.sideQuest = null;
+    ctx.sideQuestStatus = null;
+
+    function makeSideQuestMesh(kind, colorHex) {
+      var g = new THREE.Group();
+      var col = colorHex || 0x22d3ee;
+      var mat = new THREE.MeshPhysicalMaterial({ color: col, emissive: col, emissiveIntensity: 0.45, roughness: 0.25, clearcoat: 0.9 });
+      if (kind === "lantern" || kind === "hearth" || kind === "beacon") {
+        var ped = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.48, 1.3, 8), stdM(0x475569, 0.8));
+        ped.position.y = 0.65; g.add(ped);
+        var orb = new THREE.Mesh(new THREE.OctahedronGeometry(0.42, 0), new THREE.MeshPhysicalMaterial({ color: 0x334155, emissive: 0x000000, roughness: 0.2, clearcoat: 1.0 }));
+        orb.position.y = 1.65; g.add(orb);
+        var pl = new THREE.PointLight(col, 0, 18); pl.position.y = 1.9; g.add(pl);
+        g.userData.orb = orb; g.userData.pl = pl; g.userData.litColor = col;
+      } else if (kind === "bottle" || kind === "basket" || kind === "gnomon" || kind === "wood") {
+        var body = new THREE.Mesh(
+          kind === "wood" ? new THREE.CylinderGeometry(0.24, 0.24, 1.1, 8) :
+          kind === "gnomon" ? new THREE.ConeGeometry(0.35, 1.25, 4) :
+          new THREE.CylinderGeometry(0.32, 0.42, 0.85, 10),
+          mat
+        );
+        if (kind === "wood") body.rotation.z = Math.PI / 2;
+        body.position.y = 0.65; g.add(body);
+        g.userData.pickup = true;
+      } else {
+        /* conch / chime / sundial */
+        var sh = new THREE.Mesh(new THREE.TorusKnotGeometry(0.36, 0.12, 24, 6), mat);
+        sh.position.y = 1.05; g.add(sh);
+        var pl2 = new THREE.PointLight(col, 0.6, 14); pl2.position.y = 1.2; g.add(pl2);
+        g.userData.orb = sh; g.userData.pl = pl2; g.userData.litColor = col;
+      }
+      var ring = MAY.VFX.makeRunePlane(1.45, col, 0.48);
+      ring.position.y = 0.10; g.add(ring);
+      g.userData.ring = ring;
+      g.traverse(function (o) { if (o.isMesh) o.castShadow = true; });
+      return g;
+    }
+
+    ctx.setupSideQuest = function (cfg) {
+      var def = (MAY.SIDE_QUESTS && MAY.SIDE_QUESTS[ctx.id]) || null;
+      if (!def || !cfg) return null;
+      var sqSave = ls.sideQuest || (ls.sideQuest = { stage: 0, doneIds: [], done: false });
+      var nx = cfg.npcPos[0], nz = cfg.npcPos.length === 3 ? cfg.npcPos[2] : cfg.npcPos[1];
+      var ny = cfg.npcPos.length === 3 ? cfg.npcPos[1] : ctx.groundH(nx, nz);
+
+      var npcG = MAY.makeAnimal(cfg.npcKind || def.npcKind, { scale: cfg.npcScale || 1.15 });
+      npcG.position.set(nx, ny, nz);
+      npcG.rotation.y = cfg.npcRotY || 0;
+      if (!cfg.floating) npcG.add(MAY.makeContactShadow(0.8, 0.55));
+      var aura = MAY.VFX.makeRunePlane(1.5, 0x22d3ee, 0.5);
+      aura.position.y = cfg.floating ? -1.2 : 0.07; npcG.add(aura);
+      var nameLb = MAY.makeLabel(def.npcIcon + " " + def.npcName, { w: 460, sx: 3.3, sy: 0.78, bg: "rgba(6,44,58,0.90)", color: "#67e8f9" });
+      nameLb.position.set(0, cfg.labelY || 2.15, 0); npcG.add(nameLb);
+      ctx.trackLabel(nameLb, 24);
+
+      var marker = makeQuestMarkerSprite("!", "#22d3ee");
+      marker.position.set(0, (cfg.labelY || 2.15) + 1.05, 0);
+      npcG.add(marker);
+      ctx.add(npcG);
+
+      var stations = [];
+      var sqObj = {
+        def: def, save: sqSave, npcGroup: npcG, aura: aura, marker: marker,
+        npcPos: new THREE.Vector3(nx, ny + 1.0, nz),
+        baseY: ny, floating: !!cfg.floating, labelY: cfg.labelY || 2.15,
+        stations: stations,
+        setMarker: function (sym) {
+          npcG.remove(sqObj.marker);
+          if (sqObj.marker.material && sqObj.marker.material.map) sqObj.marker.material.map.dispose();
+          if (sqObj.marker.material) sqObj.marker.material.dispose();
+          var bg = sym === "!" ? "#22d3ee" : (sym === "★" ? "#fbbf24" : (sym === "✓" ? "#4ade80" : "#94a3b8"));
+          sqObj.marker = makeQuestMarkerSprite(sym, bg);
+          sqObj.marker.position.set(0, sqObj.labelY + 1.05, 0);
+          npcG.add(sqObj.marker);
+        },
+        syncState: function () {
+          var total = stations.length;
+          var doneN = 0;
+          var nextPos = null;
+          var nextLabel = "";
+          stations.forEach(function (stItem) {
+            var isDone = sqSave.done || sqSave.doneIds.indexOf(stItem.id) !== -1;
+            stItem.done = isDone;
+            var unlocked = sqSave.stage >= 1 && !sqSave.done && (!stItem.finalOnly || doneN >= total - 1);
+            if (isDone) doneN++;
+            else if (unlocked && !nextPos) { nextPos = stItem.pos; nextLabel = stItem.label; }
+            if (stItem.group.userData.pickup) {
+              stItem.group.visible = (sqSave.stage >= 1 && !isDone);
+            } else {
+              stItem.group.visible = true;
+              if (stItem.group.userData.ring) stItem.group.userData.ring.visible = unlocked && !isDone;
+              if (isDone && stItem.group.userData.orb) {
+                stItem.group.userData.orb.material.color.setHex(stItem.group.userData.litColor || 0xffe066);
+                if (stItem.group.userData.orb.material.emissive) {
+                  stItem.group.userData.orb.material.emissive.setHex(stItem.group.userData.litColor || 0xffb703);
+                  stItem.group.userData.orb.material.emissiveIntensity = 1.25;
+                }
+                if (stItem.group.userData.pl) stItem.group.userData.pl.intensity = 2.6;
+              }
+            }
+            if (stItem.labelSp) stItem.labelSp.visible = unlocked && !isDone;
+          });
+
+          if (sqSave.done) {
+            sqObj.setMarker("✓");
+            ctx.sideQuestStatus = { done: true, text: "✅ Đã xong: " + def.title, count: total, total: total, targetPos: null };
+          } else if (sqSave.stage === 0) {
+            sqObj.setMarker("!");
+            ctx.sideQuestStatus = { done: false, text: "📜 Nhiệm vụ phụ: Gặp " + def.npcName + " (! xanh)", count: 0, total: total, targetPos: sqObj.npcPos };
+          } else if (doneN >= total) {
+            sqSave.stage = 2; MAY.persist();
+            sqObj.setMarker("★");
+            ctx.sideQuestStatus = { done: false, text: "📜 Nhiệm vụ phụ: Báo tin cho " + def.npcName + " (★)", count: doneN, total: total, targetPos: sqObj.npcPos };
+          } else {
+            sqObj.setMarker("?");
+            ctx.sideQuestStatus = { done: false, text: "📜 " + def.icon + " " + (nextLabel || def.title) + " (" + doneN + "/" + total + ")", count: doneN, total: total, targetPos: nextPos };
+          }
+          if (MAY.refreshHUD) MAY.refreshHUD();
+        },
+        completeTask: function (stItem) {
+          if (sqSave.stage < 1 || sqSave.done || stItem.done) return;
+          if (stItem.finalOnly) {
+            var othersDone = stations.filter(function (s) { return !s.finalOnly && sqSave.doneIds.indexOf(s.id) !== -1; }).length;
+            var othersTotal = stations.filter(function (s) { return !s.finalOnly; }).length;
+            if (othersDone < othersTotal) {
+              MAY.toast("📜 Hãy hoàn thành các bước trước đó (" + othersDone + "/" + othersTotal + ") rồi mới kích hoạt bước cuối nhé!");
+              return;
+            }
+          }
+          if (sqSave.doneIds.indexOf(stItem.id) === -1) sqSave.doneIds.push(stItem.id);
+          MAY.persist();
+          if (MAY.sndChime) MAY.sndChime(sqSave.doneIds.length);
+          MAY.burstAt(stItem.pos.clone().add(new THREE.Vector3(0, 0.8, 0)), stItem.color || 0x22d3ee, 18);
+          sqObj.syncState();
+          var doneN = sqSave.doneIds.length;
+          if (doneN >= stations.length) {
+            MAY.toast("📜 " + def.icon + " Xong hết các bước rồi! Quay lại gặp " + def.npcName + " (★) nhận thưởng!", "Xong rồi! Quay lại báo tin cho bạn nhé!");
+          } else {
+            MAY.toast("📜 " + def.icon + " Đã xong: " + stItem.label + " (" + doneN + "/" + stations.length + ")");
+          }
+        }
+      };
+
+      (cfg.tasks || []).forEach(function (tk, idx) {
+        var tx = tk.pos[0], tz = tk.pos.length === 3 ? tk.pos[2] : tk.pos[1];
+        var ty = tk.pos.length === 3 ? tk.pos[1] : ctx.groundH(tx, tz);
+        var meshG = makeSideQuestMesh(tk.kind || "lantern", tk.color || 0x22d3ee);
+        meshG.position.set(tx, ty, tz);
+        ctx.add(meshG);
+        var lb = MAY.makeLabel("📜 " + tk.label, { w: 420, sx: 3.1, sy: 0.72, bg: "rgba(6,44,58,0.88)", color: "#a5f3fc" });
+        lb.position.set(tx, ty + 2.35, tz);
+        ctx.add(lb);
+        ctx.trackLabel(lb, 24);
+        var stItem = {
+          id: tk.id || ("sqt_" + idx),
+          label: tk.label,
+          kind: tk.kind || "lantern",
+          color: tk.color || 0x22d3ee,
+          finalOnly: !!tk.finalOnly,
+          pos: new THREE.Vector3(tx, ty + 0.8, tz),
+          group: meshG,
+          labelSp: lb,
+          done: false
+        };
+        stations.push(stItem);
+        ctx.interactives.push({
+          obj: meshG, label: "📜 " + tk.label, isSideQuestTask: true,
+          onInteract: function () { sqObj.completeTask(stItem); }
+        });
+      });
+
+      ctx.interactives.push({
+        obj: npcG, label: "📜 Nhiệm vụ phụ: " + def.npcName, isQuestNPC: true,
+        onInteract: function () {
+          if (sqSave.done) {
+            MAY.openDialogue({
+              name: def.npcName, role: def.npcRole, icon: def.npcIcon, color: "#67e8f9",
+              pages: [def.donePages[0]], endBtn: "✨ Vui quá!"
+            });
+          } else if (sqSave.stage === 0) {
+            MAY.openDialogue({
+              name: def.npcName, role: def.npcRole, icon: def.npcIcon, color: "#67e8f9",
+              pages: def.acceptPages, endBtn: "📜 Nhận Nhiệm Vụ Phụ!",
+              onDone: function () {
+                sqSave.stage = 1; MAY.persist();
+                sqObj.syncState();
+                MAY.toast("📜 Đã nhận nhiệm vụ phụ: " + def.title + "!");
+              }
+            });
+          } else if (sqSave.stage >= 2) {
+            MAY.openDialogue({
+              name: def.npcName, role: def.npcRole, icon: def.npcIcon, color: "#67e8f9",
+              pages: def.donePages, endBtn: "🏅 Nhận Huy Hiệu!",
+              onDone: function () {
+                sqSave.done = true; sqSave.stage = 3; MAY.persist();
+                MAY.healPlayer(3);
+                if (MAY.sndGem) MAY.sndGem();
+                MAY.burstAt(sqObj.npcPos.clone().add(new THREE.Vector3(0, 1, 0)), 0x22d3ee, 28);
+                MAY.toast(def.rewardMsg, "Hoàn thành nhiệm vụ phụ rồi! Mây giỏi quá!");
+                sqObj.syncState();
+              }
+            });
+          } else {
+            MAY.openDialogue({
+              name: def.npcName, role: def.npcRole, icon: def.npcIcon, color: "#67e8f9",
+              pages: def.remindPages, endBtn: "📜 Đi làm tiếp nào!"
+            });
+          }
+        }
+      });
+
+      ctx.sideQuest = sqObj;
+      sqObj.syncState();
+      return sqObj;
     };
 
     /* ---- B. Vật Thể Giải Đố Tương Tác Phép Thuật Thực Chiến ---- */
@@ -803,15 +1097,23 @@
           if (fl) fl.style.width = Math.max(0, Math.round(boss.hp / boss.maxHp * 100)) + "%";
           if (tp && boss.tipFn) tp.textContent = boss.tipFn(boss);
         },
-        activate: function () {
-          if (boss.defeated || boss.active) return;
+        activate: function (afterIntroFn) {
+          if (boss.defeated || boss.active) {
+            if (afterIntroFn) afterIntroFn();
+            return;
+          }
           boss.active = true;
           boss.mesh.visible = true;
           boss.syncHUD();
           if (MAY.sndBossRoar) MAY.sndBossRoar(boss.pos);
           if (MAY.player.addShake) MAY.player.addShake(0.38);
-          if (MAY.player.triggerCamFocus) MAY.player.triggerCamFocus(boss.pos.clone().add(new THREE.Vector3(0, 2.2, 0)), 1.8);
           MAY.burstAt(boss.pos.clone().add(new THREE.Vector3(0, 2, 0)), 0xff3b5c, 22);
+          if (MAY.Cutscene && MAY.Cutscene.playBossIntro && MAY.started) {
+            MAY.Cutscene.playBossIntro(ctx, boss, afterIntroFn || null);
+          } else {
+            if (MAY.player.triggerCamFocus) MAY.player.triggerCamFocus(boss.pos.clone().add(new THREE.Vector3(0, 2.2, 0)), 1.8);
+            if (afterIntroFn) afterIntroFn();
+          }
         },
         damage: function (msg, launchFinish) {
           if (boss.defeated || !boss.active) return;
@@ -836,7 +1138,11 @@
               boss.mesh.visible = false;
             }
             MAY.burstAt(boss.pos.clone().add(new THREE.Vector3(0, 2.5, 0)), 0xffd93d, 36);
+            var defeatPos = boss.pos.clone();
             if (boss.onDefeat) boss.onDefeat(boss);
+            if (MAY.Cutscene && MAY.Cutscene.playBossDefeat && MAY.started) {
+              MAY.Cutscene.playBossDefeat(ctx, defeatPos, "🌈 " + boss.name + " đã được thanh tẩy! Vùng đất rực sáng trở lại!");
+            }
           } else {
             boss.syncHUD();
             if (msg) MAY.toast("💥 " + msg + " (Còn " + boss.hp + "/" + boss.maxHp + " pha!)", "Trúng đòn rồi! Cố lên Mây ơi!");
@@ -911,15 +1217,43 @@
           npc.group.userData.wr.rotation.z = -wFlap;
         }
         var nd = npc.group.position.distanceTo(pPos);
+        if (npc.group.userData.mixer) {
+          if (npc.group.userData.playClip) npc.group.userData.playClip(nd < 5.5 ? "talk" : "idle");
+          npc.group.userData.mixer.update(dt);
+        }
         if (nd < 14) {
           /* Mặt thú trong makeAnimal hướng về -Z nên quay về phía Mây dùng (npc - pPos) */
           var ang = Math.atan2(npc.group.position.x - pPos.x, npc.group.position.z - pPos.z);
           npc.group.rotation.y += (Math.atan2(Math.sin(ang - npc.group.rotation.y), Math.cos(ang - npc.group.rotation.y))) * Math.min(1, dt * 4.5);
         }
-        if (npc.autoGreet && !npc.autoGreeted && !MAY.modalOpen && (npc.state === "!" || npc.state === "★") && nd < 4.2) {
+        if (npc.autoGreet && !npc.autoGreeted && !MAY.modalOpen && !(MAY.Cutscene && MAY.Cutscene.isPlaying()) && (npc.state === "!" || npc.state === "★") && nd < 4.2) {
           npc.autoGreeted = true;
           if (npc.onTalk) npc.onTalk(npc);
         }
+      }
+
+      /* Cập nhật NPC & Trạm Nhiệm Vụ Phụ tương tác 3D */
+      if (ctx.sideQuest) {
+        var sq = ctx.sideQuest;
+        sq.aura.rotation.z -= dt * 1.1;
+        sq.marker.position.y = sq.labelY + 1.05 + Math.sin(t * 4.5 + 1.2) * 0.18;
+        if (sq.floating) sq.npcGroup.position.y = sq.baseY + Math.sin(t * 2.2) * 0.25;
+        var sqD = sq.npcGroup.position.distanceTo(pPos);
+        if (sqD < 14) {
+          var sAng = Math.atan2(sq.npcGroup.position.x - pPos.x, sq.npcGroup.position.z - pPos.z);
+          sq.npcGroup.rotation.y += Math.atan2(Math.sin(sAng - sq.npcGroup.rotation.y), Math.cos(sAng - sq.npcGroup.rotation.y)) * Math.min(1, dt * 4.5);
+        }
+        sq.stations.forEach(function (stItem, idx) {
+          if (stItem.group.userData.ring && stItem.group.userData.ring.visible) {
+            stItem.group.userData.ring.rotation.z += dt * 1.4;
+          }
+          if (stItem.group.userData.orb) {
+            stItem.group.userData.orb.rotation.y += dt * (stItem.done ? 2.4 : 0.9);
+          }
+          if (!MAY.modalOpen && sq.save.stage >= 1 && !sq.save.done && !stItem.done && stItem.group.visible && stItem.pos.distanceTo(pPos) < 2.65) {
+            sq.completeTask(stItem);
+          }
+        });
       }
 
       /* Vòng gợi ý mục tiêu giải đố kỹ năng */
@@ -1028,6 +1362,9 @@
       /* Cập nhật Boss Arena */
       if (ctx.boss) {
         var bs = ctx.boss;
+        if (bs.mesh && bs.mesh.userData && bs.mesh.userData.mixer) {
+          bs.mesh.userData.mixer.update(dt);
+        }
         if (bs.state === "launched") {
           bs.stateT += dt;
           bs.mesh.position.y += 22 * dt;
@@ -1161,7 +1498,16 @@
       }
     }
 
-    /* 5. Hook riêng của từng màn nếu cần */
+    /* 5. Phép thuật cũng kích hoạt các Trạm Nhiệm Vụ Phụ gần điểm tung phép */
+    if (ctx.sideQuest && ctx.sideQuest.save.stage >= 1 && !ctx.sideQuest.save.done) {
+      ctx.sideQuest.stations.forEach(function (stItem) {
+        if (!stItem.done && (stItem.pos.distanceTo(targetPos) < 6.5 || stItem.pos.distanceTo(playerPos) < 5.5)) {
+          ctx.sideQuest.completeTask(stItem);
+        }
+      });
+    }
+
+    /* 6. Hook riêng của từng màn nếu cần */
     if (ctx.onSpellCast) ctx.onSpellCast(spellId, targetPos, playerPos);
   };
 

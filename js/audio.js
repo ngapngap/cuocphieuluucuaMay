@@ -260,37 +260,59 @@
     } catch (e) {}
   };
 
-  /* ---- Âm thanh Không Gian 3D (PositionalAudio PannerNode đồng bộ theo Camera mỗi frame!) ---- */
+  /* ---- Âm thanh Không Gian 3D HRTF (Binaural PannerNode đồng bộ theo Camera mỗi frame!) ---- */
   var _fwdVec = new THREE.Vector3(), _upVec = new THREE.Vector3();
   MAY.updateAudioListener = function (cam) {
     if (!AC || !cam) return;
     try {
       var l = AC.listener;
+      cam.getWorldDirection(_fwdVec);
+      _upVec.set(0, 1, 0).applyQuaternion(cam.quaternion);
       if (l.positionX) {
-        l.positionX.value = cam.position.x;
-        l.positionY.value = cam.position.y;
-        l.positionZ.value = cam.position.z;
-        cam.getWorldDirection(_fwdVec);
-        _upVec.set(0, 1, 0).applyQuaternion(cam.quaternion);
-        l.forwardX.value = _fwdVec.x; l.forwardY.value = _fwdVec.y; l.forwardZ.value = _fwdVec.z;
-        l.upX.value = _upVec.x; l.upY.value = _upVec.y; l.upZ.value = _upVec.z;
-      } else if (l.setPosition) {
-        l.setPosition(cam.position.x, cam.position.y, cam.position.z);
+        var now = AC.currentTime;
+        l.positionX.setValueAtTime(cam.position.x, now);
+        l.positionY.setValueAtTime(cam.position.y, now);
+        l.positionZ.setValueAtTime(cam.position.z, now);
+        l.forwardX.setValueAtTime(_fwdVec.x, now);
+        l.forwardY.setValueAtTime(_fwdVec.y, now);
+        l.forwardZ.setValueAtTime(_fwdVec.z, now);
+        l.upX.setValueAtTime(_upVec.x, now);
+        l.upY.setValueAtTime(_upVec.y, now);
+        l.upZ.setValueAtTime(_upVec.z, now);
+      } else {
+        if (l.setPosition) l.setPosition(cam.position.x, cam.position.y, cam.position.z);
+        if (l.setOrientation) l.setOrientation(_fwdVec.x, _fwdVec.y, _fwdVec.z, _upVec.x, _upVec.y, _upVec.z);
       }
     } catch (e) {}
   };
+
+  function createHRTFPanner(ac, pos, refDist, maxDist, rolloff) {
+    var pan = ac.createPanner();
+    try { pan.panningModel = "HRTF"; } catch (e) { pan.panningModel = "equalpower"; }
+    pan.distanceModel = "inverse";
+    pan.refDistance = refDist !== undefined ? refDist : 6;
+    pan.maxDistance = maxDist !== undefined ? maxDist : 65;
+    pan.rolloffFactor = rolloff !== undefined ? rolloff : 1.3;
+    pan.coneInnerAngle = 360;
+    pan.coneOuterAngle = 360;
+    pan.coneOuterGain = 0;
+    if (pos) {
+      if (pan.positionX) {
+        pan.positionX.value = pos.x; pan.positionY.value = pos.y; pan.positionZ.value = pos.z;
+      } else if (pan.setPosition) {
+        pan.setPosition(pos.x, pos.y, pos.z);
+      }
+    }
+    return pan;
+  }
+  MAY.getPanningModel = function () { return "HRTF"; };
 
   MAY.play3DSound = function (pos, freq, dur, type, vol) {
     if (!MAY.voiceOn || !pos) return;
     try {
       var ac = getAC();
-      var o = ac.createOscillator(), g = ac.createGain(), pan = ac.createPanner();
-      pan.panningModel = "equalpower";
-      pan.distanceModel = "inverse";
-      pan.refDistance = 6;
-      pan.maxDistance = 65;
-      if (pan.positionX) { pan.positionX.value = pos.x; pan.positionY.value = pos.y; pan.positionZ.value = pos.z; }
-      else if (pan.setPosition) pan.setPosition(pos.x, pos.y, pos.z);
+      var o = ac.createOscillator(), g = ac.createGain();
+      var pan = createHRTFPanner(ac, pos, 6, 65, 1.25);
       o.type = type || "triangle";
       o.frequency.value = varyPitch(freq || 440, 0.035);
       g.gain.setValueAtTime(varyVol(vol || 0.12, 0.08), ac.currentTime);
@@ -300,7 +322,7 @@
     } catch (e) {}
   };
 
-  /* ---- Nguồn Âm 3D Lặp Gắn Vào Vật Thể Cụ Thể (đèn lồng lửa, suối/thác nước, pha lê, cối xay gió) ---- */
+  /* ---- Nguồn Âm 3D HRTF Lặp Gắn Vào Vật Thể Cụ Thể (đèn lồng lửa, suối/thác nước, pha lê, cối xay gió) ---- */
   var active3DLoops = [];
   var pending3DLoops = [];
 
@@ -310,14 +332,7 @@
       var pos = spec.pos;
       var kind = spec.kind || "water";
       var vol = spec.vol !== undefined ? spec.vol : 0.045;
-      var pan = ac.createPanner();
-      pan.panningModel = "equalpower";
-      pan.distanceModel = "inverse";
-      pan.refDistance = spec.refDist || 5.5;
-      pan.maxDistance = spec.maxDist || 48;
-      pan.rolloffFactor = spec.rolloff || 1.35;
-      if (pan.positionX) { pan.positionX.value = pos.x; pan.positionY.value = pos.y; pan.positionZ.value = pos.z; }
-      else if (pan.setPosition) pan.setPosition(pos.x, pos.y, pos.z);
+      var pan = createHRTFPanner(ac, pos, spec.refDist || 5.5, spec.maxDist || 48, spec.rolloff || 1.35);
 
       var g = ac.createGain();
       g.gain.value = vol;
@@ -488,12 +503,26 @@
     setTimeout(function () { MAY.beep(987, 0.22, "sine", 0.09); }, 90);
   };
 
-  /* ---- Nhạc môi trường & Tiếng nền 3 lớp riêng cho từng vùng đất ---- */
+  /* ---- Âm Thanh Môi Trường Stereo Từ File Audio Thực Tế (7 Track WAV Loop Mượt + Crossfade + HRTF) ---- */
   var ambStarted = false, currentBiome = "hub";
   var ambLowGain = null, ambLowFilter = null;
   var ambMidGain = null, ambMidFilter = null;
   var padOsc1 = null, padOsc2 = null, padFilter = null, padGain = null;
   var musicTimer = null;
+  var ambFileBuffers = {};
+  var ambFilePending = {};
+  var activeAmbTrack = null; /* { biome, src, gain } */
+  var ambSeq = 0;
+
+  var BIOME_AMB_FILES = {
+    hub:    { url: "assets/audio/amb_hub.wav",    gain: 0.24, rev: 0.20 },
+    level1: { url: "assets/audio/amb_level1.wav", gain: 0.26, rev: 0.30 },
+    level2: { url: "assets/audio/amb_level2.wav", gain: 0.24, rev: 0.22 },
+    level3: { url: "assets/audio/amb_level3.wav", gain: 0.24, rev: 0.18 },
+    level4: { url: "assets/audio/amb_level4.wav", gain: 0.26, rev: 0.38 },
+    level5: { url: "assets/audio/amb_level5.wav", gain: 0.24, rev: 0.26 },
+    level6: { url: "assets/audio/amb_level6.wav", gain: 0.24, rev: 0.30 }
+  };
 
   var BIOME_SCALES = {
     hub:    [261.6, 293.7, 329.6, 392.0, 440.0, 523.3],
@@ -505,36 +534,107 @@
     level6: [349.2, 440.0, 523.3, 587.3, 659.3, 784.0]
   };
 
-  /* Cấu hình 3 lớp nền (Low bed + Mid wind/water texture + Harmonic Pad + Reverb wet) theo từng vùng */
+  /* Fallback tổng hợp tạm thời trong lúc giải mã WAV (tự tắt về 0 ngay khi file WAV sẵn sàng!) */
   var BIOME_AMBIENCE = {
-    hub:    { lowF: 360, lowV: 0.036, midF: 950,  midQ: 1.1, midV: 0.018, padF: [130.8, 196.0], padLP: 420, padV: 0.011, rev: 0.20 },
-    level1: { lowF: 240, lowV: 0.052, midF: 520,  midQ: 0.8, midV: 0.022, padF: [110.0, 164.8], padLP: 320, padV: 0.013, rev: 0.30 },
-    level2: { lowF: 320, lowV: 0.026, midF: 1450, midQ: 1.5, midV: 0.020, padF: [146.8, 220.0], padLP: 460, padV: 0.012, rev: 0.22 },
-    level3: { lowF: 440, lowV: 0.028, midF: 1180, midQ: 2.2, midV: 0.024, padF: [130.8, 196.0], padLP: 380, padV: 0.010, rev: 0.18 },
-    level4: { lowF: 190, lowV: 0.040, midF: 780,  midQ: 2.8, midV: 0.016, padF: [123.5, 185.0], padLP: 340, padV: 0.015, rev: 0.38 },
-    level5: { lowF: 300, lowV: 0.030, midF: 1750, midQ: 2.4, midV: 0.022, padF: [164.8, 246.9], padLP: 480, padV: 0.012, rev: 0.26 },
-    level6: { lowF: 480, lowV: 0.024, midF: 1320, midQ: 1.4, midV: 0.019, padF: [174.6, 261.6], padLP: 540, padV: 0.014, rev: 0.30 }
+    hub:    { lowF: 360, lowV: 0.022, midF: 950,  midQ: 1.1, midV: 0.010, padF: [130.8, 196.0], padLP: 420, padV: 0.008, rev: 0.20 },
+    level1: { lowF: 240, lowV: 0.030, midF: 520,  midQ: 0.8, midV: 0.012, padF: [110.0, 164.8], padLP: 320, padV: 0.009, rev: 0.30 },
+    level2: { lowF: 320, lowV: 0.016, midF: 1450, midQ: 1.5, midV: 0.010, padF: [146.8, 220.0], padLP: 460, padV: 0.008, rev: 0.22 },
+    level3: { lowF: 440, lowV: 0.018, midF: 1180, midQ: 2.2, midV: 0.012, padF: [130.8, 196.0], padLP: 380, padV: 0.007, rev: 0.18 },
+    level4: { lowF: 190, lowV: 0.024, midF: 780,  midQ: 2.8, midV: 0.010, padF: [123.5, 185.0], padLP: 340, padV: 0.010, rev: 0.38 },
+    level5: { lowF: 300, lowV: 0.018, midF: 1750, midQ: 2.4, midV: 0.012, padF: [164.8, 246.9], padLP: 480, padV: 0.008, rev: 0.26 },
+    level6: { lowF: 480, lowV: 0.015, midF: 1320, midQ: 1.4, midV: 0.010, padF: [174.6, 261.6], padLP: 540, padV: 0.009, rev: 0.30 }
   };
+
+  function setSynthBedLevel(scale) {
+    if (!AC) return;
+    var cfg = BIOME_AMBIENCE[currentBiome] || BIOME_AMBIENCE.hub;
+    var now = AC.currentTime;
+    try {
+      if (ambLowGain) ambLowGain.gain.setTargetAtTime(cfg.lowV * scale, now, 0.45);
+      if (ambMidGain) ambMidGain.gain.setTargetAtTime(cfg.midV * scale, now, 0.45);
+      if (padGain) padGain.gain.setTargetAtTime(cfg.padV * scale, now, 0.45);
+    } catch (e) {}
+  }
+
+  function playDecodedBiomeAmbience(biomeId, buffer, seq) {
+    if (!AC || !buffer || seq !== ambSeq) return;
+    try {
+      var now = AC.currentTime;
+      var meta = BIOME_AMB_FILES[biomeId] || BIOME_AMB_FILES.hub;
+      var targetGain = meta.gain || 0.24;
+
+      if (activeAmbTrack && activeAmbTrack.biome === biomeId) return;
+
+      /* Crossfade mượt 1.4s track cũ sang track mới */
+      if (activeAmbTrack) {
+        var oldT = activeAmbTrack;
+        try {
+          oldT.gain.gain.cancelScheduledValues(now);
+          oldT.gain.gain.setValueAtTime(oldT.gain.gain.value, now);
+          oldT.gain.gain.linearRampToValueAtTime(0.0001, now + 1.35);
+          setTimeout(function () {
+            try { oldT.src.stop(); oldT.src.disconnect(); oldT.gain.disconnect(); } catch (e) {}
+          }, 1500);
+        } catch (e) {}
+      }
+
+      var src = AC.createBufferSource();
+      src.buffer = buffer;
+      src.loop = true;
+      var g = AC.createGain();
+      g.gain.setValueAtTime(0.0001, now);
+      g.gain.linearRampToValueAtTime(targetGain, now + 1.35);
+      src.connect(g);
+      g.connect(ambBus);
+      src.start(0);
+      activeAmbTrack = { biome: biomeId, src: src, gain: g };
+      MAY.ambienceSourceMode = "wav-buffer";
+      /* Tắt sạch lớp nhiễu tổng hợp ngay khi track WAV thật bắt đầu phát */
+      setSynthBedLevel(0.0);
+    } catch (e) {}
+  }
+
+  function loadAndPlayBiomeAmbience(biomeId) {
+    if (!AC) return;
+    var meta = BIOME_AMB_FILES[biomeId] || BIOME_AMB_FILES.hub;
+    var seq = ++ambSeq;
+    if (ambFileBuffers[biomeId]) {
+      playDecodedBiomeAmbience(biomeId, ambFileBuffers[biomeId], seq);
+      return;
+    }
+    if (!ambFilePending[biomeId]) {
+      ambFilePending[biomeId] = fetch(meta.url)
+        .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.arrayBuffer(); })
+        .then(function (ab) { return AC.decodeAudioData(ab); })
+        .then(function (buf) { ambFileBuffers[biomeId] = buf; return buf; })
+        .catch(function () { ambFilePending[biomeId] = null; return null; });
+    }
+    ambFilePending[biomeId].then(function (buf) {
+      if (buf && biomeId === currentBiome) playDecodedBiomeAmbience(biomeId, buf, seq);
+    });
+  }
 
   function applyBiomeAmbience(biomeId, overrideFreq, overrideVol) {
     var cfg = BIOME_AMBIENCE[biomeId] || BIOME_AMBIENCE.hub;
+    var fMeta = BIOME_AMB_FILES[biomeId] || BIOME_AMB_FILES.hub;
     if (!AC) return;
     var now = AC.currentTime;
     try {
       if (ambLowFilter) ambLowFilter.frequency.setTargetAtTime(overrideFreq || cfg.lowF, now, 0.35);
-      if (ambLowGain) ambLowGain.gain.setTargetAtTime(overrideVol !== undefined ? overrideVol : cfg.lowV, now, 0.45);
       if (ambMidFilter) {
         ambMidFilter.frequency.setTargetAtTime(cfg.midF, now, 0.35);
         ambMidFilter.Q.setTargetAtTime(cfg.midQ, now, 0.35);
       }
-      if (ambMidGain) ambMidGain.gain.setTargetAtTime(cfg.midV, now, 0.45);
       if (padOsc1 && padOsc2) {
         padOsc1.frequency.setTargetAtTime(cfg.padF[0], now, 0.5);
         padOsc2.frequency.setTargetAtTime(cfg.padF[1], now, 0.5);
       }
       if (padFilter) padFilter.frequency.setTargetAtTime(cfg.padLP, now, 0.4);
-      if (padGain) padGain.gain.setTargetAtTime(cfg.padV, now, 0.5);
-      if (reverbSend) reverbSend.gain.setTargetAtTime(cfg.rev, now, 0.4);
+      if (reverbSend) reverbSend.gain.setTargetAtTime(fMeta.rev !== undefined ? fMeta.rev : cfg.rev, now, 0.4);
+      if (!ambFileBuffers[biomeId]) {
+        setSynthBedLevel(1.0);
+      }
+      loadAndPlayBiomeAmbience(biomeId);
     } catch (e) {}
   }
 
@@ -543,23 +643,13 @@
     try {
       var scale = BIOME_SCALES[currentBiome] || BIOME_SCALES.hub;
       var f = scale[Math.floor(Math.random() * scale.length)];
+      /* Nốt nhạc nền ngũ cung cực nhẹ kết hợp cùng track môi trường WAV stereo */
       if (currentBiome === "level4") {
-        MAY.beep(f * 2, 0.65, "sine", 0.030, { tight: true, bus: "amb" });
-        if (Math.random() < 0.45) setTimeout(function () { MAY.beep(1320 + Math.random() * 450, 0.14, "sine", 0.022, { bus: "amb" }); }, 380);
-      } else if (currentBiome === "level2") {
-        MAY.beep(f, 0.55, "triangle", 0.026, { tight: true, bus: "amb" });
-        if (Math.random() < 0.4) {
-          setTimeout(function () {
-            MAY.beep(2200 + Math.random() * 700, 0.07, "sine", 0.016, { bus: "amb" });
-            setTimeout(function () { MAY.beep(2600 + Math.random() * 500, 0.09, "sine", 0.014, { bus: "amb" }); }, 95);
-          }, 420);
-        }
+        MAY.beep(f * 2, 0.65, "sine", 0.018, { tight: true, bus: "amb" });
       } else if (currentBiome === "level5" || currentBiome === "level6") {
-        MAY.beep(f * 2, 0.72, "sine", 0.024, { tight: true, bus: "amb" });
-        setTimeout(function () { MAY.beep(f * 1.5, 0.6, "triangle", 0.018, { tight: true, bus: "amb" }); }, 240);
+        MAY.beep(f * 2, 0.72, "sine", 0.016, { tight: true, bus: "amb" });
       } else {
-        MAY.beep(f, 0.65, "sine", 0.024, { tight: true, bus: "amb" });
-        setTimeout(function () { MAY.beep(f * 1.5, 0.5, "triangle", 0.016, { tight: true, bus: "amb" }); }, 280);
+        MAY.beep(f, 0.62, "sine", 0.015, { tight: true, bus: "amb" });
       }
     } catch (e) {}
   }
@@ -569,27 +659,19 @@
     ambStarted = true;
     try {
       var ac = getAC();
-      /* Lớp 1: Nền trầm (sóng biển / hầm hang / gió sâu) có LFO nhịp chậm */
+      /* Dự phòng nền rất nhẹ chỉ chạy trong tích tắc khi trình duyệt đang giải mã WAV đầu tiên */
       var srcLow = ac.createBufferSource(); srcLow.buffer = brownBuf; srcLow.loop = true;
       ambLowFilter = ac.createBiquadFilter(); ambLowFilter.type = "lowpass"; ambLowFilter.frequency.value = 360;
       ambLowGain = ac.createGain(); ambLowGain.gain.value = 0;
-      var lfo1 = ac.createOscillator(); lfo1.frequency.value = 0.09;
-      var lfo1G = ac.createGain(); lfo1G.gain.value = 0.012;
-      lfo1.connect(lfo1G); lfo1G.connect(ambLowGain.gain); lfo1.start();
       srcLow.connect(ambLowFilter); ambLowFilter.connect(ambLowGain); ambLowGain.connect(ambBus);
       srcLow.start();
 
-      /* Lớp 2: Lớp không khí / gió xào xạc / dòng chảy tầm trung (Pink Noise + Bandpass + LFO) */
       var srcMid = ac.createBufferSource(); srcMid.buffer = pinkBuf; srcMid.loop = true;
       ambMidFilter = ac.createBiquadFilter(); ambMidFilter.type = "bandpass"; ambMidFilter.frequency.value = 950; ambMidFilter.Q.value = 1.2;
       ambMidGain = ac.createGain(); ambMidGain.gain.value = 0;
-      var lfo2 = ac.createOscillator(); lfo2.frequency.value = 0.16;
-      var lfo2G = ac.createGain(); lfo2G.gain.value = 180;
-      lfo2.connect(lfo2G); lfo2G.connect(ambMidFilter.frequency); lfo2.start();
       srcMid.connect(ambMidFilter); ambMidFilter.connect(ambMidGain); ambMidGain.connect(ambBus);
       srcMid.start();
 
-      /* Lớp 3: Hợp âm nền Pad ấm êm dịu riêng theo từng vùng đất */
       padOsc1 = ac.createOscillator(); padOsc1.type = "sine"; padOsc1.frequency.value = 130.8;
       padOsc2 = ac.createOscillator(); padOsc2.type = "triangle"; padOsc2.frequency.value = 196.0;
       padFilter = ac.createBiquadFilter(); padFilter.type = "lowpass"; padFilter.frequency.value = 420;
@@ -600,10 +682,10 @@
 
       applyBiomeAmbience(currentBiome);
 
-      /* Khởi động các nguồn âm 3D lặp đã đăng ký trước khi người chơi bấm Bắt Đầu */
+      /* Khởi động các nguồn âm 3D HRTF lặp đã đăng ký trước khi người chơi bấm Bắt Đầu */
       while (pending3DLoops.length) startOne3DLoop(pending3DLoops.shift());
     } catch (e) {}
-    if (!musicTimer) musicTimer = setInterval(tickBiomeSoundscape, 2900);
+    if (!musicTimer) musicTimer = setInterval(tickBiomeSoundscape, 3800);
   };
 
   MAY.setAmbientTone = function (freq, vol, biomeId) {

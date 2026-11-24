@@ -374,6 +374,122 @@ window.MAY = window.MAY || {};
     return MAY.LEVEL_META[0];
   };
 
+  /* ---- 7 NHIỆM VỤ PHỤ TƯƠNG TÁC THỰC SỰ (Mỗi vùng đất 1 tuyến nhiệm vụ NPC -> Hành động -> Trả nhiệm vụ!) ---- */
+  MAY.SIDE_QUESTS = {
+    hub: {
+      id: "sq_hub", title: "Ngọn Đèn Bến Cảng & Chai Thư Biển", icon: "🏮",
+      npcName: "Khỉ Nâu Bến Thuyền", npcRole: "Người Giữ Bến Cảng Đảo Mây", npcIcon: "🐒", npcKind: "monkey",
+      acceptPages: [
+        "Mây ơi! Đêm bão hôm qua làm tắt 2 Ngọn Đèn Hải Âu ngoài bến tàu và có một Chai Thư Phát Sáng trôi dạt vào gần mũi thuyền kìa!",
+        "Mây giúp tớ nhặt Chai Thư rồi thắp sáng 2 Trụ Đèn Bến Cảng để đàn chim hải âu tìm được đường về đảo nhé!"
+      ],
+      remindPages: [
+        "Hãy ra mũi thuyền gỗ nhặt Chai Thư Biển và chạm vào 2 Trụ Đèn Bến Cảng đang tắt ngoài cầu gỗ nhé Mây!"
+      ],
+      donePages: [
+        "Tuyệt vời quá! Đèn bến cảng sáng ấm áp trở lại và bức thư trong chai viết lời cảm ơn của những người bạn phương xa gửi tới bé Mây đó!",
+        "Tớ tặng Mây Huy Hiệu Người Giữ Bến Cảng và hồi đầy 3 Trái Tim Ánh Sáng nhé!"
+      ],
+      rewardMsg: "🏅 Hoàn thành Nhiệm vụ phụ Đảo Mây: Đèn Bến Cảng & Chai Thư Biển!"
+    },
+    level1: {
+      id: "sq_l1", title: "Bản Hợp Xướng Ốc Biển Hát", icon: "🐚",
+      npcName: "Bạch Tuộc Nhạc Sĩ", npcRole: "Nhạc Trưởng Vịnh San Hô", npcIcon: "🐙", npcKind: "octopus",
+      acceptPages: [
+        "Chào bé Mây! Cơn bão mực làm 3 Chiếc Ốc Biển Hát của dàn nhạc san hô bị mắc kẹt ở 3 góc vịnh: mạn Tàu Đắm, Vườn San Hô và Thềm Đá Đông.",
+        "Mây hãy bơi tới đánh thức cả 3 Chiếc Ốc Biển Hát (chạm tương tác hoặc tung phép 🌊) rồi quay lại đây nghe hòa nhạc nhé!"
+      ],
+      remindPages: [
+        "Còn Ốc Biển Hát đang chờ Mây đánh thức ở quanh vịnh (nhìn cột sáng màu ngọc lam nhé)!"
+      ],
+      donePages: [
+        "Nghe kìa! Tiếng 3 Chiếc Ốc Biển hòa âm vang vọng khắp Vịnh San Hô rồi! Đàn cá vui sướng nhảy múa quanh Mây kìa!",
+        "Cảm ơn Mây nhiều lắm! Tặng Mây Huy Hiệu Nhạc Sĩ Đại Dương!"
+      ],
+      rewardMsg: "🏅 Hoàn thành Nhiệm vụ phụ Vịnh San Hô: Bản Hợp Xướng Ốc Biển!"
+    },
+    level2: {
+      id: "sq_l2", title: "Bữa Tiệc Đèn Lồng Rừng Nấm", icon: "🧺",
+      npcName: "Thỏ Rừng Bông", npcRole: "Đầu Bếp Tiệc Rừng Xanh", npcIcon: "🐇", npcKind: "rabbit",
+      acceptPages: [
+        "Mây ơi giúp tớ với! Tớ chuẩn bị bữa tiệc hạt dẻ cho cả khu rừng, nhưng Giỏ Hạt Dẻ Vàng bị gió thổi kẹt bên kia suối và 2 Đèn Nấm Tiệc bị tắt mất rồi!",
+        "Mây lấy giùm tớ Giỏ Hạt Dẻ và thắp sáng 2 Đèn Nấm quanh cầu gỗ rồi mang về cho tớ nhé!"
+      ],
+      remindPages: [
+        "Hãy tìm Giỏ Hạt Dẻ Vàng và thắp sáng 2 Đèn Nấm Tiệc ven suối rồi quay lại gặp Thỏ Rừng Bông nhé!"
+      ],
+      donePages: [
+        "Hoan hô! Bữa tiệc hạt dẻ rừng xanh lung linh ánh đèn nấm rồi! Cả Hươu Sao và Gấu Trúc đều vỗ tay cảm ơn bé Mây đó!",
+        "Tặng Mây Huy Hiệu Bạn Thân Rừng Nấm & hồi đầy Trái Tim!"
+      ],
+      rewardMsg: "🏅 Hoàn thành Nhiệm vụ phụ Rừng Nấm: Bữa Tiệc Đèn Lồng!"
+    },
+    level3: {
+      id: "sq_l3", title: "Bí Ẩn Đồng Hồ Mặt Trời Cổ", icon: "🧭",
+      npcName: "Cáo Tai To Kính Lúp", npcRole: "Nhà Khảo Cổ Sa Mạc", npcIcon: "🦊", npcKind: "fennec",
+      acceptPages: [
+        "Hí hí! Tớ tìm thấy Đồng Hồ Mặt Trời cổ đại trong Khu Tàn Tích Tây Sa Mạc, nhưng Kim Vàng bị rơi bên bờ Ốc Đảo và 2 Cột Đo Bóng bị cát vùi!",
+        "Mây hãy nhặt Kim Đồng Hồ Vàng bên Ốc Đảo, phủi cát 2 Cột Đo Bóng rồi gắn lên bệ ở Tàn Tích giúp tớ nhé!"
+      ],
+      remindPages: [
+        "Nhớ tìm Kim Vàng ven Ốc Đảo và kích hoạt 2 Cột Đo Bóng ở Khu Tàn Tích phía Tây rồi báo tin cho tớ nhé!"
+      ],
+      donePages: [
+        "Ôi tuyệt đỉnh khảo cổ học! Đồng Hồ Mặt Trời quay đúng hướng nắng vàng và mở ra bản đồ sao cổ đại rồi!",
+        "Tặng Mây Huy Hiệu Nhà Khảo Cổ Sa Mạc!"
+      ],
+      rewardMsg: "🏅 Hoàn thành Nhiệm vụ phụ Sa Mạc: Đồng Hồ Mặt Trời Cổ!"
+    },
+    level4: {
+      id: "sq_l4", title: "Mạng Lưới Đèn Pha Lê Thợ Mỏ", icon: "🔦",
+      npcName: "Chuột Chũi Kỹ Sư", npcRole: "Thợ Mỏ Ánh Sáng Hang Pha Lê", npcIcon: "🦡", npcKind: "mole",
+      acceptPages: [
+        "Cẩn thận trơn nhé Mây! Khi Golem rung chuyển hang động, 3 Trạm Tiếp Sáng Pha Lê dẫn đường cho các bạn thú nhỏ trong hang bị tắt ngấm!",
+        "Mây hãy tới kích hoạt lại cả 3 Trạm Tiếp Sáng (ở Hốc Tây, Bờ Bắc và Cột Đông) bằng tương tác hoặc phép thuật nhé!"
+      ],
+      remindPages: [
+        "Vẫn còn Trạm Tiếp Sáng Pha Lê chưa sáng trong hang! Mây tìm theo dấu vòng sáng ngọc lam nhé!"
+      ],
+      donePages: [
+        "Sáng rực cả hang động rồi! Giờ Kỳ Nhông và Dơi Nhỏ đi đâu cũng thấy đường lung linh lấp lánh!",
+        "Tặng Mây Huy Hiệu Kỹ Sư Ánh Sáng Hang Pha Lê!"
+      ],
+      rewardMsg: "🏅 Hoàn thành Nhiệm vụ phụ Hang Pha Lê: Mạng Lưới Đèn Pha Lê!"
+    },
+    level5: {
+      id: "sq_l5", title: "Chuyến Củi Ấm Cho Làng Igloo", icon: "🔥",
+      npcName: "Tuần Lộc Mũi Đỏ", npcRole: "Đội Trưởng Vận Chuyển Xứ Tuyết", npcIcon: "🦌", npcKind: "reindeer",
+      acceptPages: [
+        "Bão tuyết mạnh quá làm tớ đánh rơi 3 Bó Củi Thông Thơm dọc thung lũng, làm Lò Sưởi Làng Igloo sắp tắt mất rồi!",
+        "Mây giúp tớ gom lại 3 Bó Củi Thông và thắp ấm Lò Sưởi giữa làng Igloo nhé!"
+      ],
+      remindPages: [
+        "Mây hãy gom đủ 3 Bó Củi Thông Thơm rải quanh thung lũng rồi mang về thắp Lò Sưởi Làng Igloo nhé!"
+      ],
+      donePages: [
+        "Ấm áp quá trời luôn! Ngọn lửa làng Igloo bập bùng sưởi ấm cả Cánh Cụt Bông lẫn Gấu Bắc Cực Nhí rồi!",
+        "Tặng Mây Huy Hiệu Ngọn Lửa Ấm Xứ Tuyết!"
+      ],
+      rewardMsg: "🏅 Hoàn thành Nhiệm vụ phụ Xứ Tuyết: Ngọn Lửa Ấm Làng Igloo!"
+    },
+    level6: {
+      id: "sq_l6", title: "Khúc Nhạc Chuông Gió Trên Mây", icon: "🎐",
+      npcName: "Kỳ Lân Mây Nhí", npcRole: "Người Canh Chuông Gió Vương Quốc", npcIcon: "🦄", npcKind: "unicorn",
+      acceptPages: [
+        "Chào người hùng Mây! Bão sét của Vua Mây Bão làm 3 Chiếc Chuông Gió Cầu Vồng ở Đảo Tây, Cối Xay Gió Đông và Đảo Đông Bắc bị lệch nhịp!",
+        "Mây hãy bay lướt qua 3 hòn đảo để lên dây lại cả 3 Chiếc Chuông Gió Cầu Vồng cho Vương Quốc Mây ngân vang nhé!"
+      ],
+      remindPages: [
+        "Hãy ghé Đảo Tây, Cối Xay Gió Đảo Đông và Đảo Đông Bắc để chạm lên dây 3 Chiếc Chuông Gió Cầu Vồng nhé!"
+      ],
+      donePages: [
+        "Đẹp như giấc mơ! Tiếng Chuông Gió Cầu Vồng ngân vang hòa cùng cánh Cối Xay Gió làm cả bầu trời bừng sáng!",
+        "Tặng Mây Huy Hiệu Nhạc Trưởng Trên Mây!"
+      ],
+      rewardMsg: "🏅 Hoàn thành Nhiệm vụ phụ Vương Quốc Mây: Khúc Nhạc Chuông Gió!"
+    }
+  };
+
   function freshLevelSave() {
     return {
       items: [],
@@ -387,6 +503,8 @@ window.MAY = window.MAY || {};
       gem: false,
       bestTime: 0,
       playSecs: 0,
+      introSeen: false,
+      sideQuest: { stage: 0, doneIds: [], done: false },
       story: { stage: 0, steps: {}, bossDown: false, rewarded: false }
     };
   }
@@ -444,6 +562,10 @@ window.MAY = window.MAY || {};
           dst.gem = !!src.gem;
           dst.bestTime = src.bestTime || 0;
           dst.playSecs = src.playSecs || 0;
+          dst.introSeen = !!src.introSeen;
+          dst.sideQuest = src.sideQuest && typeof src.sideQuest === "object"
+            ? { stage: src.sideQuest.stage || 0, doneIds: Array.isArray(src.sideQuest.doneIds) ? src.sideQuest.doneIds : [], done: !!src.sideQuest.done }
+            : { stage: 0, doneIds: [], done: false };
           dst.story = src.story && typeof src.story === "object"
             ? { stage: src.story.stage || 0, steps: src.story.steps || {}, bossDown: !!src.story.bossDown, rewarded: !!src.story.rewarded }
             : { stage: 0, steps: {}, bossDown: false, rewarded: false };
@@ -539,6 +661,7 @@ window.MAY = window.MAY || {};
   MAY.getLevelSave = function (id) {
     if (!MAY.save.levels[id]) MAY.save.levels[id] = freshLevelSave();
     if (!MAY.save.levels[id].story) MAY.save.levels[id].story = { stage: 0, steps: {}, bossDown: false, rewarded: false };
+    if (!MAY.save.levels[id].sideQuest) MAY.save.levels[id].sideQuest = { stage: 0, doneIds: [], done: false };
     return MAY.save.levels[id];
   };
 

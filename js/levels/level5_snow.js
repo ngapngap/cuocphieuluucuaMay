@@ -22,7 +22,7 @@
     MAY.diveLight.intensity = 0.12;
     MAY.diveLight.castShadow = false;
     MAY.setAmbientTone(480, 0.036, "level5");
-    MAY.setPostGrade({ tint: 0xf2f8ff, vignette: 0.22, bloom: 0.30, ssao: 0.48 });
+    MAY.setPostGrade({ tint: 0xf2f8ff, vignette: 0.22, bloom: 0.30, ssao: 0.48, godRay: 0.34, godRayColor: 0xb8f2ff });
     ctx.getSurface = function (x, z) { return ctx.isIce(x, z) ? "ice" : "snow"; };
 
     MAY.scene.fog = new THREE.FogExp2(0x9dc7e8, 0.0068);
@@ -98,7 +98,13 @@
       roughness: 0.76
     });
     MAY.applyWorldWeathering(snowMat, { macro: 0.12, stain: 0.18, wallGrime: 0.16, stainColor: 0x6f96ba });
-    ctx.buildTerrain(230, 120, snowMat);
+    ctx.buildTerrain(230, 120, snowMat, {
+      staticLights: [
+        { x: -26, z: 22,  r: 1.0, g: 0.80, b: 0.42, radius: 18, intensity: 0.48 },
+        { x: 26,  z: 20,  r: 1.0, g: 0.80, b: 0.42, radius: 16, intensity: 0.40 },
+        { x: -22, z: -32, r: 1.0, g: 0.80, b: 0.42, radius: 16, intensity: 0.40 }
+      ]
+    });
 
     /* HỒ BĂNG SOI GƯƠNG THỜI GIAN THỰC (Planar Reflection + Roughness vết nứt băng!) */
     var iceGeo = new THREE.CircleGeometry(ICE.r + 0.5, 48);
@@ -115,16 +121,10 @@
       fogDensity: 0.0068
     }, new THREE.Vector3(ICE.x, 1.09, ICE.z));
 
-    /* Dãy núi tuyết Alps + Đá phủ tuyết + Tia sáng Cực Quang rọi xuống thung lũng + Tuyết rơi */
+    /* Dãy núi tuyết Alps + Đá phủ tuyết + Tia sáng Screen-Space Volumetric God Rays + Tuyết rơi */
     MAY.buildVistaRing(ctx, { count: 24, radius: 142, hMin: 28, hMax: 58, wBase: 32, baseY: -1, color: 0x5d7a96, snowCap: true });
     MAY.scatterDebris(ctx, 160, function (x, z) { return !ctx.isIce(x, z); }, { spread: 80, size: 0.26, color: 0x8ea4ba });
-    var snowRayMat = MAY.makeGodRayMat(0xb8f2ff, 0.19);
-    [[0, -6], [-26, 20], [26, 18], [0, -36], [-30, -18], [32, -16]].forEach(function (rp, ri) {
-      var ray = new THREE.Mesh(new THREE.ConeGeometry(3.4 + (ri % 3) * 0.8, 42, 12, 1, true), snowRayMat);
-      ray.position.set(rp[0], 21, rp[1]);
-      ray.rotation.z = -0.22;
-      ctx.add(ray);
-    });
+    if (MAY.setGodRays) MAY.setGodRays({ color: 0xb8f2ff, strength: 0.34, density: 0.90, decay: 0.94 });
     ctx.addAmbientParticles({ count: 480, spread: 130, minY: 0.5, maxY: 26, vy: -1.4, vx: 0.6, color: 0xffffff, size: 0.2, opacity: 0.85 });
 
     /* Rừng thông phủ tuyết dày tán lá đa tầng chân thực */
@@ -184,7 +184,9 @@
       var igY = ctx.groundH(x, z);
       g.position.set(x, igY - 0.15, z); g.rotation.y = rotY;
       ctx.add(g);
-      ctx.addCollider(x, z, 3.25, "igloo", { maxY: igY + 3.6 });
+      ctx.addSphereCollider(x, igY, z, 3.25, "igloo_dome", { minY: igY - 0.5, maxY: igY + 3.4 });
+      var tx = x + Math.sin(rotY) * 3.0, tz = z + Math.cos(rotY) * 3.0;
+      ctx.addBoxCollider(tx, tz, 2.4, 2.3, igY - 0.5, igY + 1.9, rotY, "igloo_tunnel");
     }
     makeIgloo(-26, 22, 0.7, true);
     makeIgloo(26, 20, -0.8, false);
@@ -217,7 +219,9 @@
     sman.position.set(0, smY, -38);
     sman.traverse(function (o) { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
     ctx.add(sman);
-    ctx.addCollider(0, -38, 2.35, "snowman", { maxY: smY + 8.8 });
+    ctx.addSphereCollider(0, smY + 2.0, -38, 2.35, "snowman_b");
+    ctx.addSphereCollider(0, smY + 4.9, -38, 1.65, "snowman_m");
+    ctx.addSphereCollider(0, smY + 7.1, -38, 1.15, "snowman_h");
     ctx.addGemAltar([0, -32]);
 
     /* ---- 10 Bông Tuyết Bạc (Nhiệm vụ chính) ---- */
@@ -352,6 +356,18 @@
     /* TRÙM CHƯƠNG 5: 🦊 Sói Tuyết Băng Giá (Frostfang Alpha — Đặt bẫy Cột Băng ❄️ cho Sói trượt đâm choáng -> ☀️ thanh tẩy!) */
     var wolfBossMesh = MAY.makeMonsterMesh("icewolf", 2.35);
     var activeIceTrap = null;
+    function clearBossIceTrap() {
+      if (ctx.removeCollider) ctx.removeCollider("boss_ice_pillar");
+      activeIceTrap = null;
+    }
+    function placeBossIcePillar(pos) {
+      clearBossIceTrap();
+      var p = pos.clone();
+      MAY.VFX.spawnIcePillar(p, 5.5);
+      MAY.sndFreeze(p);
+      if (ctx.addCollider) ctx.addCollider(p.x, p.z, 1.15, "boss_ice_pillar", { minY: p.y - 0.5, maxY: p.y + 3.8 });
+      activeIceTrap = { pos: p, life: 5.5 };
+    }
     var ch5Npc;
     var ch5Boss = ctx.setBoss({
       name: "Sói Tuyết Băng Giá", icon: "🦊",
@@ -386,7 +402,7 @@
               bs.pos.y = 1.1;
               bs.subState.dizzy = true;
               bs.subState.dizzyT = 6.0;
-              activeIceTrap.life = 0;
+              clearBossIceTrap();
               MAY.sndShatter(bs.pos);
               MAY.VFX.spawnShatterBurst(bs.pos.clone().add(new THREE.Vector3(0, 1.5, 0)), 0x7dd3fc);
               bs.syncHUD();
@@ -403,10 +419,7 @@
       },
       onSpellHit: function (spellId, castPos, bs) {
         if (spellId === "frost") {
-          /* Dựng Cột Băng bẫy Sói ngay trước mặt Mây! */
-          MAY.VFX.spawnIcePillar(castPos.clone(), 5.5);
-          MAY.sndFreeze(castPos);
-          activeIceTrap = { pos: castPos.clone(), life: 5.5 };
+          /* Cột băng chỉ dựng DUY NHẤT 1 lần trong ctx.onSpellCast (khử sạch bug cột băng nhân đôi!) */
           if (castPos.distanceTo(bs.pos) < 7.5) {
             bs.subState.dizzy = true;
             bs.subState.dizzyT = 6.0;
@@ -425,6 +438,7 @@
         }
       },
       onDefeat: function () {
+        clearBossIceTrap();
         ch5St.stage = 4; MAY.persist();
         ch5Npc.setMarker("★");
         ctx.setObjective("★", "QUAY LẠI TRƯỞNG LÀNG CÁNH CỤT BÔNG NHẬN ⚪ NGỌC TRẮNG!", ch5Npc.pos);
@@ -432,12 +446,10 @@
       }
     });
 
-    /* Cho phép dựng Cột Băng mọi nơi trên hồ băng khi Boss đang hoạt động */
+    /* Dựng Cột Băng DUY NHẤT 1 lần mỗi lượt tung phép ❄️ khi Boss đang hoạt động */
     ctx.onSpellCast = function (spellId, targetPos) {
       if (spellId === "frost" && ch5Boss.active && !ch5Boss.defeated) {
-        MAY.VFX.spawnIcePillar(targetPos.clone(), 5.5);
-        MAY.sndFreeze(targetPos);
-        activeIceTrap = { pos: targetPos.clone(), life: 5.5 };
+        placeBossIcePillar(targetPos);
       }
     };
 
@@ -481,10 +493,11 @@
         ch5St.stage = 3; MAY.persist();
         ch5Npc.setMarker("?");
         if (!ch5Boss.active) {
-          ch5Boss.activate();
-          MAY.openDialogue({
-            name: ch5Sc.npcName, role: ch5Sc.npcRole, icon: ch5Sc.npcIcon, color: ch5Sc.npcColor,
-            pages: ch5Sc.bossIntro, endBtn: "🦊 Chiến đấu với Sói Tuyết!", voiceClip: "boss_appear"
+          ch5Boss.activate(function () {
+            MAY.openDialogue({
+              name: ch5Sc.npcName, role: ch5Sc.npcRole, icon: ch5Sc.npcIcon, color: ch5Sc.npcColor,
+              pages: ch5Sc.bossIntro, endBtn: "🦊 Chiến đấu với Sói Tuyết!", voiceClip: "boss_appear"
+            });
           });
         }
         ctx.setObjective("🦊", "BẪY CỘT BĂNG (❄️) + CHIẾU NẮNG (☀️) HẠ SÓI TUYẾT!", ch5Boss.pos);
@@ -528,6 +541,7 @@
       onHit: function (sp, tg) {
         ch5St.steps.ballFrozen = true; sbFrozen = true; MAY.persist();
         snowBall.material = new THREE.MeshPhysicalMaterial({ color: 0x7dd3fc, emissive: 0x0284c7, emissiveIntensity: 0.45, roughness: 0.08, clearcoat: 1.0 });
+        ctx.addSphereCollider(snowBall.position.x, snowBall.position.y, snowBall.position.z, 1.9, "frozen_snowball");
         tg.markDone();
         MAY.sndFreeze(snowBall.position);
         MAY.toast("❄️ Quả cầu tuyết đã đông cứng! Sói Tuyết Băng Giá nhảy ra giữa hồ băng kìa!");
@@ -575,9 +589,23 @@
     });
     updateCh5Story();
 
+    /* ---- Nhiệm Vụ Phụ Tương Tác Chương 5: Chuyến Củi Ấm Cho Làng Igloo ---- */
+    ctx.setupSideQuest({
+      npcPos: [8, 32], npcRotY: -0.4, npcScale: 1.15, labelY: 2.3,
+      tasks: [
+        { id: "wood1",  kind: "wood",   label: "Nhặt Bó Củi Thông Đồi Tây",    pos: [-32, 16], color: 0xd97706 },
+        { id: "wood2",  kind: "wood",   label: "Nhặt Bó Củi Thông Đồi Đông",   pos: [32, 14],  color: 0xd97706 },
+        { id: "wood3",  kind: "wood",   label: "Nhặt Bó Củi Thông Rừng Bắc",   pos: [-16, -28], color: 0xd97706 },
+        { id: "hearth", kind: "hearth", label: "Thắp Lò Sưởi Ấm Làng Igloo",   pos: [-20, 22], color: 0xff9f1c, finalOnly: true }
+      ]
+    });
+
     var chillWarnCd = 0;
     ctx.onUpdate = function (dt, t) {
-      if (activeIceTrap && activeIceTrap.life > 0) activeIceTrap.life -= dt;
+      if (activeIceTrap && activeIceTrap.life > 0) {
+        activeIceTrap.life -= dt;
+        if (activeIceTrap.life <= 0) clearBossIceTrap();
+      }
       if (chillWarnCd > 0) chillWarnCd -= dt;
       /* Nếu Mây lỡ bước xuống khe suối băng chưa đóng băng -> tóe nước lạnh & bật nhẹ lên bờ! */
       if (!MAY.modalOpen) {

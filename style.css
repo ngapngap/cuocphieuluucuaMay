@@ -7,27 +7,41 @@ body {
 #view { position: fixed; inset: 0; display: block; touch-action: none; }
 #mask, #grade { position: fixed; inset: 0; z-index: 2; pointer-events: none; transition: opacity .4s ease; opacity: 0; }
 
-/* HUD */
-.hud { position: fixed; z-index: 5; pointer-events: none; }
+/* HUD — Bố cục 3 cột đỉnh (Trái: #hud-left | Giữa: #compass | Phải: #fr) chống chồng lấn mọi tỉ lệ màn hình */
+.hud { position: fixed; z-index: 5; pointer-events: none; transition: opacity .25s ease; }
+
+#hud-left {
+  top: 10px; left: 12px;
+  display: flex; flex-direction: column; align-items: flex-start; gap: 6px;
+  max-width: min(372px, 31vw);
+}
 #obj {
-  top: 12px; left: 12px;
-  background: rgba(5, 22, 38, .48);
+  width: 100%;
+  background: rgba(5, 22, 38, .54);
   backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
   border: 1px solid rgba(255,255,255,.22);
-  border-radius: 16px; padding: 8px 14px;
+  border-radius: 15px; padding: 7px 12px;
 }
-#obj .t1 { font-size: 11px; letter-spacing: .16em; color: #9fd8ef; font-weight: 800; }
-#obj .t2 { font-size: 20px; font-weight: 900; letter-spacing: .04em; color: #fff; text-shadow: 0 2px 6px rgba(0,0,0,.55); }
+.obj-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+#obj .t1 { font-size: 10.5px; letter-spacing: .12em; color: #9fd8ef; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#hearts-hud { font-size: 15px; letter-spacing: 2px; flex-shrink: 0; filter: drop-shadow(0 2px 4px rgba(0,0,0,.55)); transition: transform .2s ease; }
+#hearts-hud.hurt { transform: scale(1.25); filter: drop-shadow(0 0 10px #ff3b5c); }
+#obj .t2 { font-size: 14px; font-weight: 900; letter-spacing: .03em; line-height: 1.24; color: #fff; text-shadow: 0 2px 6px rgba(0,0,0,.55); margin-top: 2px; }
 #obj .t2 .star { color: #ffd93d; }
+.obj-substep {
+  font-size: 11.5px; color: #7dd3fc; font-weight: 700; margin-top: 3px; line-height: 1.25;
+  text-shadow: 0 1px 4px rgba(0,0,0,.6);
+}
+.obj-substep.sq-done { color: #86efac; }
 
-/* Thanh 6 Phép Thuật Nguyên Tố (phong cách Fable 5.2) */
-#spellbar { top: 82px; left: 12px; pointer-events: auto; }
-.spell-row { display: flex; align-items: center; gap: 6px; }
+/* Thanh 6 Phép Thuật Nguyên Tố (nằm trong flex column #hud-left -> không bao giờ đè #obj) */
+#spellbar { pointer-events: auto; }
+.spell-row { display: flex; align-items: center; gap: 5px; }
 .spell-slot {
-  position: relative; width: 38px; height: 38px; border-radius: 50%;
-  border: 2px solid rgba(255,255,255,.32); background: rgba(6, 22, 40, .65);
+  position: relative; width: 35px; height: 35px; border-radius: 50%;
+  border: 2px solid rgba(255,255,255,.32); background: rgba(6, 22, 40, .68);
   backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-  color: #fff; font-size: 17px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center;
   transition: transform .14s ease, border-color .15s ease, box-shadow .15s ease;
 }
 .spell-slot kbd {
@@ -38,47 +52,70 @@ body {
 .spell-slot:hover { transform: scale(1.08); }
 .spell-slot.active {
   border-color: #ffd93d; background: rgba(255, 217, 61, .28);
-  box-shadow: 0 0 12px rgba(255, 217, 61, .65); transform: scale(1.12);
+  box-shadow: 0 0 12px rgba(255, 217, 61, .65); transform: scale(1.1);
+}
+.spell-slot.locked {
+  opacity: .38; filter: grayscale(.85); cursor: not-allowed;
+  border-style: dashed; border-color: rgba(255,255,255,.25);
+}
+.spell-slot.locked::after {
+  content: "🔒"; position: absolute; left: -3px; top: -4px; font-size: 10px;
 }
 .spell-cast {
-  height: 36px; padding: 0 12px; border-radius: 999px; border: 2px solid #ffd93d;
-  background: linear-gradient(135deg, rgba(255,217,61,.9), rgba(255,159,67,.9));
-  color: #162436; font-weight: 900; font-size: 13px; cursor: pointer; font-family: inherit;
-  box-shadow: 0 3px 10px rgba(0,0,0,.35);
+  height: 33px; padding: 0 11px; border-radius: 999px; border: 2px solid #ffd93d;
+  background: linear-gradient(135deg, rgba(255,217,61,.92), rgba(255,159,67,.92));
+  color: #162436; font-weight: 900; font-size: 12.5px; cursor: pointer; font-family: inherit;
+  box-shadow: 0 3px 10px rgba(0,0,0,.35); white-space: nowrap;
 }
 .spell-cast:active { transform: scale(.95); }
 #spell-name {
-  margin-top: 5px; font-size: 11px; font-weight: 800; letter-spacing: .24em;
-  color: #ffe8a3; text-shadow: 0 2px 6px rgba(0,0,0,.85); padding-left: 4px;
+  margin-top: 4px; font-size: 10.5px; font-weight: 800; letter-spacing: .18em;
+  color: #ffe8a3; text-shadow: 0 2px 6px rgba(0,0,0,.85); padding-left: 3px;
 }
 
+/* HUD Góc trên phải: cột flex #hud-right (#fr + #minimap-wrap) -> chống chồng lấn tuyệt đối */
+#hud-right {
+  top: 10px; right: 12px;
+  display: flex; flex-direction: column; align-items: flex-end; gap: 7px;
+  max-width: min(465px, 36.5vw);
+}
 #fr {
-  top: 12px; right: 12px; text-align: right;
-  display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 6px;
-  max-width: 62vw;
+  text-align: right;
+  display: flex; flex-direction: column; align-items: flex-end; gap: 5px;
+  width: 100%;
+}
+#fr-top {
+  display: flex; align-items: center; justify-content: flex-end; gap: 5px; flex-wrap: nowrap;
+}
+#fr-pills {
+  display: flex; align-items: center; justify-content: flex-end; gap: 3px; flex-wrap: wrap;
 }
 #fr .pill {
-  display: inline-block;
-  background: rgba(5, 24, 42, .56);
+  display: inline-block; white-space: nowrap;
+  background: rgba(5, 24, 42, .62);
   backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
   border: 1px solid rgba(255,255,255,.28);
-  border-radius: 999px; padding: 6px 12px; font-size: 15px; font-weight: 800;
+  border-radius: 999px; padding: 3px 7px; font-size: 11.5px; font-weight: 800; line-height: 1.25;
 }
-#fr .gem-pill { background: linear-gradient(135deg, rgba(168,85,247,.48), rgba(56,189,248,.48)); border-color: rgba(255,217,61,.6); }
-#zone-pill { background: rgba(255,217,61,.25) !important; border-color: rgba(255,217,61,.55) !important; }
+#fr .gem-pill { background: linear-gradient(135deg, rgba(168,85,247,.52), rgba(56,189,248,.52)); border-color: rgba(255,217,61,.65); }
+#zone-pill {
+  background: rgba(255,217,61,.26) !important; border-color: rgba(255,217,61,.62) !important;
+  padding: 5px 11px !important; font-size: 13px !important;
+}
 #fr .hbtn {
-  pointer-events: auto;
-  background: rgba(5, 26, 46, .65);
+  pointer-events: auto; flex-shrink: 0;
+  background: rgba(5, 26, 46, .68);
   backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
   border: 1px solid rgba(255,255,255,.4);
-  color: #fff; font-size: 17px; width: 40px; height: 40px; border-radius: 50%;
+  color: #fff; font-size: 15px; width: 34px; height: 34px; border-radius: 50%;
   cursor: pointer; transition: transform .12s ease, background .15s ease;
+  display: inline-flex; align-items: center; justify-content: center;
 }
 #fr .hbtn:hover { background: rgba(255,217,61,.32); transform: scale(1.06); }
 
-/* La bàn */
+/* La bàn ở chính giữa trên cùng — luôn có khoảng trống rõ với #hud-left và #hud-right */
 #compass {
-  top: 66px; left: 50%; transform: translateX(-50%); width: min(400px, 50vw); height: 34px;
+  top: 10px; left: 50%; transform: translateX(-50%); width: min(296px, 24vw); height: 34px;
   overflow: hidden; border-bottom: 2px solid rgba(255,255,255,.38);
   -webkit-mask-image: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent);
   mask-image: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent);
@@ -100,13 +137,14 @@ body {
 #big .l { font-size: 12px; letter-spacing: .2em; color: #cfeefc; font-weight: 800; }
 
 #toast {
-  position: fixed; left: 50%; top: 112px; transform: translateX(-50%) scale(.92); z-index: 8;
-  background: rgba(255,217,61,.96); color: #083452; font-weight: 900; font-size: 18px;
-  padding: 10px 22px; border-radius: 999px; opacity: 0; transition: all .28s ease; pointer-events: none;
-  box-shadow: 0 6px 20px rgba(0,0,0,.38); white-space: nowrap; max-width: 92vw;
+  position: fixed; left: 50%; top: 54px; transform: translateX(-50%) scale(.92); z-index: 8;
+  background: rgba(255,217,61,.96); color: #083452; font-weight: 900; font-size: 16px;
+  padding: 9px 20px; border-radius: 999px; opacity: 0; transition: all .28s ease; pointer-events: none;
+  box-shadow: 0 6px 20px rgba(0,0,0,.38); white-space: nowrap; max-width: 90vw;
   overflow: hidden; text-overflow: ellipsis;
 }
 #toast.show { opacity: 1; transform: translateX(-50%) scale(1); }
+body.boss-active #toast { top: 136px; }
 
 #hint {
   position: fixed; left: 50%; transform: translateX(-50%); bottom: 14px; z-index: 5;
@@ -122,11 +160,12 @@ body {
 body.touch #diver-id { display: none; }
 
 #minimap-wrap {
-  position: fixed; right: 14px; top: 112px; z-index: 5; width: 126px; height: 126px;
+  width: 114px; height: 114px; flex-shrink: 0;
   border-radius: 50%; border: 3px solid rgba(255,255,255,.72); overflow: hidden; pointer-events: none;
   background: rgba(3,40,60,.58); box-shadow: 0 6px 16px rgba(0,0,0,.4);
+  transition: opacity .25s ease;
 }
-#minimap { width: 126px; height: 126px; display: block; }
+#minimap { width: 114px; height: 114px; display: block; }
 
 #interact {
   position: fixed; left: 50%; top: 62%; transform: translateX(-50%); z-index: 6;
@@ -267,56 +306,28 @@ body.touch #big { display: none; }
   background: #083b5c; color: #fff; font-size: 18px; padding: 24px; text-align: center;
 }
 
-@media (max-width: 720px) {
-  #obj .t2 { font-size: 16px; }
-  .obj-word { display: none; }
-  #fr { max-width: 68vw; gap: 4px; }
-  #fr .pill { font-size: 12px; padding: 4px 8px; }
-  #fr .hbtn { width: 35px; height: 35px; font-size: 15px; }
-  #compass { top: 76px; width: 58vw; }
-  #toast { top: 118px; font-size: 15px; }
-  #hint { font-size: 11px; white-space: normal; text-align: center; max-width: 92vw; }
-  #minimap-wrap { width: 98px; height: 98px; top: 112px; }
-  #minimap { width: 98px; height: 98px; }
-  .alb-grid { grid-template-columns: repeat(2, 1fr); }
-}
-
-
 /* ============================================================================
-   v10.0 — HUD CỐT TRUYỆN, 3 TRÁI TIM, HỘP THOẠI NPC, THANH MÁU TRÙM & BANNER PHÉP
+   v13.0 — BOSS HUD, BANNER PHÉP, HỘP THOẠI, CUTSCENE 3D, FINALE DOCK & ERROR BOUNDARY
    ============================================================================ */
-.obj-top { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
-#hearts-hud { font-size: 16px; letter-spacing: 2px; filter: drop-shadow(0 2px 4px rgba(0,0,0,.55)); transition: transform .2s ease; }
-#hearts-hud.hurt { transform: scale(1.25); filter: drop-shadow(0 0 10px #ff3b5c); }
-#obj .t2 { font-size: 15px; max-width: min(410px, 44vw); line-height: 1.25; }
-.obj-substep { font-size: 11px; color: #b9e4f8; font-weight: 700; margin-top: 3px; opacity: .88; }
-#spellbar { top: 116px; }
-.spell-slot.locked {
-  opacity: .38; filter: grayscale(.85); cursor: not-allowed;
-  border-style: dashed; border-color: rgba(255,255,255,.25);
-}
-.spell-slot.locked::after {
-  content: "🔒"; position: absolute; left: -3px; top: -4px; font-size: 10px;
-}
 
-/* Boss HP Bar */
+/* Boss HP Bar — nằm gọn dưới La bàn trung tâm, không đè HUD trái/phải */
 #boss-hud {
-  top: 106px; left: 50%; transform: translateX(-50%);
-  width: min(460px, 74vw); z-index: 7;
-  background: rgba(24, 10, 32, .82); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-  border: 2px solid rgba(255, 92, 138, .75); border-radius: 16px; padding: 9px 14px;
+  top: 52px; left: 50%; transform: translateX(-50%);
+  width: min(390px, 36vw); z-index: 7;
+  background: rgba(24, 10, 32, .84); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  border: 2px solid rgba(255, 92, 138, .75); border-radius: 15px; padding: 8px 13px;
   box-shadow: 0 8px 26px rgba(0, 0, 0, .55), 0 0 20px rgba(255, 77, 130, .28);
 }
 #boss-hud.hidden { display: none; }
-.boss-head { display: flex; justify-content: space-between; align-items: center; font-weight: 900; font-size: 14px; letter-spacing: .05em; color: #ffd6e6; margin-bottom: 5px; }
-#boss-phase { font-size: 12px; background: rgba(255, 92, 138, .35); border: 1px solid #ff7aa2; padding: 2px 9px; border-radius: 999px; color: #fff; }
-.boss-bar { width: 100%; height: 11px; background: rgba(255,255,255,.15); border-radius: 999px; overflow: hidden; border: 1px solid rgba(255,255,255,.25); }
+.boss-head { display: flex; justify-content: space-between; align-items: center; font-weight: 900; font-size: 13.5px; letter-spacing: .04em; color: #ffd6e6; margin-bottom: 4px; gap: 8px; }
+#boss-phase { font-size: 11.5px; background: rgba(255, 92, 138, .35); border: 1px solid #ff7aa2; padding: 2px 8px; border-radius: 999px; color: #fff; white-space: nowrap; }
+.boss-bar { width: 100%; height: 10px; background: rgba(255,255,255,.15); border-radius: 999px; overflow: hidden; border: 1px solid rgba(255,255,255,.25); }
 .boss-bar i { display: block; height: 100%; background: linear-gradient(90deg, #ff3b6b, #ff9f43, #ffd93d); transition: width .35s ease; box-shadow: 0 0 10px rgba(255, 90, 120, .8); }
-#boss-tip { margin-top: 5px; font-size: 12px; font-weight: 700; color: #ffe8a3; text-align: center; }
+#boss-tip { margin-top: 4px; font-size: 11.5px; font-weight: 700; color: #ffe8a3; text-align: center; }
 
 /* Skill Unlock Banner */
 #skill-banner {
-  position: fixed; left: 50%; top: 158px; transform: translateX(-50%); z-index: 12;
+  position: fixed; left: 50%; top: 148px; transform: translateX(-50%); z-index: 12;
   display: flex; align-items: center; gap: 14px; max-width: min(520px, 90vw);
   background: linear-gradient(135deg, rgba(16, 40, 68, .94), rgba(52, 24, 82, .94));
   border: 2px solid #ffd93d; border-radius: 20px; padding: 14px 20px;
@@ -362,3 +373,107 @@ body.touch #big { display: none; }
 
 #interact { pointer-events: auto; cursor: pointer; }
 #interact:hover { transform: translateX(-50%) scale(1.05); }
+
+/* Cutscene 3D Letterbox UI */
+#cutscene-ui {
+  position: fixed; inset: 0; z-index: 16; pointer-events: none;
+  display: flex; flex-direction: column; justify-content: space-between;
+}
+#cs-top, #cs-bot {
+  width: 100%; background: linear-gradient(180deg, rgba(3, 10, 20, .94), rgba(3, 10, 20, .78));
+  padding: 12px 20px; pointer-events: auto;
+}
+#cs-top {
+  display: flex; align-items: center; justify-content: space-between; min-height: 56px;
+  border-bottom: 1px solid rgba(255, 217, 61, .28);
+}
+#cs-prog {
+  font-size: 12.5px; font-weight: 800; letter-spacing: .12em; color: #ffd93d;
+  background: rgba(255, 217, 61, .14); border: 1px solid rgba(255, 217, 61, .45);
+  border-radius: 999px; padding: 4px 12px;
+}
+#cs-skip {
+  border: 1.5px solid rgba(255, 255, 255, .45); background: rgba(15, 36, 60, .82);
+  color: #fff; font-family: inherit; font-size: 13px; font-weight: 800;
+  padding: 7px 15px; border-radius: 999px; cursor: pointer; transition: background .15s ease, border-color .15s ease;
+}
+#cs-skip:hover { background: rgba(255, 217, 61, .92); color: #083452; border-color: #ffd93d; }
+#cs-bot {
+  background: linear-gradient(0deg, rgba(3, 10, 20, .96), rgba(3, 10, 20, .80));
+  border-top: 1px solid rgba(255, 217, 61, .28);
+  min-height: 92px; display: flex; align-items: center; justify-content: center;
+}
+.cs-cap { max-width: min(820px, 92vw); text-align: center; }
+#cs-speaker {
+  display: inline-block; font-size: 12px; font-weight: 900; letter-spacing: .12em;
+  color: #083452; background: #ffd93d; border-radius: 999px; padding: 3px 12px; margin-bottom: 6px;
+}
+#cs-text { font-size: clamp(15px, 2vw, 19px); font-weight: 700; line-height: 1.42; color: #f6fbff; text-shadow: 0 2px 8px rgba(0,0,0,.75); }
+body.in-cutscene .hud,
+body.in-cutscene #minimap-wrap,
+body.in-cutscene #diver-id,
+body.in-cutscene #hint,
+body.in-cutscene #dot,
+body.in-cutscene #interact,
+body.in-cutscene #toast { opacity: 0 !important; pointer-events: none !important; }
+
+/* Live 3D Grand Finale Floating Bottom Dock (không che cảnh 3D Lễ Hội Cầu Vồng!) */
+.finale-dock {
+  position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 11;
+  width: min(860px, 94vw); pointer-events: auto;
+  animation: dlgSlide .32s ease;
+}
+.finale-dock-in {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap; justify-content: space-between;
+  background: linear-gradient(135deg, rgba(14, 34, 62, .86), rgba(44, 20, 74, .86));
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  border: 2px solid rgba(255, 217, 61, .82); border-radius: 22px; padding: 11px 16px;
+  box-shadow: 0 12px 34px rgba(0, 0, 0, .55), 0 0 24px rgba(255, 217, 61, .26);
+}
+.finale-ava { width: 54px; height: 54px; border-radius: 50%; object-fit: cover; object-position: top center; border: 2.5px solid #ffd93d; flex-shrink: 0; }
+.finale-copy { flex: 1; min-width: 210px; }
+.finale-kicker { font-size: 15px; font-weight: 900; color: #ffd93d; letter-spacing: .04em; }
+.finale-desc { font-size: 13px; color: #eef8ff; margin-top: 2px; }
+.finale-acts { display: flex; flex-wrap: wrap; gap: 7px; align-items: center; }
+
+/* Global Error Boundary Recovery Overlay */
+#err-boundary { z-index: 9999; background: rgba(6, 18, 34, .88); }
+.err-panel { border-color: rgba(255, 130, 130, .65); max-width: 560px; }
+.err-details {
+  margin-top: 10px; text-align: left; background: rgba(0, 12, 24, .65);
+  border: 1px solid rgba(255,255,255,.18); border-radius: 12px; padding: 8px 12px;
+}
+.err-details summary { cursor: pointer; font-size: 12.5px; font-weight: 800; color: #9fd8ef; }
+.err-details pre {
+  margin: 8px 0 0; font-size: 11px; line-height: 1.4; color: #fecaca;
+  white-space: pre-wrap; word-break: break-word; max-height: 160px; overflow-y: auto;
+}
+
+/* Responsive Breakpoints (luôn đặt cuối file để ghi đè chuẩn xác) */
+@media (max-width: 1060px) {
+  #hud-left { max-width: 34vw; }
+  #compass { width: 23vw; }
+  #hud-right { max-width: 37vw; }
+  #fr .pill { font-size: 11px; padding: 3px 6px; }
+  #zone-pill { font-size: 12px !important; padding: 4px 8px !important; }
+  #fr .hbtn { width: 32px; height: 32px; font-size: 14px; }
+  .spell-slot { width: 32px; height: 32px; font-size: 15px; }
+}
+@media (max-width: 720px) {
+  #hud-left { max-width: 50vw; }
+  #obj .t2 { font-size: 13px; }
+  .obj-word { display: none; }
+  #hud-right { max-width: 46vw; gap: 5px; }
+  #fr { gap: 4px; }
+  #fr-top { flex-wrap: wrap; }
+  #fr .pill { font-size: 10.5px; padding: 2.5px 6px; }
+  #fr .hbtn { width: 31px; height: 31px; font-size: 13.5px; }
+  #compass { top: 94px; width: 54vw; }
+  #boss-hud { top: 132px; width: 88vw; }
+  #toast { top: 132px; font-size: 14px; }
+  body.boss-active #toast { top: 205px; }
+  #hint { font-size: 11px; white-space: normal; text-align: center; max-width: 92vw; }
+  #minimap-wrap { width: 90px; height: 90px; }
+  #minimap { width: 90px; height: 90px; }
+  .alb-grid { grid-template-columns: repeat(2, 1fr); }
+}

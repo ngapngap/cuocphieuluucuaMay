@@ -165,22 +165,71 @@
     return new THREE.ExtrudeGeometry(s, { depth: 0.22, bevelEnabled: true, bevelSize: 0.06, bevelThickness: 0.06 });
   })();
 
+  function drawRoundRect(g, x, y, w, h, r) {
+    var rad = Math.min(r, w * 0.5, h * 0.5);
+    g.beginPath();
+    g.moveTo(x + rad, y);
+    g.arcTo(x + w, y, x + w, y + h, rad);
+    g.arcTo(x + w, y + h, x, y + h, rad);
+    g.arcTo(x, y + h, x, y, rad);
+    g.arcTo(x, y, x + w, y, rad);
+    g.closePath();
+  }
+
   MAY.makeLabel = function (text, opts) {
     opts = opts || {};
+    var str = String(text || "");
     var c = document.createElement("canvas");
-    c.width = opts.w || 320; c.height = 84;
     var g = c.getContext("2d");
-    var fs = text.length > 16 ? 24 : text.length > 10 ? 28 : text.length > 6 ? 34 : 42;
-    g.font = "bold " + fs + "px 'Segoe UI', sans-serif";
-    g.textAlign = "center"; g.textBaseline = "middle";
-    g.lineWidth = 8;
-    g.strokeStyle = opts.stroke || "rgba(0,30,60,0.88)";
-    g.strokeText(text, c.width / 2, 42);
-    g.fillStyle = opts.fill || "#ffffff";
-    g.fillText(text, c.width / 2, 42);
+    var fs = opts.fontSize || (str.length > 22 ? 22 : str.length > 16 ? 25 : str.length > 10 ? 29 : str.length > 6 ? 34 : 42);
+    var fontStr = "800 " + fs + "px 'Segoe UI', system-ui, sans-serif";
+    g.font = fontStr;
+    var textW = Math.ceil(g.measureText(str).width);
+    var padX = opts.bg ? 30 : 20;
+    var baseW = opts.w || 320;
+    c.width = Math.max(baseW, textW + padX * 2);
+    c.height = opts.h || 88;
+    var cy = c.height * 0.5;
+
+    var textColor = opts.color || opts.fill || "#ffffff";
+    if (opts.bg) {
+      var pillW = Math.min(c.width - 10, textW + padX * 1.65);
+      var pillH = c.height - 16;
+      var px = (c.width - pillW) * 0.5;
+      var py = (c.height - pillH) * 0.5;
+      g.save();
+      g.shadowColor = "rgba(0,0,0,0.45)";
+      g.shadowBlur = 10;
+      g.shadowOffsetY = 3;
+      drawRoundRect(g, px, py, pillW, pillH, pillH * 0.5);
+      g.fillStyle = opts.bg;
+      g.fill();
+      g.restore();
+
+      drawRoundRect(g, px, py, pillW, pillH, pillH * 0.5);
+      g.lineWidth = 3;
+      g.strokeStyle = opts.border || "rgba(255,255,255,0.34)";
+      g.stroke();
+    }
+
+    g.font = fontStr;
+    g.textAlign = "center";
+    g.textBaseline = "middle";
+    g.lineJoin = "round";
+    g.lineWidth = opts.bg ? 5 : 8;
+    g.strokeStyle = opts.stroke || (opts.bg ? "rgba(0,16,32,0.75)" : "rgba(0,30,60,0.88)");
+    g.strokeText(str, c.width * 0.5, cy);
+    g.fillStyle = textColor;
+    g.fillText(str, c.width * 0.5, cy);
+
     var tex = new THREE.CanvasTexture(c);
+    tex.encoding = THREE.sRGBEncoding;
+    tex.needsUpdate = true;
     var sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false }));
-    sp.scale.set(opts.sx || 3.8, opts.sy || 1.05, 1);
+    var baseSx = opts.sx || 3.8;
+    var widthRatio = c.width / baseW;
+    sp.scale.set(widthRatio > 1.05 ? baseSx * Math.min(1.65, widthRatio) : baseSx, opts.sy || 1.05, 1);
+    sp.userData.labelOpts = { text: str, bg: opts.bg || null, color: textColor };
     return sp;
   };
 
@@ -294,7 +343,7 @@
     );
   };
 
-  /* ---- 15 Mô hình GLB tĩnh + 2 Mô hình GLB có khung xương (SkinnedMesh + AnimationMixer) ---- */
+  /* ---- 21 Mô hình GLB tĩnh/công trình + 15 Mô hình GLB có khung xương (SkinnedMesh/Rigged + AnimationMixer) ---- */
   MAY.MODEL_T = {};
   MAY.RIGGED = {};
   MAY.modelsReady = false;
@@ -303,11 +352,27 @@
     "assets/models/jelly.glb", "assets/models/chest.glb", "assets/models/tang-blue.glb",
     "assets/models/tang-yellow.glb", "assets/models/manta.glb", "assets/models/barrel.glb",
     "assets/models/amphora.glb", "assets/models/clam.glb", "assets/models/sanddollar.glb",
-    "assets/models/starfish.glb", "assets/models/seaweed.glb", "assets/models/kelp.glb"
+    "assets/models/starfish.glb", "assets/models/seaweed.glb", "assets/models/kelp.glb",
+    "assets/models/hero_lighthouse.glb", "assets/models/hero_castle.glb",
+    "assets/models/cc0_cabin.glb", "assets/models/cc0_windmill.glb",
+    "assets/models/cc0_shipwreck.glb", "assets/models/cc0_boat.glb"
   ];
   var RIGGED_FILES = [
-    { key: "may",  url: "assets/models/may_rigged.glb" },
-    { key: "milo", url: "assets/models/companion_milo.glb" }
+    { key: "may",          url: "assets/models/may_rigged.glb" },
+    { key: "milo",         url: "assets/models/companion_milo.glb" },
+    { key: "tortoise",     url: "assets/models/npc_tortoise_elder.glb" },
+    { key: "mushroomking", url: "assets/models/boss_mushroom_king.glb" },
+    { key: "golem",        url: "assets/models/boss_crystal_golem.glb" },
+    { key: "stormking",    url: "assets/models/boss_storm_king.glb" },
+    { key: "fox",          url: "assets/models/cc0_fox.glb" },
+    { key: "deer",         url: "assets/models/cc0_deer.glb" },
+    { key: "reindeer",     url: "assets/models/cc0_reindeer.glb" },
+    { key: "unicorn",      url: "assets/models/cc0_unicorn.glb" },
+    { key: "alpaca",       url: "assets/models/cc0_alpaca.glb" },
+    { key: "crab",         url: "assets/models/cc0_crab.glb" },
+    { key: "dolphin",      url: "assets/models/cc0_dolphin.glb" },
+    { key: "whale",        url: "assets/models/cc0_whale.glb" },
+    { key: "clownfish",    url: "assets/models/cc0_clownfish.glb" }
   ];
 
   function bakeModel(sc) {
@@ -431,8 +496,37 @@
     if (res[12]) T.prop_starfish = propTemplate(res[12], "x", 1.2);
     if (res[13]) T.prop_seaweed = propTemplate(res[13], "y", 2.5);
     if (res[14]) T.prop_kelp = propTemplate(res[14], "y", 3.5);
+    function landmarkTemplate(sc) {
+      var g = new THREE.Group();
+      sc.traverse(function (o) {
+        if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; }
+      });
+      g.add(sc);
+      return { group: g };
+    }
+    if (res[15]) T.hero_lighthouse = landmarkTemplate(res[15]);
+    if (res[16]) T.hero_castle     = landmarkTemplate(res[16]);
+    if (res[17]) T.cc0_cabin       = landmarkTemplate(res[17]);
+    if (res[18]) T.cc0_windmill    = landmarkTemplate(res[18]);
+    if (res[19]) T.cc0_shipwreck   = landmarkTemplate(res[19]);
+    if (res[20]) T.cc0_boat        = landmarkTemplate(res[20]);
     registerAllTemplates();
   }
+
+  MAY.cloneLandmark = function (key, scale) {
+    var t = MAY.MODEL_T[key];
+    if (!t || !t.group) return null;
+    var c = t.group.clone(true);
+    c.traverse(function (o) {
+      if (o.isMesh) {
+        o.userData.sharedGeo = true;
+        o.castShadow = true;
+        o.receiveShadow = true;
+      }
+    });
+    if (scale) c.scale.setScalar(scale);
+    return c;
+  };
 
   MAY.cloneFish = function (color, len, species) {
     var T = MAY.MODEL_T;
@@ -521,6 +615,77 @@
       }
     }
     return { scene: clone, animations: rec.animations || [] };
+  };
+
+  /* Khởi tạo Trùm (Boss) từ GLB có khung xương + AnimationMixer (Idle / Attack / Hit / Defeat), fallback thủ công */
+  MAY.makeRiggedBoss = function (key, scale, fallbackKind, fallbackScale, opts) {
+    var cloned = MAY.cloneSkinnedGLB(key);
+    if (!cloned) return MAY.makeMonsterMesh(fallbackKind, fallbackScale);
+    var wrap = new THREE.Group();
+    var root = cloned.scene;
+    root.scale.setScalar(scale || 1.0);
+    /* GLB hướng +Z về phía trước; Boss trong story quay ang + Math.PI (mong đợi mặt trước ở -Z) */
+    root.rotation.y = Math.PI;
+    wrap.add(root);
+
+    /* Gắn ánh xạ material riêng (ví dụ cap / armor) để đổi emissive khi bị trúng phép mà không ảnh hưởng template gốc */
+    if (opts && opts.tagMat) {
+      var tags = opts.tagMat;
+      root.traverse(function (o) {
+        if (o.isMesh && o.material && o.material.name) {
+          Object.keys(tags).forEach(function (prop) {
+            if (!wrap.userData[prop] && o.material.name.indexOf(tags[prop]) !== -1) {
+              o.material = o.material.clone();
+              wrap.userData[prop] = o;
+            }
+          });
+        }
+      });
+    }
+
+    var mixer = new THREE.AnimationMixer(root);
+    var actions = {};
+    (cloned.animations || []).forEach(function (clip) {
+      var nm = (clip.name || "").toLowerCase();
+      var act = mixer.clipAction(clip);
+      if (nm.indexOf("attack") !== -1) actions.attack = act;
+      else if (nm.indexOf("hit") !== -1) actions.hit = act;
+      else if (nm.indexOf("defeat") !== -1) actions.defeat = act;
+      else if (nm.indexOf("idle") !== -1 && !actions.idle) actions.idle = act;
+    });
+    if (!actions.idle && cloned.animations && cloned.animations.length) {
+      actions.idle = mixer.clipAction(cloned.animations[0]);
+    }
+
+    var curAct = null;
+    if (actions.idle) {
+      actions.idle.play();
+      curAct = actions.idle;
+    }
+    mixer.addEventListener("finished", function (e) {
+      if (e.action !== actions.defeat && actions.idle && curAct !== actions.idle) {
+        actions.idle.reset().fadeIn(0.22).play();
+        curAct = actions.idle;
+      }
+    });
+
+    wrap.userData.mixer = mixer;
+    wrap.userData.playClip = function (name, loop) {
+      var next = actions[name];
+      if (!next) return;
+      if (curAct && curAct !== next) curAct.fadeOut(0.14);
+      next.reset();
+      if (loop === false) {
+        next.setLoop(THREE.LoopOnce, 1);
+        next.clampWhenFinished = (name === "defeat");
+      } else {
+        next.setLoop(THREE.LoopRepeat, Infinity);
+        next.clampWhenFinished = false;
+      }
+      next.fadeIn(0.14).play();
+      curAct = next;
+    };
+    return wrap;
   };
 
   var modelsLoadedCount = 0;
@@ -706,6 +871,98 @@
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
   });
+
+  /* ---- Global Error Boundary & WebGL Context Lost/Restored Recovery ---- */
+  var errorBoundary = {
+    history: [],
+    paused: false,
+    contextLost: false,
+    consecutiveFrameErrors: 0,
+    show: function (title, msg, detail) {
+      var ov = document.getElementById("err-boundary");
+      if (!ov) return;
+      var tEl = document.getElementById("err-title");
+      var mEl = document.getElementById("err-msg");
+      var dEl = document.getElementById("err-detail");
+      if (tEl && title) tEl.textContent = title;
+      if (mEl && msg) mEl.textContent = msg;
+      if (dEl) dEl.textContent = detail || "";
+      ov.classList.remove("hidden");
+    },
+    dismiss: function () {
+      this.paused = false;
+      this.consecutiveFrameErrors = 0;
+      var ov = document.getElementById("err-boundary");
+      if (ov) ov.classList.add("hidden");
+    },
+    recoverToHub: function () {
+      this.dismiss();
+      try {
+        if (MAY.Cutscene && MAY.Cutscene.cancelSilent) MAY.Cutscene.cancelSilent();
+        if (MAY.closeAllModals) MAY.closeAllModals();
+        if (MAY.enterLevel) MAY.enterLevel("hub", true);
+        if (MAY.toast) MAY.toast("🏝️ Đã đưa Mây trở về Đảo Mây an toàn!");
+      } catch (e) {
+        location.reload();
+      }
+    },
+    report: function (err, source, opts) {
+      opts = opts || {};
+      var msg = (err && (err.message || String(err))) || "Lỗi không xác định";
+      if (/ResizeObserver loop|AbortError|NotAllowedError/i.test(msg)) return;
+      var stack = (err && err.stack) ? String(err.stack) : (source ? ("Nguồn: " + source + "\n" + msg) : msg);
+      var entry = { time: new Date().toISOString(), source: source || "runtime", message: msg, stack: stack };
+      this.history.push(entry);
+      if (this.history.length > 20) this.history.shift();
+      if (window.console && console.error) console.error("[MAY ErrorBoundary:" + entry.source + "]", err);
+      if (opts.pause) this.paused = true;
+      this.show(
+        opts.title || "⚠️ Ồ! Gặp chút trục trặc nhỏ!",
+        opts.userMessage || "Cuộc phiêu lưu gặp lỗi bất ngờ nhưng tiến trình đã được bảo vệ an toàn. Bé có thể bấm Thử tiếp tục hoặc Về Đảo Mây nhé!",
+        "[" + entry.source + "] " + msg + (stack && stack !== msg ? ("\n" + stack) : "")
+      );
+    }
+  };
+
+  MAY.ErrorBoundary = errorBoundary;
+  MAY.reportError = function (err, source, opts) { errorBoundary.report(err, source, opts); };
+
+  window.addEventListener("error", function (ev) {
+    if (!ev) return;
+    if (ev.target && ev.target !== window && (ev.target.tagName === "IMG" || ev.target.tagName === "AUDIO")) return;
+    var err = ev.error || new Error(ev.message || "Lỗi JavaScript toàn cục");
+    errorBoundary.report(err, "window.error:" + (ev.filename ? ev.filename.split("/").pop() : "script") + ":" + (ev.lineno || 0), { pause: false });
+  });
+
+  window.addEventListener("unhandledrejection", function (ev) {
+    var reason = ev && ev.reason;
+    var msg = reason && (reason.message || String(reason)) || "";
+    if (/AbortError|NotAllowedError|play\(\) failed|user didn't interact/i.test(msg)) return;
+    errorBoundary.report(reason || new Error("Unhandled Promise Rejection"), "unhandledrejection", { pause: false });
+  });
+
+  canvas.addEventListener("webglcontextlost", function (ev) {
+    ev.preventDefault();
+    errorBoundary.contextLost = true;
+    errorBoundary.paused = true;
+    errorBoundary.show(
+      "🖥️ Mất kết nối đồ họa 3D (WebGL)",
+      "Trình duyệt tạm thu hồi bộ nhớ đồ họa 3D. Hệ thống đang chờ tự khôi phục — hoặc bé có thể tải lại trang nếu màn hình đứng lâu nhé!",
+      "Sự kiện: webglcontextlost"
+    );
+  }, false);
+
+  canvas.addEventListener("webglcontextrestored", function () {
+    errorBoundary.contextLost = false;
+    errorBoundary.dismiss();
+    try {
+      if (MAY.resizePostFX) MAY.resizePostFX();
+      if (MAY.enterLevel) MAY.enterLevel(MAY.currentLevelId || "hub", true);
+      if (MAY.toast) MAY.toast("✨ Đồ họa 3D đã tự khôi phục!");
+    } catch (e) {
+      errorBoundary.report(e, "webglcontextrestored", { pause: true });
+    }
+  }, false);
 
   MAY.canvas = canvas;
   MAY.renderer = renderer;

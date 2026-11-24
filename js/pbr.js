@@ -1,6 +1,6 @@
 "use strict";
 /* ============================================================================
-   PBR & SHADERS v12.0 — Chuẩn "The Hall" + "Fable 5.2":
+   PBR & SHADERS v13.0 — Chuẩn "The Hall" + "Fable 5.2":
    - Texture PBR 512x512 + Anti-Tiling Macro Weathering + Bờ ẩm ướt tự động
    - Phản chiếu mặt phẳng thời gian thực (Planar Reflections cho Nước, Băng & Vũng đá ướt)
    - Hậu kỳ Depth-Buffer SSAO (tối khe góc) + DoF nhẹ + Bloom + Film Grain + Spell Flash
@@ -559,7 +559,79 @@
   };
   MAY.PlanarReflector.init();
 
-  /* ---- Shader Nước Gerstner + Phản Chiếu 3D + Hấp Thụ Độ Sâu Beer-Lambert + SSS + Bọt Bờ Theo Độ Sâu Thật + Snell's Window ---- */
+  /* ---- HỆ THỐNG KHÚC XẠ KHÔNG GIAN MÀN HÌNH (True Screen-Space Water Refraction + Depth) ---- */
+  var _depthOverrideMat = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking });
+  var _isWebGL2 = !!(MAY.renderer && MAY.renderer.capabilities && MAY.renderer.capabilities.isWebGL2);
+  var _usePackedDepth = !_isWebGL2;
+
+  MAY.WaterRefractor = {
+    rt: null,
+    rtDepthRGBA: null,
+    hasValidFrame: false,
+    init: function () {
+      var scale = MAY.quality === "high" ? 0.85 : 0.6;
+      var pr = Math.min(MAY.renderer.getPixelRatio(), 1.35);
+      var w = Math.max(2, Math.floor(window.innerWidth * pr * scale));
+      var h = Math.max(2, Math.floor(window.innerHeight * pr * scale));
+      if (this.rt) this.rt.dispose();
+      if (this.rtDepthRGBA) this.rtDepthRGBA.dispose();
+      this.rt = new THREE.WebGLRenderTarget(w, h, {
+        minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBAFormat
+      });
+      this.rt.depthBuffer = true;
+      if (!_usePackedDepth) {
+        this.rt.depthTexture = new THREE.DepthTexture(w, h);
+        this.rt.depthTexture.type = THREE.UnsignedIntType;
+        this.rt.depthTexture.format = THREE.DepthFormat;
+        this.rtDepthRGBA = null;
+      } else {
+        this.rt.depthTexture = null;
+        this.rtDepthRGBA = new THREE.WebGLRenderTarget(w, h, {
+          minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, format: THREE.RGBAFormat
+        });
+      }
+    },
+    getDepthTexture: function () {
+      return _usePackedDepth ? (this.rtDepthRGBA ? this.rtDepthRGBA.texture : null) : (this.rt ? this.rt.depthTexture : null);
+    },
+    render: function (waterMeshes) {
+      if (!waterMeshes || !waterMeshes.length || MAY.quality === "low" || !this.rt) {
+        this.hasValidFrame = false;
+        return;
+      }
+      var prevVis = [];
+      for (var i = 0; i < waterMeshes.length; i++) {
+        prevVis.push(waterMeshes[i].visible);
+        waterMeshes[i].visible = false;
+      }
+      var r = MAY.renderer;
+      r.setRenderTarget(this.rt);
+      r.clear();
+      r.render(MAY.scene, MAY.camera);
+
+      if (_usePackedDepth && this.rtDepthRGBA) {
+        var prevOverride = MAY.scene.overrideMaterial;
+        var prevBg = MAY.scene.background;
+        var prevClearCol = r.getClearColor(new THREE.Color());
+        var prevClearAlpha = r.getClearAlpha();
+        MAY.scene.background = null;
+        MAY.scene.overrideMaterial = _depthOverrideMat;
+        r.setClearColor(0xffffff, 1);
+        r.setRenderTarget(this.rtDepthRGBA);
+        r.clear();
+        r.render(MAY.scene, MAY.camera);
+        MAY.scene.overrideMaterial = prevOverride;
+        MAY.scene.background = prevBg;
+        r.setClearColor(prevClearCol, prevClearAlpha);
+      }
+      r.setRenderTarget(null);
+      for (var j = 0; j < waterMeshes.length; j++) waterMeshes[j].visible = prevVis[j];
+      this.hasValidFrame = true;
+    }
+  };
+  MAY.WaterRefractor.init();
+
+  /* ---- Shader Nước Gerstner + Screen-Space Refraction Thật + Planar Reflection + Beer-Lambert + SSS + Bọt Bờ/Wake + Snell's Window ---- */
   MAY.makeRealisticWater = function (opts) {
     opts = opts || {};
     var geo = new THREE.PlaneGeometry(opts.width || 280, opts.height || 280, opts.segs || 84, opts.segs || 84);
@@ -590,7 +662,13 @@
         uUnderFogDens: { value: opts.underFogDensity !== undefined ? opts.underFogDensity : 0.0175 },
         tReflect: { value: MAY.PlanarReflector.rt.texture },
         uReflMatrix: { value: MAY.PlanarReflector.matrix },
-        uUseReflect: { value: 0.0 }
+        uUseReflect: { value: 0.0 },
+        tRefract: { value: MAY.WaterRefractor.rt.texture },
+        tRefractDepth: { value: MAY.WaterRefractor.getDepthTexture() },
+        uUseRefract: { value: 0.0 },
+        uRefractDepthPacked: { value: _usePackedDepth ? 1.0 : 0.0 },
+        uNear: { value: MAY.camera.near },
+        uFar: { value: MAY.camera.far }
       },
       transparent: true,
       side: THREE.DoubleSide,
@@ -601,7 +679,7 @@
         "uniform mat4 uReflMatrix;",
         "varying vec3 vWorldPos, vNormal;",
         "varying float vCrest, vDepth;",
-        "varying vec4 vReflCoord;",
+        "varying vec4 vReflCoord, vClipPos;",
         "vec3 gerstner(vec2 pos, float t, vec2 dir, float freq, float steep, float speed, inout vec3 dX, inout vec3 dZ) {",
         "  float ph = dot(dir, pos) * freq + t * speed;",
         "  float s = sin(ph), c = cos(ph), a = steep / freq;",
@@ -621,14 +699,22 @@
         "  vec4 wp = wp0 + vec4(disp, 0.0);",
         "  vWorldPos = wp.xyz; vNormal = normalize(cross(dZ, dX)); vCrest = disp.y; vDepth = aDepth;",
         "  vReflCoord = uReflMatrix * wp0;",
-        "  gl_Position = projectionMatrix * viewMatrix * wp;",
+        "  vClipPos = projectionMatrix * viewMatrix * wp;",
+        "  gl_Position = vClipPos;",
         "}"
       ].join("\n"),
       fragmentShader: [
-        "uniform float uTime, uFoamRadius, uUnderFogDens, uUseReflect;",
+        "#include <packing>",
+        "uniform float uTime, uFoamRadius, uUnderFogDens, uUseReflect, uUseRefract, uRefractDepthPacked, uNear, uFar;",
         "uniform vec3 uSunDir, uDeep, uShallow, uSkyCol, uSunCol, uPlayerPos, uFoamCenter, uUnderFogCol;",
-        "uniform sampler2D tReflect;",
-        "varying vec3 vWorldPos, vNormal; varying float vCrest, vDepth; varying vec4 vReflCoord;",
+        "uniform sampler2D tReflect, tRefract, tRefractDepth;",
+        "varying vec3 vWorldPos, vNormal; varying float vCrest, vDepth; varying vec4 vReflCoord, vClipPos;",
+        "float linZ(float z01) { float z = z01 * 2.0 - 1.0; return (2.0 * uNear * uFar) / (uFar + uNear - z * (uFar - uNear)); }",
+        "float sampleRefrDepth(vec2 u) {",
+        "  vec4 raw = texture2D(tRefractDepth, clamp(u, 0.002, 0.998));",
+        "  float d01 = uRefractDepthPacked > 0.5 ? unpackRGBAToDepth(raw) : raw.r;",
+        "  return linZ(d01);",
+        "}",
         "float rippleH(vec2 p, float t) {",
         "  return sin(p.x * 0.95 + t * 1.3 + sin(p.y * 0.7 - t * 0.8)) * 0.52 +",
         "         sin(p.y * 1.15 - t * 1.1 + cos(p.x * 0.85 + t * 0.7)) * 0.34 +",
@@ -645,20 +731,31 @@
         "  float pNear = smoothstep(3.5, 0.0, abs(uPlayerPos.y - vWorldPos.y));",
         "  float wake = sin(pDist * 4.2 - uTime * 6.0) * exp(-pDist * 0.35) * pNear;",
         "  N = normalize(N + vec3(wake * 0.22, 0.0, wake * 0.22));",
+        "  vec2 screenUV = clamp(vClipPos.xy / max(vClipPos.w, 0.0001) * 0.5 + 0.5, 0.002, 0.998);",
+        "  float waterEyeD = linZ(gl_FragCoord.z);",
         "  if (underwater) {",
         "    vec3 Nu = -N; float cosT = max(dot(V, Nu), 0.0);",
         "    float snell = smoothstep(0.18, 0.76, cosT);",
         "    vec3 skyWin = mix(vec3(0.12, 0.62, 0.76), vec3(0.42, 0.90, 0.94), snell);",
+        "    if (uUseRefract > 0.5 && snell > 0.05) {",
+        "      vec2 uwOff = N.xz * 0.042 * snell;",
+        "      vec3 aboveRefr = vec3(",
+        "        texture2D(tRefract, clamp(screenUV + uwOff * 1.08, 0.002, 0.998)).r,",
+        "        texture2D(tRefract, clamp(screenUV + uwOff, 0.002, 0.998)).g,",
+        "        texture2D(tRefract, clamp(screenUV + uwOff * 0.92, 0.002, 0.998)).b",
+        "      );",
+        "      skyWin = mix(skyWin, aboveRefr * vec3(0.84, 0.98, 1.02), 0.78 * snell);",
+        "    }",
         "    vec3 tirCol = mix(uUnderFogCol * 0.88, vec3(0.08, 0.48, 0.62), pow(cosT, 0.8));",
         "    vec3 col = mix(tirCol, skyWin, snell);",
         "    col += vec3(0.28, 0.78, 0.85) * smoothstep(0.15, 0.9, h0 * 0.5 + 0.5) * (0.14 + 0.28 * snell);",
         "    col += uSunCol * pow(max(dot(-V, uSunDir), 0.0), 14.0) * 0.9;",
         "    float fogF = 1.0 - exp(-pow(camDist * uUnderFogDens, 2.0));",
         "    col = mix(col, uUnderFogCol, clamp(fogF, 0.0, 1.0));",
-        "    gl_FragColor = vec4(col, mix(0.95, 0.72, snell * (1.0 - fogF)));",
+        "    gl_FragColor = vec4(col, mix(0.96, 0.86, snell * (1.0 - fogF)));",
         "  } else {",
         "    float NdotV = max(dot(N, V), 0.0);",
-        "    float fresnel = 0.05 + 0.95 * pow(1.0 - NdotV, 3.8);",
+        "    float fresnel = 0.04 + 0.96 * pow(1.0 - NdotV, 4.0);",
         "    vec3 R = reflect(-V, N);",
         "    vec3 envRefl = mix(uSkyCol * 0.76, uSkyCol * 1.12, clamp(R.y * 1.4, 0.0, 1.0));",
         "    if (uUseReflect > 0.5 && vReflCoord.w > 0.01) {",
@@ -667,25 +764,49 @@
         "      vec3 planar = texture2D(tReflect, clamp(ruv, 0.002, 0.998)).rgb;",
         "      envRefl = mix(envRefl, planar, 0.88);",
         "    }",
-        "    /* Hấp thụ ánh sáng Beer-Lambert theo độ sâu nước thật + tán xạ sóng SSS (chuẩn SCUM!) */",
-        "    float depthFactor = 1.0 - exp(-vDepth * 0.34);",
+        "    /* Screen-Space Refraction thật (Snell normal warp + tán sắc RGB + lọc độ sâu tránh lem vật thể trên bờ) + Beer-Lambert */",
+        "    float effDepth = vDepth;",
+        "    float depthFactor = 1.0 - exp(-effDepth * 0.34);",
         "    vec3 waterBody = mix(uShallow, uDeep, clamp(depthFactor * 0.82 + camDist * 0.003, 0.0, 1.0));",
+        "    float outAlpha = mix(0.46, 0.86, clamp(depthFactor * 1.15, 0.0, 1.0));",
+        "    if (uUseRefract > 0.5) {",
+        "      float bgD0 = sampleRefrDepth(screenUV);",
+        "      float ssThick0 = max(0.0, bgD0 - waterEyeD);",
+        "      vec2 refrOff = N.xz * clamp(0.026 + 0.024 * (1.0 - NdotV), 0.006, 0.055) * clamp(ssThick0 * 0.32 + 0.14, 0.14, 1.0);",
+        "      vec2 refrUV = clamp(screenUV + refrOff, 0.002, 0.998);",
+        "      float bgD = sampleRefrDepth(refrUV);",
+        "      if (bgD < waterEyeD - 0.06) { refrOff = vec2(0.0); refrUV = screenUV; bgD = bgD0; }",
+        "      float ssThick = max(0.0, bgD - waterEyeD);",
+        "      effDepth = mix(vDepth, ssThick, step(0.02, ssThick) * 0.80);",
+        "      depthFactor = 1.0 - exp(-effDepth * 0.34);",
+        "      vec3 refrRGB = vec3(",
+        "        texture2D(tRefract, clamp(screenUV + refrOff * 1.07, 0.002, 0.998)).r,",
+        "        texture2D(tRefract, refrUV).g,",
+        "        texture2D(tRefract, clamp(screenUV + refrOff * 0.93, 0.002, 0.998)).b",
+        "      );",
+        "      /* Beer-Lambert hấp thụ thực theo quang trình nước (đỏ tắt nhanh, xanh lục/lam xuyên sâu) */",
+        "      vec3 sigma = vec3(0.48, 0.16, 0.09);",
+        "      vec3 transm = exp(-sigma * effDepth * 0.72);",
+        "      vec3 scatterTint = mix(uShallow, uDeep, clamp(depthFactor * 0.85 + camDist * 0.0025, 0.0, 1.0));",
+        "      waterBody = refrRGB * transm + scatterTint * (1.0 - transm);",
+        "      outAlpha = smoothstep(0.0, 0.16, max(effDepth, vDepth));",
+        "    }",
         "    float sss = pow(max(dot(V, normalize(-uSunDir + N * 0.45)), 0.0), 4.0) * smoothstep(-0.05, 0.28, vCrest + 0.1);",
         "    waterBody += vec3(0.08, 0.42, 0.40) * sss * (0.45 + 0.55 * (1.0 - depthFactor));",
-        "    vec3 col = mix(waterBody, envRefl, clamp(fresnel * 0.92 + 0.12 * uUseReflect, 0.0, 0.96));",
+        "    vec3 col = mix(waterBody, envRefl, clamp(fresnel * 0.92 + 0.08 * uUseReflect, 0.0, 0.96));",
         "    vec3 H = normalize(V + uSunDir);",
         "    float spec1 = pow(max(dot(N, H), 0.0), 190.0);",
         "    float spec2 = pow(max(dot(N, H), 0.0), 30.0);",
         "    col += uSunCol * (spec1 * 2.1 + spec2 * 0.22);",
         "    float dShore = abs(length(vWorldPos.xz - uFoamCenter.xz) - uFoamRadius);",
-        "    float depthFoam = smoothstep(0.95, 0.04, vDepth) * (0.55 + 0.45 * sin(vDepth * 12.0 - uTime * 2.8 + h0 * 2.4));",
+        "    float depthFoam = smoothstep(0.95, 0.04, effDepth) * (0.55 + 0.45 * sin(effDepth * 12.0 - uTime * 2.8 + h0 * 2.4));",
         "    float shoreBand = max(depthFoam, smoothstep(2.8, 0.2, dShore) * (0.45 + 0.45 * sin(dShore * 4.5 - uTime * 2.5 + h0 * 2.0)));",
         "    float wakeFoam = smoothstep(0.15, 0.75, abs(wake)) * pNear * 0.78;",
         "    float crestFoam = smoothstep(0.18, 0.34, vCrest + h0 * 0.08) * 0.26;",
         "    float foam = clamp(shoreBand * 0.78 + wakeFoam + crestFoam, 0.0, 1.0);",
         "    col = mix(col, vec3(0.95, 0.98, 1.0), foam);",
-        "    float shallowAlpha = mix(0.46, 0.86, clamp(depthFactor * 1.15, 0.0, 1.0));",
-        "    gl_FragColor = vec4(col, clamp(shallowAlpha + fresnel * 0.28 + foam * 0.32 + spec1 * 0.3, 0.38, 0.98));",
+        "    float finalA = uUseRefract > 0.5 ? clamp(max(outAlpha, foam * 0.85 + fresnel * 0.35), 0.12, 1.0) : clamp(outAlpha + fresnel * 0.28 + foam * 0.32 + spec1 * 0.3, 0.38, 0.98);",
+        "    gl_FragColor = vec4(col, finalA);",
         "  }",
         "}"
       ].join("\n")
@@ -827,6 +948,163 @@
       MAY.scene.environment = rt.texture;
       pmrem.dispose();
     } catch (e) {}
+  };
+
+  /* ---- GI Spherical Harmonics L2 LightProbe (9 hệ số SH tính từ Bầu Trời + Mặt Trời + Phản Xạ Mặt Đất) ---- */
+  MAY.createBiomeLightProbe = function (cfg) {
+    cfg = cfg || {};
+    var sh = new THREE.SphericalHarmonics3();
+    var cZen = new THREE.Color(cfg.zenith || 0x1d68b8);
+    var cHor = new THREE.Color(cfg.horizon || 0xa6dcf5);
+    var cGnd = new THREE.Color(cfg.ground || 0x2c4a38);
+    var cSun = new THREE.Color(cfg.sunColor || 0xfff4cf);
+    var sunD = (cfg.sunDir || new THREE.Vector3(18, 32, 14)).clone().normalize();
+    var basis = new Float32Array(9);
+    var dir = new THREE.Vector3();
+    var sampleCol = new THREE.Color();
+    var N = 48;
+    var golden = Math.PI * (3 - Math.sqrt(5));
+    var weight = (4 * Math.PI) / N;
+
+    for (var i = 0; i < N; i++) {
+      var y = 1 - (i / (N - 1)) * 2;
+      var rad = Math.sqrt(Math.max(0, 1 - y * y));
+      var theta = golden * i;
+      dir.set(Math.cos(theta) * rad, y, Math.sin(theta) * rad).normalize();
+      if (y >= 0) {
+        sampleCol.copy(cHor).lerp(cZen, Math.pow(y, 0.55));
+      } else {
+        sampleCol.copy(cHor).lerp(cGnd, Math.pow(-y, 0.45));
+        /* Giả lập phản xạ GI ấm từ mặt đất đón nắng */
+        sampleCol.multiplyScalar(0.85);
+      }
+      var sDot = Math.max(0, dir.dot(sunD));
+      sampleCol.r += cSun.r * Math.pow(sDot, 6) * 0.45;
+      sampleCol.g += cSun.g * Math.pow(sDot, 6) * 0.45;
+      sampleCol.b += cSun.b * Math.pow(sDot, 6) * 0.45;
+
+      THREE.SphericalHarmonics3.getBasisAt(dir, basis);
+      for (var b = 0; b < 9; b++) {
+        var bw = basis[b] * weight;
+        sh.coefficients[b].x += sampleCol.r * bw;
+        sh.coefficients[b].y += sampleCol.g * bw;
+        sh.coefficients[b].z += sampleCol.b * bw;
+      }
+    }
+    var probe = new THREE.LightProbe(sh, cfg.probeIntensity !== undefined ? cfg.probeIntensity : 0.42);
+    return probe;
+  };
+
+  /* ---- Nướng Lightmap GI + Horizon Sky AO + Bounce + Đèn Tĩnh (uv2 + mat.lightMap thật!) ---- */
+  MAY.bakeTerrainLightmap = function (geo, mat, opts) {
+    if (!geo || !mat || !opts || !opts.groundH) return null;
+    try {
+      var uvAttr = geo.attributes.uv;
+      if (uvAttr && !geo.attributes.uv2) {
+        geo.setAttribute("uv2", new THREE.BufferAttribute(new Float32Array(uvAttr.array), 2));
+      }
+      var res = opts.res || 160;
+      var size = opts.size || 220;
+      var half = size * 0.5;
+      var gh = opts.groundH;
+      var skyCol = new THREE.Color(opts.skyColor || 0xaadbf5);
+      var bounceCol = new THREE.Color(opts.bounceColor || 0x8ea67c);
+      var sunCol = new THREE.Color(opts.sunColor || 0xfff1c9);
+      var sunD = (opts.sunDir || new THREE.Vector3(24, 42, 16)).clone().normalize();
+      var lights = opts.staticLights || [];
+      var c = document.createElement("canvas");
+      c.width = c.height = res;
+      var ctx2 = c.getContext("2d");
+      var img = ctx2.createImageData(res, res);
+      var data = img.data;
+      var dirs = [
+        [1, 0], [-1, 0], [0, 1], [0, -1],
+        [0.707, 0.707], [-0.707, 0.707], [0.707, -0.707], [-0.707, -0.707]
+      ];
+      var dists = [3.5, 9.0, 17.5];
+      var eps = 1.6;
+
+      for (var py = 0; py < res; py++) {
+        /* PlaneGeometry xoay -PI/2: v=1 ở -Z, v=0 ở +Z; canvas y=0 tương ứng v=1 (flipY=true) */
+        var v = 1.0 - (py + 0.5) / res;
+        var wz = (0.5 - v) * size;
+        for (var px = 0; px < res; px++) {
+          var u = (px + 0.5) / res;
+          var wx = (u - 0.5) * size;
+          var h0 = gh(wx, wz);
+
+          /* Pháp tuyến địa hình cục bộ */
+          var hx = (gh(wx + eps, wz) - gh(wx - eps, wz)) / (2 * eps);
+          var hz = (gh(wx, wz + eps) - gh(wx, wz - eps)) / (2 * eps);
+          var invN = 1 / Math.sqrt(hx * hx + 1 + hz * hz);
+          var nx = -hx * invN, ny = invN, nz = -hz * invN;
+
+          /* Horizon-Angle Sky AO (8 hướng x 3 cự ly ray-march trên heightfield!) */
+          var occSum = 0;
+          for (var di = 0; di < dirs.length; di++) {
+            var maxTan = 0;
+            var dx = dirs[di][0], dz = dirs[di][1];
+            for (var si = 0; si < dists.length; si++) {
+              var dd = dists[si];
+              var dh = gh(wx + dx * dd, wz + dz * dd) - h0;
+              var tAng = dh / dd;
+              if (tAng > maxTan) maxTan = tAng;
+            }
+            occSum += Math.sin(Math.atan(Math.max(0, maxTan)));
+          }
+          var skyVis = Math.max(0.28, 1.0 - (occSum / dirs.length) * 0.85);
+
+          /* Kiểm tra bóng che mặt trời tầm xa (Self-Shadow + Warm Indirect Bounce) */
+          var sunVis = 1.0;
+          var sHor = Math.hypot(sunD.x, sunD.z) || 1;
+          var sdx = sunD.x / sHor, sdz = sunD.z / sHor;
+          var sunSlope = sunD.y / sHor;
+          for (var ss = 1; ss <= 3; ss++) {
+            var sd = ss * 6.5;
+            if ((gh(wx + sdx * sd, wz + sdz * sd) - h0) / sd > sunSlope) {
+              sunVis -= 0.24;
+            }
+          }
+          sunVis = Math.max(0.28, sunVis);
+          var nDotS = Math.max(0, nx * sunD.x + ny * sunD.y + nz * sunD.z);
+
+          /* Tổng hợp GI gián tiếp: Sky Fill + Ground Bounce + Sun Indirect */
+          var r = skyCol.r * skyVis * 0.42 + bounceCol.r * (0.34 + 0.24 * (1 - skyVis)) + sunCol.r * nDotS * sunVis * 0.28;
+          var g = skyCol.g * skyVis * 0.42 + bounceCol.g * (0.34 + 0.24 * (1 - skyVis)) + sunCol.g * nDotS * sunVis * 0.28;
+          var b = skyCol.b * skyVis * 0.42 + bounceCol.b * (0.34 + 0.24 * (1 - skyVis)) + sunCol.b * nDotS * sunVis * 0.28;
+
+          /* Nướng các nguồn sáng tĩnh cục bộ (Hải đăng, Đèn lồng, Pha lê, Lửa trại) */
+          for (var li = 0; li < lights.length; li++) {
+            var L = lights[li];
+            var ldx = wx - L.x, ldz = wz - L.z;
+            var d2 = ldx * ldx + ldz * ldz;
+            var lr = L.radius || 18;
+            if (d2 < lr * lr) {
+              var att = Math.pow(1 - Math.sqrt(d2) / lr, 1.8) * (L.intensity || 0.55);
+              r += L.r * att;
+              g += L.g * att;
+              b += L.b * att;
+            }
+          }
+
+          var idx = (py * res + px) * 4;
+          data[idx]     = Math.max(0, Math.min(255, Math.round(r * 255)));
+          data[idx + 1] = Math.max(0, Math.min(255, Math.round(g * 255)));
+          data[idx + 2] = Math.max(0, Math.min(255, Math.round(b * 255)));
+          data[idx + 3] = 255;
+        }
+      }
+      ctx2.putImageData(img, 0, 0);
+      var lmTex = new THREE.CanvasTexture(c);
+      lmTex.encoding = THREE.sRGBEncoding;
+      lmTex.needsUpdate = true;
+      mat.lightMap = lmTex;
+      mat.lightMapIntensity = opts.intensity !== undefined ? opts.intensity : 0.72;
+      mat.needsUpdate = true;
+      return lmTex;
+    } catch (e) {
+      return null;
+    }
   };
 
   /* ---- Tia Nắng Khối (God Rays) ---- */
@@ -1097,36 +1375,59 @@
     }
   };
 
-  /* ---- HẬU KỲ ĐIỆN ẢNH DEPTH-BUFFER: SSAO + DoF nhẹ + Bloom + Film Grain + Spell Pulse ---- */
+  /* ---- HẬU KỲ ĐIỆN ẢNH DEPTH-BUFFER 32-BIT (WebGL1 RGBA-Packed & WebGL2 Native):
+     8-Tap Noise-Rotated SSAO + Screen-Space Volumetric God Rays + Bloom + Film Grain + Spell Pulse ---- */
   var post = {
     enabled: true,
-    rtScene: null, rtBright: null, rtBlur: null,
+    rtScene: null, rtDepthRGBA: null, rtBright: null, rtBlur: null, rtGodRay: null,
     quadScene: new THREE.Scene(),
     quadCam: new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1),
-    quadMesh: null, matBright: null, matBlur: null, matComp: null,
+    quadMesh: null, matBright: null, matBlur: null, matGodRay: null, matComp: null,
     wetness: 0,
     spellFlash: 0,
     spellColor: new THREE.Color(0xffffff),
     gradeTint: new THREE.Color(0xffffff),
     vignette: 0.28,
     bloomStrength: 0.32,
-    ssaoStrength: 0.52
+    ssaoStrength: 0.52,
+    godRayColor: new THREE.Color(0xfff2c2),
+    godRayStrength: 0.34,
+    godRayDensity: 0.92,
+    godRayDecay: 0.94,
+    godRaySourcePos: null
   };
+
+  function allocSceneDepthTargets(rw, rh) {
+    var rtOpts = { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBAFormat };
+    if (post.rtScene) post.rtScene.dispose();
+    if (post.rtDepthRGBA) post.rtDepthRGBA.dispose();
+    post.rtScene = new THREE.WebGLRenderTarget(rw, rh, rtOpts);
+    post.rtScene.depthBuffer = true;
+    if (!_usePackedDepth) {
+      post.rtScene.depthTexture = new THREE.DepthTexture(rw, rh);
+      post.rtScene.depthTexture.type = THREE.UnsignedIntType;
+      post.rtScene.depthTexture.format = THREE.DepthFormat;
+      post.rtDepthRGBA = null;
+    } else {
+      post.rtScene.depthTexture = null;
+      post.rtDepthRGBA = new THREE.WebGLRenderTarget(rw, rh, {
+        minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, format: THREE.RGBAFormat
+      });
+    }
+  }
 
   function initPostFX() {
     var pr = MAY.renderer.getPixelRatio();
     var rw = Math.max(2, Math.floor(window.innerWidth * pr));
     var rh = Math.max(2, Math.floor(window.innerHeight * pr));
     var bw = Math.max(2, Math.floor(rw * 0.35)), bh = Math.max(2, Math.floor(rh * 0.35));
+    var gw = Math.max(2, Math.floor(rw * 0.38)), gh = Math.max(2, Math.floor(rh * 0.38));
 
     var rtOpts = { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBAFormat };
-    post.rtScene = new THREE.WebGLRenderTarget(rw, rh, rtOpts);
-    post.rtScene.depthBuffer = true;
-    post.rtScene.depthTexture = new THREE.DepthTexture(rw, rh);
-    post.rtScene.depthTexture.type = MAY.renderer.capabilities.isWebGL2 ? THREE.UnsignedIntType : THREE.UnsignedShortType;
-
+    allocSceneDepthTargets(rw, rh);
     post.rtBright = new THREE.WebGLRenderTarget(bw, bh, rtOpts);
     post.rtBlur = new THREE.WebGLRenderTarget(bw, bh, rtOpts);
+    post.rtGodRay = new THREE.WebGLRenderTarget(gw, gh, rtOpts);
 
     var vs = "varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }";
 
@@ -1151,12 +1452,72 @@
       ].join("\n")
     });
 
+    /* True Screen-Space Volumetric Light Scattering (GPU Gems 3 Radial Occlusion God Rays!) */
+    post.matGodRay = new THREE.ShaderMaterial({
+      uniforms: {
+        tScene: { value: null }, tDepth: { value: null },
+        uDepthPacked: { value: _usePackedDepth ? 1.0 : 0.0 },
+        uNear: { value: MAY.camera.near }, uFar: { value: MAY.camera.far },
+        uSunUV: { value: new THREE.Vector2(0.5, 0.78) },
+        uSunCol: { value: post.godRayColor },
+        uFacing: { value: 0.0 },
+        uDensity: { value: post.godRayDensity },
+        uDecay: { value: post.godRayDecay },
+        uAspect: { value: window.innerWidth / Math.max(1, window.innerHeight) },
+        uUnderwater: { value: 0.0 },
+        uTime: MAY.shaderUniforms.uTime
+      },
+      vertexShader: vs,
+      fragmentShader: [
+        "#include <packing>",
+        "uniform sampler2D tScene, tDepth;",
+        "uniform vec2 uSunUV; uniform vec3 uSunCol;",
+        "uniform float uDepthPacked, uNear, uFar, uFacing, uDensity, uDecay, uAspect, uUnderwater, uTime;",
+        "varying vec2 vUv;",
+        "float readLinD(vec2 u) {",
+        "  vec4 raw = texture2D(tDepth, clamp(u, 0.002, 0.998));",
+        "  float d01 = uDepthPacked > 0.5 ? unpackRGBAToDepth(raw) : raw.r;",
+        "  float z = d01 * 2.0 - 1.0;",
+        "  return (2.0 * uNear * uFar) / (uFar + uNear - z * (uFar - uNear));",
+        "}",
+        "float ign(vec2 p) { return fract(52.9829189 * fract(dot(p, vec2(0.06711056, 0.00583715)))); }",
+        "void main() {",
+        "  if (uFacing <= 0.005) { gl_FragColor = vec4(0.0); return; }",
+        "  const int SAMPLES = 32;",
+        "  vec2 delta = (vUv - uSunUV) * (uDensity / float(SAMPLES));",
+        "  float jitter = ign(gl_FragCoord.xy + fract(uTime) * 19.0);",
+        "  vec2 uv = vUv - delta * jitter;",
+        "  float illumDecay = 1.0;",
+        "  vec3 accum = vec3(0.0);",
+        "  for (int i = 0; i < SAMPLES; i++) {",
+        "    uv -= delta;",
+        "    if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) break;",
+        "    float d = readLinD(uv);",
+        "    vec3 sc = texture2D(tScene, uv).rgb;",
+        "    float lum = dot(sc, vec3(0.2126, 0.7152, 0.0722));",
+        "    /* Lọc tia xuyên qua khoảng hở bầu trời (depth >= far) hoặc vùng sáng giếng trời / mặt nước Snell */",
+        "    float skyOpen = smoothstep(uFar * 0.68, uFar * 0.93, d);",
+        "    float uwOpen = uUnderwater * smoothstep(0.45, 0.95, lum) * smoothstep(0.35, 0.92, uv.y);",
+        "    float occMask = max(skyOpen * smoothstep(0.32, 0.85, lum), uwOpen);",
+        "    vec2 dSun = (uv - uSunUV) * vec2(uAspect, 1.0);",
+        "    float sunLobe = exp(-dot(dSun, dSun) * (uUnderwater > 0.5 ? 2.4 : 4.2));",
+        "    accum += mix(sc, uSunCol, 0.62) * occMask * sunLobe * illumDecay;",
+        "    illumDecay *= uDecay;",
+        "  }",
+        "  vec3 rays = (accum / float(SAMPLES)) * 2.55 * uFacing;",
+        "  gl_FragColor = vec4(rays, 1.0);",
+        "}"
+      ].join("\n")
+    });
+
     post.matComp = new THREE.ShaderMaterial({
       uniforms: {
-        tScene: { value: null }, tBloom: { value: null }, tDepth: { value: null },
+        tScene: { value: null }, tBloom: { value: null }, tDepth: { value: null }, tGodRay: { value: null },
         uTexel: { value: new THREE.Vector2(1 / rw, 1 / rh) },
+        uDepthPacked: { value: _usePackedDepth ? 1.0 : 0.0 },
         uNear: { value: MAY.camera.near }, uFar: { value: MAY.camera.far },
         uBloomStr: { value: post.bloomStrength }, uSSAO: { value: post.ssaoStrength },
+        uGodRayStr: { value: post.godRayStrength },
         uTint: { value: post.gradeTint }, uVignette: { value: post.vignette },
         uUnderwater: { value: 0.0 }, uWetness: { value: 0.0 },
         uSpellFlash: { value: 0.0 }, uSpellColor: { value: post.spellColor },
@@ -1164,15 +1525,20 @@
       },
       vertexShader: vs,
       fragmentShader: [
-        "uniform sampler2D tScene, tBloom, tDepth;",
-        "uniform vec2 uTexel; uniform float uNear, uFar, uBloomStr, uSSAO, uVignette, uUnderwater, uWetness, uSpellFlash, uTime;",
+        "#include <packing>",
+        "uniform sampler2D tScene, tBloom, tDepth, tGodRay;",
+        "uniform vec2 uTexel; uniform float uDepthPacked, uNear, uFar, uBloomStr, uSSAO, uGodRayStr, uVignette, uUnderwater, uWetness, uSpellFlash, uTime;",
         "uniform vec3 uTint, uSpellColor;",
         "varying vec2 vUv;",
-        "float linDepth(vec2 u){ float z=texture2D(tDepth,u).r*2.0-1.0; return (2.0*uNear*uFar)/(uFar+uNear-z*(uFar-uNear)); }",
+        "float linDepth(vec2 u){",
+        "  vec4 raw = texture2D(tDepth, clamp(u, 0.002, 0.998));",
+        "  float d01 = uDepthPacked > 0.5 ? unpackRGBAToDepth(raw) : raw.r;",
+        "  float z = d01 * 2.0 - 1.0;",
+        "  return (2.0 * uNear * uFar) / (uFar + uNear - z * (uFar - uNear));",
+        "}",
         "float hash12(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }",
         "void main(){",
         "  vec2 uv = vUv;",
-        "  /* Biến dạng quang học cực nhẹ kiểu ống kính góc rộng (giống The Hall nhưng dịu mắt) */",
         "  vec2 cc = uv - 0.5; float r2 = dot(cc, cc);",
         "  uv = 0.5 + cc * (1.0 + r2 * 0.045);",
         "  if (uUnderwater > 0.01) {",
@@ -1185,29 +1551,32 @@
         "  }",
         "  vec2 off = (uv - 0.5) * (0.0018 + 0.0018 * uUnderwater);",
         "  vec3 col = vec3(texture2D(tScene, uv + off).r, texture2D(tScene, uv).g, texture2D(tScene, uv - off).b);",
-        "  /* True Depth-Buffer SSAO (kiểm tra độ lõm đối xứng 4 cặp hướng — khử sạch sọc bậc thang trên mặt nghiêng!) */",
+        "  /* True 32-Bit Depth-Buffer SSAO (hoạt động cả WebGL2 native lẫn WebGL1 RGBA-32bit depth packing, xoay góc nhiễu 8 hướng!) */",
         "  float cd = linDepth(uv);",
         "  if (uSSAO > 0.01 && cd < uFar * 0.68) {",
         "    float occ = 0.0;",
-        "    float rad = clamp(16.0 / max(cd, 1.8), 1.8, 6.0);",
-        "    float bias = 0.14 + cd * 0.016;",
-        "    vec2 dirs[4];",
-        "    dirs[0]=vec2(1.0, 0.0); dirs[1]=vec2(0.0, 1.0);",
-        "    dirs[2]=vec2(0.707, 0.707); dirs[3]=vec2(0.707, -0.707);",
-        "    for (int i = 0; i < 4; i++) {",
-        "      vec2 duv = dirs[i] * uTexel * rad;",
+        "    float rad = clamp(18.0 / max(cd, 1.8), 2.0, 7.0);",
+        "    float bias = 0.13 + cd * 0.015;",
+        "    float ang0 = hash12(gl_FragCoord.xy) * 3.14159265;",
+        "    for (int i = 0; i < 6; i++) {",
+        "      float ang = ang0 + float(i) * 0.52359877;",
+        "      float rScale = (i == 1 || i == 3 || i == 5) ? 0.58 : 1.0;",
+        "      vec2 duv = vec2(cos(ang), sin(ang)) * uTexel * rad * rScale;",
         "      float d1 = linDepth(clamp(uv + duv, 0.002, 0.998));",
         "      float d2 = linDepth(clamp(uv - duv, 0.002, 0.998));",
         "      float avgD = 0.5 * (d1 + d2);",
         "      float conc = cd - avgD;",
-        "      if (conc > bias && conc < 2.2) {",
-        "        occ += smoothstep(bias, bias + 0.35, conc) * smoothstep(2.2, 0.25, conc);",
+        "      if (conc > bias && conc < 2.4) {",
+        "        occ += smoothstep(bias, bias + 0.35, conc) * smoothstep(2.4, 0.25, conc);",
         "      }",
         "    }",
-        "    float ao = 1.0 - clamp((occ / 4.0) * uSSAO * 0.95, 0.0, 0.44);",
+        "    float ao = 1.0 - clamp((occ / 6.0) * uSSAO * 0.96, 0.0, 0.46);",
         "    col *= ao;",
         "  }",
-        "  /* Bloom có chọn lọc + Ánh chớp phép thuật (Spell Exposure Pulse) */",
+        "  /* Volumetric Screen-Space God Rays + Selective Bloom + Spell Flash */",
+        "  if (uGodRayStr > 0.005) {",
+        "    col += texture2D(tGodRay, clamp(uv, 0.002, 0.998)).rgb * uGodRayStr;",
+        "  }",
         "  vec3 bloom = texture2D(tBloom, uv).rgb;",
         "  col += bloom * (uBloomStr + uSpellFlash * 0.35);",
         "  col = mix(col, col + uSpellColor * 0.16, uSpellFlash);",
@@ -1217,7 +1586,6 @@
         "  col = mix(vec3(luma), col, 1.07);",
         "  col = col / (1.0 + col * 0.09);",
         "  col = pow(max(col, vec3(0.0)), vec3(0.97));",
-        "  /* Film Grain siêu mịn khử phân dải màu & tạo chất ảnh điện ảnh */",
         "  float grain = (hash12(vUv * 920.0 + fract(uTime) * 47.0) - 0.5) * 0.022;",
         "  col += grain;",
         "  float vig = 1.0 - smoothstep(0.50, 0.96, length(vUv - 0.5)) * (uVignette + uUnderwater * 0.14);",
@@ -1231,17 +1599,33 @@
   }
   initPostFX();
 
+  MAY.getDepthMode = function () {
+    return _usePackedDepth ? "rgba32-packed" : "webgl2-uint32";
+  };
+  MAY.setPackedDepthMode = function (forcePacked) {
+    var next = !!forcePacked || !_isWebGL2;
+    if (next === _usePackedDepth) return;
+    _usePackedDepth = next;
+    MAY.resizePostFX();
+  };
+
   MAY.resizePostFX = function () {
     if (!post.rtScene) return;
     var pr = MAY.renderer.getPixelRatio();
     var rw = Math.max(2, Math.floor(window.innerWidth * pr)), rh = Math.max(2, Math.floor(window.innerHeight * pr));
     var bw = Math.max(2, Math.floor(rw * 0.35)), bh = Math.max(2, Math.floor(rh * 0.35));
-    post.rtScene.setSize(rw, rh);
+    var gw = Math.max(2, Math.floor(rw * 0.38)), gh = Math.max(2, Math.floor(rh * 0.38));
+    allocSceneDepthTargets(rw, rh);
     post.rtBright.setSize(bw, bh);
     post.rtBlur.setSize(bw, bh);
+    post.rtGodRay.setSize(gw, gh);
     post.matBlur.uniforms.uTexel.value.set(1 / bw, 1 / bh);
     post.matComp.uniforms.uTexel.value.set(1 / rw, 1 / rh);
+    post.matComp.uniforms.uDepthPacked.value = _usePackedDepth ? 1.0 : 0.0;
+    post.matGodRay.uniforms.uDepthPacked.value = _usePackedDepth ? 1.0 : 0.0;
+    post.matGodRay.uniforms.uAspect.value = window.innerWidth / Math.max(1, window.innerHeight);
     MAY.PlanarReflector.init();
+    MAY.WaterRefractor.init();
   };
   window.addEventListener("resize", MAY.resizePostFX);
 
@@ -1250,27 +1634,54 @@
     post.spellColor.setHex(hexColor || 0xffd93d);
     post.spellFlash = Math.min(1.0, strength !== undefined ? strength : 0.65);
   };
+  MAY.setGodRays = function (opts) {
+    opts = opts || {};
+    post.godRayColor.setHex(opts.color || 0xfff2c2);
+    post.godRayStrength = opts.strength !== undefined ? opts.strength : 0.36;
+    post.godRayDensity = opts.density !== undefined ? opts.density : 0.92;
+    post.godRayDecay = opts.decay !== undefined ? opts.decay : 0.94;
+    post.godRaySourcePos = opts.sourcePos ? opts.sourcePos.clone() : null;
+  };
   MAY.setPostGrade = function (opts) {
     opts = opts || {};
     post.gradeTint.setHex(opts.tint || 0xffffff);
     post.vignette = opts.vignette !== undefined ? opts.vignette : 0.25;
     post.bloomStrength = opts.bloom !== undefined ? opts.bloom : 0.30;
     post.ssaoStrength = opts.ssao !== undefined ? opts.ssao : 0.52;
+    if (opts.godRay !== undefined) post.godRayStrength = opts.godRay;
+    if (opts.godRayColor !== undefined) post.godRayColor.setHex(opts.godRayColor);
+    post.godRaySourcePos = opts.godRaySourcePos ? opts.godRaySourcePos.clone() : null;
   };
+
+  var _grSunDir = new THREE.Vector3(), _grSunWorld = new THREE.Vector3(), _grCamFwd = new THREE.Vector3(), _grClearCol = new THREE.Color();
 
   MAY.renderFrame = function (dt, isUnderwater) {
     if (post.wetness > 0) post.wetness = Math.max(0, post.wetness - dt * 0.45);
     if (post.spellFlash > 0) post.spellFlash = Math.max(0, post.spellFlash - dt * 1.9);
 
+    var ctx = MAY.currentCtx;
     /* Bước 1: Render Planar Reflection pass (cho mặt nước, hồ băng, vũng đá ướt) */
     MAY.PlanarReflector.render();
     var reflOk = MAY.PlanarReflector.hasValidFrame ? 1.0 : 0.0;
-    var ctx = MAY.currentCtx;
+
+    /* Bước 1b: Render True Screen-Space Water Refraction pass (cảnh dưới mặt nước + depth!) */
+    var waterList = ctx && ctx.waterMeshes ? ctx.waterMeshes : null;
+    MAY.WaterRefractor.render(waterList);
+    var refrOk = MAY.WaterRefractor.hasValidFrame ? 1.0 : 0.0;
+    var refrDepthTex = MAY.WaterRefractor.getDepthTexture();
+
     if (ctx) {
       if (ctx.waterMeshes) {
         for (var i = 0; i < ctx.waterMeshes.length; i++) {
           var wu = ctx.waterMeshes[i].userData.waterUniforms;
-          if (wu) { wu.uUseReflect.value = reflOk; wu.tReflect.value = MAY.PlanarReflector.rt.texture; }
+          if (wu) {
+            wu.uUseReflect.value = reflOk;
+            wu.tReflect.value = MAY.PlanarReflector.rt.texture;
+            wu.uUseRefract.value = refrOk;
+            wu.tRefract.value = MAY.WaterRefractor.rt.texture;
+            wu.tRefractDepth.value = refrDepthTex;
+            wu.uRefractDepthPacked.value = _usePackedDepth ? 1.0 : 0.0;
+          }
         }
       }
       if (ctx.reflectiveMeshes) {
@@ -1291,6 +1702,57 @@
     r.setRenderTarget(post.rtScene);
     r.render(MAY.scene, MAY.camera);
 
+    /* Trên WebGL1 (hoặc chế độ packed depth), nướng thêm Depth Pass 32-bit RGBA cho SSAO & Volumetric God Rays! */
+    if (_usePackedDepth && post.rtDepthRGBA) {
+      var prevOverride = MAY.scene.overrideMaterial;
+      var prevBg = MAY.scene.background;
+      r.getClearColor(_grClearCol);
+      var prevClearAlpha = r.getClearAlpha();
+      MAY.scene.background = null;
+      MAY.scene.overrideMaterial = _depthOverrideMat;
+      r.setClearColor(0xffffff, 1);
+      r.setRenderTarget(post.rtDepthRGBA);
+      r.clear();
+      r.render(MAY.scene, MAY.camera);
+      MAY.scene.overrideMaterial = prevOverride;
+      MAY.scene.background = prevBg;
+      r.setClearColor(_grClearCol, prevClearAlpha);
+    }
+    var activeDepthTex = _usePackedDepth ? post.rtDepthRGBA.texture : post.rtScene.depthTexture;
+
+    /* Bước 2: Screen-Space Volumetric God Rays (Chiếu vị trí Mặt Trời / Giếng Trời lên màn hình + Radial Blur theo Depth!) */
+    var grFacing = 0.0;
+    if (post.godRayStrength > 0.01) {
+      MAY.camera.getWorldDirection(_grCamFwd);
+      if (post.godRaySourcePos) {
+        _grSunWorld.copy(post.godRaySourcePos);
+        _grSunDir.subVectors(_grSunWorld, MAY.camera.position).normalize();
+      } else {
+        _grSunDir.subVectors(MAY.sun.position, MAY.sun.target.position).normalize();
+        _grSunWorld.copy(MAY.camera.position).addScaledVector(_grSunDir, 180);
+      }
+      var dotSun = _grCamFwd.dot(_grSunDir);
+      if (dotSun > -0.15) {
+        _grSunWorld.project(MAY.camera);
+        var su = _grSunWorld.x * 0.5 + 0.5;
+        var sv = _grSunWorld.y * 0.5 + 0.5;
+        var edgeFade = 1.0 - Math.min(1.0, Math.max(0.0, (Math.max(Math.abs(_grSunWorld.x), Math.abs(_grSunWorld.y)) - 1.15) * 0.85));
+        grFacing = Math.max(0, Math.min(1, (dotSun + 0.15) / 0.55)) * edgeFade;
+        post.matGodRay.uniforms.uSunUV.value.set(su, sv);
+      }
+      post.quadMesh.material = post.matGodRay;
+      post.matGodRay.uniforms.tScene.value = post.rtScene.texture;
+      post.matGodRay.uniforms.tDepth.value = activeDepthTex;
+      post.matGodRay.uniforms.uDepthPacked.value = _usePackedDepth ? 1.0 : 0.0;
+      post.matGodRay.uniforms.uFacing.value = grFacing;
+      post.matGodRay.uniforms.uDensity.value = post.godRayDensity;
+      post.matGodRay.uniforms.uDecay.value = post.godRayDecay;
+      post.matGodRay.uniforms.uUnderwater.value = isUnderwater ? 1.0 : 0.0;
+      r.setRenderTarget(post.rtGodRay);
+      r.render(post.quadScene, post.quadCam);
+    }
+
+    /* Bước 3: Selective Bloom */
     post.quadMesh.material = post.matBright;
     post.matBright.uniforms.tDiffuse.value = post.rtScene.texture;
     r.setRenderTarget(post.rtBright);
@@ -1307,12 +1769,16 @@
     r.setRenderTarget(post.rtBright);
     r.render(post.quadScene, post.quadCam);
 
+    /* Bước 4: Final Composite (SSAO 32-bit + Volumetric God Rays + Bloom + Filmic Grade + Vignette) */
     post.quadMesh.material = post.matComp;
     post.matComp.uniforms.tScene.value = post.rtScene.texture;
     post.matComp.uniforms.tBloom.value = post.rtBright.texture;
-    post.matComp.uniforms.tDepth.value = post.rtScene.depthTexture;
+    post.matComp.uniforms.tDepth.value = activeDepthTex;
+    post.matComp.uniforms.tGodRay.value = post.rtGodRay.texture;
+    post.matComp.uniforms.uDepthPacked.value = _usePackedDepth ? 1.0 : 0.0;
     post.matComp.uniforms.uBloomStr.value = MAY.quality === "high" ? post.bloomStrength : post.bloomStrength * 0.72;
-    post.matComp.uniforms.uSSAO.value = MAY.quality === "high" ? post.ssaoStrength : post.ssaoStrength * 0.65;
+    post.matComp.uniforms.uSSAO.value = MAY.quality === "high" ? post.ssaoStrength : post.ssaoStrength * 0.68;
+    post.matComp.uniforms.uGodRayStr.value = grFacing > 0.005 ? (MAY.quality === "high" ? post.godRayStrength : post.godRayStrength * 0.75) : 0.0;
     post.matComp.uniforms.uVignette.value = post.vignette;
     post.matComp.uniforms.uUnderwater.value = isUnderwater ? 1.0 : 0.0;
     post.matComp.uniforms.uWetness.value = post.wetness;

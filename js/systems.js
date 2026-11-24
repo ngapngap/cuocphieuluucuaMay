@@ -45,6 +45,22 @@
     setText("star-n2", ls.items.length);
     setText("big-icon", meta.collectIcon);
     setText("big-label", meta.collectName.toUpperCase());
+    var subEl = document.getElementById("obj-substep");
+    if (subEl) {
+      if (ctx && ctx.sideQuestStatus) {
+        subEl.textContent = ctx.sideQuestStatus.text;
+        subEl.classList.toggle("sq-done", !!ctx.sideQuestStatus.done);
+      } else {
+        subEl.textContent = meta.collectIcon + " Sưu tầm " + meta.collectName + ": " + ls.items.length + "/" + meta.collectTarget;
+        subEl.classList.remove("sq-done");
+      }
+    }
+    var pillCol = document.getElementById("pill-col");
+    if (pillCol) {
+      setText("col-icon", meta.collectIcon);
+      setText("col-n", ls.items.length);
+      setText("col-max", meta.collectTarget);
+    }
     if (MAY.syncHeartsHUD) MAY.syncHeartsHUD(false);
 
     setText("gem-n", MAY.save.gems.length);
@@ -128,6 +144,14 @@
         if (nd < bestNd) {
           bestNd = nd;
           found = { obj: npc.group, label: "Trò chuyện với " + npc.name + " (Bấm / Enter)", onInteract: function () { if (npc.onTalk) npc.onTalk(npc); } };
+        }
+      }
+      if (!found && ctx.sideQuest && ctx.sideQuest.npcGroup) {
+        var sqd = ctx.sideQuest.npcGroup.position.distanceTo(MAY.player.pos);
+        if (sqd < 5.6) {
+          for (var iq = 0; iq < ctx.interactives.length; iq++) {
+            if (ctx.interactives[iq].obj === ctx.sideQuest.npcGroup) { found = ctx.interactives[iq]; break; }
+          }
         }
       }
     }
@@ -218,8 +242,86 @@
     return g;
   };
 
+  /* Helper tạo thú / NPC có xương Blender & CC0 Quaternius (SkinnedMesh + AnimationMixer) */
+  function buildRiggedAnimal(key, cfg, opts) {
+    if (!MAY.RIGGED || !MAY.RIGGED[key] || !MAY.cloneSkinnedGLB) return null;
+    var cl = MAY.cloneSkinnedGLB(key);
+    if (!cl || !cl.scene) return null;
+    var g = new THREE.Group();
+    g.rotation.order = "YXZ";
+    var root = cl.scene;
+    root.rotation.y = cfg.rotY !== undefined ? cfg.rotY : Math.PI;
+    root.scale.setScalar(cfg.scale || 1.0);
+    if (cfg.yOff) root.position.y = cfg.yOff;
+    if (cfg.tint !== undefined && cfg.tint !== null) {
+      var tintCol = new THREE.Color(cfg.tint);
+      var amt = cfg.tintAmt !== undefined ? cfg.tintAmt : 0.5;
+      root.traverse(function (o) {
+        if (o.isMesh && o.material) {
+          var mats = Array.isArray(o.material) ? o.material : [o.material];
+          var cloned = mats.map(function (m) {
+            if (!m || !m.color) return m;
+            var nm = m.clone();
+            nm.color.lerp(tintCol, amt);
+            return nm;
+          });
+          o.material = Array.isArray(o.material) ? cloned : cloned[0];
+        }
+      });
+    }
+    var mixer = new THREE.AnimationMixer(root);
+    var acts = {};
+    cl.animations.forEach(function (c) {
+      var raw = c.name.toLowerCase();
+      var tail = raw.split("|").pop();
+      var act = mixer.clipAction(c);
+      acts[c.name] = act;
+      acts[tail] = act;
+      if (tail.indexOf("idle") === 0 && !acts.idle) acts.idle = act;
+      if (tail.indexOf("walk") === 0 && !acts.walk) acts.walk = act;
+      if ((tail.indexOf("gallop") === 0 || tail.indexOf("run") === 0) && !acts.run) acts.run = act;
+      if (tail.indexOf("jump") === 0 && !acts.jump) acts.jump = act;
+      if (tail.indexOf("dance") === 0 && !acts.dance) acts.dance = act;
+      if (tail.indexOf("swim") === 0 && !acts.swim) acts.swim = act;
+      if (tail.indexOf("talk") === 0 && !acts.talk) acts.talk = act;
+    });
+    var cur = null, curName = null;
+    g.userData.mixer = mixer;
+    g.userData.playClip = function (name) {
+      var k = (name || "idle").toLowerCase();
+      var nxt = acts[k] || acts[name] || (k === "dance" ? acts.jump : null) || (k === "run" ? acts.walk : null) || acts.idle || acts.swim;
+      if (!nxt || cur === nxt) return;
+      nxt.reset().setEffectiveTimeScale(1).setEffectiveWeight(1).play();
+      if (cur && cur !== nxt) cur.crossFadeTo(nxt, 0.20, false);
+      cur = nxt; curName = k;
+    };
+    g.userData.playClip(cfg.defaultClip || "idle");
+    g.add(root);
+    if (opts && opts.scale) g.scale.setScalar(opts.scale);
+    return g;
+  }
+
+  var RIGGED_ANIMAL_MAP = {
+    tortoise:  { key: "tortoise",  scale: 0.86, defaultClip: "idle" },
+    fox:       { key: "fox",       scale: 0.42, defaultClip: "idle" },
+    fennec:    { key: "fox",       scale: 0.36, tint: 0xf4c989, tintAmt: 0.48, defaultClip: "idle" },
+    snowfox:   { key: "fox",       scale: 0.40, tint: 0xf5fbff, tintAmt: 0.80, defaultClip: "idle" },
+    deer:      { key: "deer",      scale: 0.44, defaultClip: "idle" },
+    reindeer:  { key: "reindeer",  scale: 0.40, defaultClip: "idle" },
+    unicorn:   { key: "unicorn",   scale: 0.42, defaultClip: "idle" },
+    sheep:     { key: "alpaca",    scale: 0.28, tint: 0xffffff, tintAmt: 0.65, defaultClip: "idle" },
+    camel:     { key: "alpaca",    scale: 0.36, tint: 0xdcb06c, tintAmt: 0.55, defaultClip: "idle" },
+    crab:      { key: "crab",      scale: 0.52, defaultClip: "idle" },
+    dolphin:   { key: "dolphin",   scale: 0.34, rotY: Math.PI / 2, defaultClip: "swim" },
+    clownfish: { key: "clownfish", scale: 0.24, rotY: Math.PI / 2, defaultClip: "swim" }
+  };
+
   MAY.makeAnimal = function (kind, opts) {
     opts = opts || {};
+    if (RIGGED_ANIMAL_MAP[kind]) {
+      var rg = buildRiggedAnimal(RIGGED_ANIMAL_MAP[kind].key, RIGGED_ANIMAL_MAP[kind], opts);
+      if (rg) return rg;
+    }
     var g = new THREE.Group();
     g.rotation.order = "YXZ";
 
@@ -622,10 +724,17 @@
     };
 
     ctx.addSky = function (cfg) {
+      cfg = cfg || {};
+      ctx._skyCfg = cfg;
       var sky = MAY.makeAtmosphericSky(cfg);
       ctx.add(sky);
       ctx.skyMesh = sky;
       MAY.bakeBiomeEnv(sky);
+      if (MAY.createBiomeLightProbe) {
+        var lp = MAY.createBiomeLightProbe(cfg);
+        ctx.lightProbe = lp;
+        ctx.add(lp);
+      }
       return sky;
     };
 
@@ -663,8 +772,8 @@
       return ctx.beacon;
     };
 
-    /* 1. Tạo địa hình chuẩn từ hàm groundH(x,z) */
-    ctx.buildTerrain = function (size, segs, mat) {
+    /* 1. Tạo địa hình chuẩn từ hàm groundH(x,z) + tự động nướng GI Lightmap (uv2 + mat.lightMap) */
+    ctx.buildTerrain = function (size, segs, mat, lmOpts) {
       var geo = new THREE.PlaneGeometry(size, size, segs, segs);
       geo.rotateX(-Math.PI / 2);
       var pos = geo.attributes.position;
@@ -672,6 +781,18 @@
         pos.setY(i, ctx.groundH(pos.getX(i), pos.getZ(i)));
       }
       geo.computeVertexNormals();
+      if (MAY.bakeTerrainLightmap && (!lmOpts || lmOpts.enabled !== false)) {
+        var sc = ctx._skyCfg || {};
+        MAY.bakeTerrainLightmap(geo, mat, Object.assign({
+          size: size,
+          groundH: ctx.groundH,
+          skyColor: sc.horizon || 0xaadbf5,
+          bounceColor: sc.ground || 0x4b6e56,
+          sunColor: sc.sunColor || 0xfff3cc,
+          sunDir: sc.sunDir || new THREE.Vector3(24, 42, 16),
+          intensity: 0.72
+        }, lmOpts || {}));
+      }
       var mesh = new THREE.Mesh(geo, mat);
       mesh.receiveShadow = true;
       ctx.add(mesh);
@@ -1066,6 +1187,9 @@
       ctx.trackLabel(lb, 24);
 
       ctx.add(g);
+      if (ctx.addCollider) {
+        ctx.addCollider(pos[0], z, 1.55, "gem_altar", { minY: y - 0.5, maxY: y + 1.15, walkable: true });
+      }
       ctx.gemAltar = { group: g, gem: gem, halo: halo, rune: rune, pos: new THREE.Vector3(pos[0], y + 2.0, z), announced: false };
     };
 
@@ -1088,11 +1212,18 @@
       veil.position.y = 2.1; g.add(veil);
       var gRune = MAY.VFX.makeRunePlane(2.6, color || 0x4dd0ff, 0.55);
       gRune.position.y = 0.08; g.add(gRune);
-      var lb = MAY.makeLabel(label, { sx: 3.8, sy: 0.92 });
+      var lb = MAY.makeLabel(label, { sx: 3.8, sy: 0.92, bg: "rgba(8,28,50,0.82)", color: "#ffffff" });
       lb.position.y = 4.6; g.add(lb);
       ctx.trackLabel(lb, 24);
       g.lookAt(0, y, 0);
+      g.updateMatrixWorld(true);
       ctx.add(g);
+      if (ctx.addCollider) {
+        var lp = new THREE.Vector3(-2.05, 0, 0).applyMatrix4(g.matrixWorld);
+        var rp = new THREE.Vector3(2.05, 0, 0).applyMatrix4(g.matrixWorld);
+        ctx.addCollider(lp.x, lp.z, 0.46, "portal_pillar", { minY: y - 0.5, maxY: y + 3.4 });
+        ctx.addCollider(rp.x, rp.z, 0.46, "portal_pillar", { minY: y - 0.5, maxY: y + 3.4 });
+      }
       ctx.portals.push({ group: g, pos: new THREE.Vector3(pos[0], y + 1.5, z), targetId: targetId, label: label, veil: veil, gRune: gRune, arch: arch });
       ctx.interactives.push({
         obj: g, label: "Đi tới " + label,
@@ -1253,7 +1384,7 @@
 
       /* Bạn thú */
       ctx.friends.forEach(function (f) {
-        var jy = 0;
+        var jy = 0, moving = false;
         if (f.jump < 1) {
           f.jump += dt * 1.5;
           jy = Math.sin(Math.min(1, f.jump) * Math.PI) * 1.1;
@@ -1265,6 +1396,7 @@
           var dx = tx - f.group.position.x, dz = tz - f.group.position.z;
           var dd = Math.hypot(dx, dz);
           if (dd > 0.5) {
+            moving = true;
             var sp = Math.min(5.2, dd * 1.8);
             f.group.position.x += dx / dd * sp * dt;
             f.group.position.z += dz / dd * sp * dt;
@@ -1287,6 +1419,7 @@
             f.group.userData.wr.rotation.z = -fl;
           }
         } else if (f.behavior === "swim") {
+          moving = true;
           f.wa += dt * 0.25;
           f.group.position.x = f.hx + Math.cos(f.wa) * 2.2;
           f.group.position.z = f.hz + Math.sin(f.wa) * 2.2;
@@ -1304,6 +1437,7 @@
           var dx2 = nx - f.group.position.x, dz2 = nz - f.group.position.z;
           var dd2 = Math.hypot(dx2, dz2);
           if (dd2 > 0.3) {
+            moving = true;
             var sp2 = Math.min(1.4, dd2);
             f.group.position.x += dx2 / dd2 * sp2 * dt;
             f.group.position.z += dz2 / dd2 * sp2 * dt;
@@ -1311,7 +1445,17 @@
             f.hop += dt * 6;
           }
           var gy = ctx.groundH(f.group.position.x, f.group.position.z);
-          f.group.position.y = (gy > -30 ? gy : f.baseY) + Math.abs(Math.sin(f.hop)) * 0.14 + jy;
+          var hopOff = f.group.userData.mixer ? 0 : Math.abs(Math.sin(f.hop)) * 0.14;
+          f.group.position.y = (gy > -30 ? gy : f.baseY) + hopOff + jy;
+        }
+        if (f.group.userData.mixer) {
+          if (f.group.userData.playClip) {
+            var fc = f.behavior === "swim" ? "swim"
+              : (f.jump < 1 ? (f.kind === "crab" ? "dance" : "jump")
+              : (moving ? (f.following ? "run" : "walk") : "idle"));
+            f.group.userData.playClip(fc);
+          }
+          f.group.userData.mixer.update(dt);
         }
         f.label.position.set(f.group.position.x, f.group.position.y + f.labelY, f.group.position.z);
 
@@ -1566,6 +1710,9 @@
     if (ctx.storyObjective && ctx.storyObjective.targetPos) {
       near.push({ pos: ctx.storyObjective.targetPos, d: ctx.storyObjective.targetPos.distanceTo(p), icon: ctx.storyObjective.icon || "❗" });
     }
+    if (ctx.sideQuestStatus && !ctx.sideQuestStatus.done && ctx.sideQuestStatus.targetPos) {
+      near.push({ pos: ctx.sideQuestStatus.targetPos, d: ctx.sideQuestStatus.targetPos.distanceTo(p), icon: "📜" });
+    }
     var nearItems = ctx.collectibles.filter(function (c) { return !c.taken; })
       .map(function (c) { return { pos: c.mesh.position, d: c.mesh.position.distanceTo(p), icon: ctx.meta.collectIcon }; })
       .sort(function (a, b) { return a.d - b.d; }).slice(0, 2);
@@ -1610,6 +1757,7 @@
     if (ctx.enemies) ctx.enemies.forEach(function (en) { if (en.state !== "purified") dot(en.mesh.position.x, en.mesh.position.z, "#ff3b5c", 3.4); });
     if (ctx.boss && ctx.boss.active && !ctx.boss.defeated) dot(ctx.boss.pos.x, ctx.boss.pos.z, "#ff0055", 5.5);
     if (ctx.storyObjective && ctx.storyObjective.targetPos) dot(ctx.storyObjective.targetPos.x, ctx.storyObjective.targetPos.z, "#4ade80", 4.8);
+    if (ctx.sideQuestStatus && !ctx.sideQuestStatus.done && ctx.sideQuestStatus.targetPos) dot(ctx.sideQuestStatus.targetPos.x, ctx.sideQuestStatus.targetPos.z, "#22d3ee", 4.2);
     if (ctx.gemAltar && !ctx.save.gem) dot(ctx.gemAltar.pos.x, ctx.gemAltar.pos.z, "#ffffff", 4.2);
 
     var p = MAY.player.pos;
@@ -1812,6 +1960,25 @@
       outEl.appendChild(b);
     });
 
+    /* 7 Nhiệm vụ phụ tương tác thực sự */
+    var sqEl = document.getElementById("alb-sidequests");
+    var totSQ = 0;
+    if (sqEl && MAY.SIDE_QUESTS) {
+      sqEl.innerHTML = "";
+      MAY.LEVEL_META.forEach(function (m) {
+        var sqDef = MAY.SIDE_QUESTS[m.id];
+        if (!sqDef) return;
+        var lss = MAY.getLevelSave(m.id);
+        var done = !!(lss.sideQuest && lss.sideQuest.done);
+        var prog = (lss.sideQuest && lss.sideQuest.doneIds) ? lss.sideQuest.doneIds.length : 0;
+        if (done) totSQ++;
+        var d = document.createElement("div");
+        d.className = "alb-chip" + (done ? " got" : "");
+        d.innerHTML = '<span class="aico">' + (done ? "✅" : sqDef.icon) + "</span><b>" + sqDef.title + "</b><small>" + m.shortName + " • " + (done ? "Hoàn thành!" : (lss.sideQuest && lss.sideQuest.stage > 0 ? ("Đang làm (" + prog + ")") : ("Gặp " + sqDef.npcName))) + "</small>";
+        sqEl.appendChild(d);
+      });
+    }
+
     /* Tổng kết Bảo vật ẩn & Thử thách */
     var totHidden = 0, totCh = 0, totFriends = 0;
     MAY.LEVEL_META.forEach(function (m) {
@@ -1820,7 +1987,7 @@
       totFriends += ls.friends.length;
       totCh += Object.keys(ls.challenges).filter(function (k) { return ls.challenges[k]; }).length;
     });
-    setText("alb-stats", "🎖️ Đã gặp " + totFriends + "/35 bạn thú • 🏆 Đạt " + totCh + "/18 thử thách • 👑 Tìm thấy " + totHidden + "/6 bảo vật ẩn");
+    setText("alb-stats", "🎖️ " + totFriends + "/35 bạn thú • 📜 " + totSQ + "/7 nhiệm vụ phụ • 🏆 " + totCh + "/18 thử thách • 👑 " + totHidden + "/6 bảo vật ẩn");
     document.getElementById("ov-album").classList.remove("hidden");
   };
   MAY.renderAlbum = MAY.openAlbum;
@@ -1870,9 +2037,18 @@
   MAY.showGrandFinale = function () {
     releasePointerLock();
     MAY.closeAllModals();
-    MAY.modalOpen = true;
-    document.getElementById("ov-finale").classList.remove("hidden");
-    MAY.speak("Chúc mừng Mây! Mây đã gom đủ 6 Viên Ngọc Cầu Vồng! Hãy quay về Đảo Mây dự Lễ Hội Cầu Vồng cùng tất cả các bạn thú nhé!");
+    var showDock = function () {
+      var el = document.getElementById("ov-finale");
+      if (el) el.classList.remove("hidden");
+      /* Thanh đại tiệc nổi gọn ở dưới cùng — giữ nguyên Lễ Hội 3D Cầu Vồng & Pháo Hoa chạy sống động phía sau! */
+      MAY.modalOpen = false;
+    };
+    if (MAY.Cutscene && MAY.Cutscene.playGrandFinale) {
+      MAY.Cutscene.playGrandFinale(showDock);
+    } else {
+      showDock();
+      MAY.speak("Chúc mừng Mây! Mây đã gom đủ 6 Viên Ngọc Cầu Vồng! Hãy quay về Đảo Mây dự Lễ Hội Cầu Vồng cùng tất cả các bạn thú nhé!");
+    }
   };
 
 })(window.MAY);

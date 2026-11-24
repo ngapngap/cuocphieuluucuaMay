@@ -1,13 +1,25 @@
-/* Cuộc Phiêu Lưu Của Mây v12.0 — offline cache (PWA). Network-first cho code, cache-first cho model/ảnh/giọng đọc. */
-var CACHE = 'may-phieu-luu-v12.0';
+/* Cuộc Phiêu Lưu Của Mây v13.1 — offline cache (PWA). Network-first cho code, cache-first cho model/ảnh/giọng đọc/ambience. */
+var CACHE = 'may-phieu-luu-v13.1';
 var CORE = [
-  "./", "index.html", "style.css", "three.min.js", "game.js", "manifest.json",
-  "js/data.js", "js/audio.js", "js/core.js", "js/pbr.js", "js/vfx.js", "js/player.js", "js/systems.js", "js/story.js",
+  "./", "index.html", "style.css", "three.min.js", "game.js", "manifest.json", "favicon.ico",
+  "js/data.js", "js/audio.js", "js/core.js", "js/pbr.js", "js/vfx.js", "js/player.js", "js/systems.js", "js/story.js", "js/cutscene.js",
   "js/levels/hub.js", "js/levels/level1_ocean.js", "js/levels/level2_forest.js",
   "js/levels/level3_desert.js", "js/levels/level4_crystal.js", "js/levels/level5_snow.js",
   "js/levels/level6_clouds.js",
   "icons/icon-192.png", "icons/icon-512.png",
+  "assets/audio/amb_hub.wav", "assets/audio/amb_level1.wav", "assets/audio/amb_level2.wav",
+  "assets/audio/amb_level3.wav", "assets/audio/amb_level4.wav", "assets/audio/amb_level5.wav", "assets/audio/amb_level6.wav",
   "assets/models/may_rigged.glb", "assets/models/companion_milo.glb",
+  "assets/models/npc_tortoise_elder.glb", "assets/models/boss_mushroom_king.glb",
+  "assets/models/boss_crystal_golem.glb", "assets/models/boss_storm_king.glb",
+  "assets/models/hero_lighthouse.glb", "assets/models/hero_castle.glb",
+  "assets/models/cc0_cabin.glb", "assets/models/cc0_windmill.glb",
+  "assets/models/cc0_shipwreck.glb", "assets/models/cc0_boat.glb",
+  "assets/models/cc0_fox.glb", "assets/models/cc0_deer.glb",
+  "assets/models/cc0_reindeer.glb", "assets/models/cc0_unicorn.glb",
+  "assets/models/cc0_alpaca.glb", "assets/models/cc0_crab.glb",
+  "assets/models/cc0_dolphin.glb", "assets/models/cc0_whale.glb",
+  "assets/models/cc0_clownfish.glb",
   "assets/models/amphora.glb", "assets/models/barrel.glb", "assets/models/chest.glb",
   "assets/models/clam.glb", "assets/models/coral.glb", "assets/models/fish.glb",
   "assets/models/jelly.glb", "assets/models/kelp.glb", "assets/models/manta.glb",

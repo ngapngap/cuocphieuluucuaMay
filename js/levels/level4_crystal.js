@@ -27,7 +27,7 @@
     MAY.diveLight.castShadow = (MAY.quality !== "low");
     if (MAY.diveLight.shadow) { MAY.diveLight.shadow.mapSize.set(1024, 1024); MAY.diveLight.shadow.bias = -0.0008; }
     MAY.setAmbientTone(260, 0.042, "level4");
-    MAY.setPostGrade({ tint: 0xf6f0ff, vignette: 0.34, bloom: 0.44, ssao: 0.65 });
+    MAY.setPostGrade({ tint: 0xf6f0ff, vignette: 0.34, bloom: 0.44, ssao: 0.65, godRay: 0.40, godRayColor: 0xc4b5fd, godRaySourcePos: new THREE.Vector3(0, 32, -8) });
     ctx.getSurface = function (x, z) {
       return (Math.abs(x) < 2.6 && z > -30 && z < 14) || Math.hypot(x, z + 8) < 8.4 ? "stone" : "wetstone";
     };
@@ -70,7 +70,16 @@
       metalness: 0.12
     });
     MAY.applyCaustics(caveMat, 0.1, 0.75);
-    ctx.buildTerrain(200, 116, caveMat);
+    ctx.buildTerrain(200, 116, caveMat, {
+      intensity: 0.85,
+      staticLights: [
+        { x: -26, z: 22,  r: 0.75, g: 0.52, b: 1.0,  radius: 22, intensity: 0.52 },
+        { x: 28,  z: 20,  r: 0.25, g: 0.78, b: 1.0,  radius: 22, intensity: 0.52 },
+        { x: -34, z: -18, r: 0.96, g: 0.46, b: 0.74, radius: 22, intensity: 0.50 },
+        { x: 36,  z: -16, r: 0.22, g: 0.86, b: 0.76, radius: 22, intensity: 0.50 },
+        { x: 0,   z: -38, r: 0.72, g: 0.54, b: 1.0,  radius: 24, intensity: 0.55 }
+      ]
+    });
 
     /* Sau khi dựng địa hình lòng hồ thật, bật mặt cầu đá & Đấu Trường Tròn Golem (y=2.45) để Mây đi qua hồ không bị rơi! */
     ctx.groundH = function (x, z) {
@@ -110,12 +119,8 @@
     });
     lakeW.position.set(LAKE.x, 0.1, LAKE.z);
 
-    /* Tia sáng giếng trời hang rọi xuống hồ & hành lang + Bụi pha lê bay lơ lửng */
-    var skylightMat = MAY.makeGodRayMat(0xc4b5fd, 0.26);
-    [[0, -8], [-22, 20], [24, -22]].forEach(function (rp) {
-      var ray = new THREE.Mesh(new THREE.ConeGeometry(4.2, 36, 12, 1, true), skylightMat);
-      ray.position.set(rp[0], 17, rp[1]); ray.rotation.z = 0.16; ctx.add(ray);
-    });
+    /* Tia sáng giếng trời hang Screen-Space Volumetric God Rays + Bụi pha lê bay lơ lửng */
+    if (MAY.setGodRays) MAY.setGodRays({ color: 0xc4b5fd, strength: 0.40, density: 0.90, decay: 0.93, sourcePos: new THREE.Vector3(0, 32, -8) });
     ctx.addAmbientParticles({ count: 320, spread: 100, minY: 0.8, maxY: 22, vy: 0.18, color: 0xd8b4fe, size: 0.2, opacity: 0.85 });
 
     /* VŨNG NƯỚC PHẢN CHIẾU THỜI GIAN THỰC TRÊN SÀN HANG ƯỚT (Trực tiếp tái hiện chất liệu sàn ướt "The Hall"!) */
@@ -149,12 +154,14 @@
     [[-5.2, -13.2], [5.2, -13.2], [-5.2, -2.8], [5.2, -2.8], [0, 8], [0, -24]].forEach(function (pp) {
       var pier = new THREE.Mesh(new THREE.CylinderGeometry(0.65, 0.95, 7.2, 10), bridgeMat);
       pier.position.set(pp[0], -1.6, pp[1]); pier.castShadow = true; ctx.add(pier);
+      ctx.addCollider(pp[0], pp[1], 0.92, "bridge_pier", { minY: -6.0, maxY: 2.0 });
     });
     var postMat = new THREE.MeshStandardMaterial({ color: 0x2b2630, metalness: 0.7, roughness: 0.4 });
     [[-2.2, 11], [2.2, 11], [-2.2, -27], [2.2, -27], [-7.2, -3.5], [7.2, -3.5], [-7.2, -12.5], [7.2, -12.5], [2.2, 28]].forEach(function (lp, lIdx) {
       var post = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.14, 3.1, 8), postMat);
       var py = ctx.groundH(lp[0], lp[1]);
       post.position.set(lp[0], py + 1.55, lp[1]); post.castShadow = true; ctx.add(post);
+      ctx.addCollider(lp[0], lp[1], 0.30, "lantern_post", { minY: py - 0.5, maxY: py + 3.2 });
       var lan = MAY.makeCagedLantern(0xffb85c, lIdx === 0 ? 3.2 : 2.4, 24, lIdx === 0);
       lan.position.set(lp[0], py + 3.15, lp[1]); ctx.add(lan);
     });
@@ -246,7 +253,9 @@
     var chimeNames = ["Đô 🎵", "Rê 🎵", "Mi 🎵", "Son 🎵", "La 🎵"];
     ctx.addInteractProps([[-12, 14], [12, 14], [-22, -4], [22, -4], [0, -28]].map(function (p, i) {
       var cl = makeCrystalCluster(crysCols[i], 0.85, false);
-      cl.position.set(p[0], ctx.groundH(p[0], p[1]), p[1]);
+      var cpy = ctx.groundH(p[0], p[1]);
+      cl.position.set(p[0], cpy, p[1]);
+      ctx.addCollider(p[0], p[1], 0.65, "chime_crystal", { minY: cpy - 0.5, maxY: cpy + 2.8 });
       return {
         id: "ch" + i, obj: cl, label: "Gõ pha lê nhạc " + chimeNames[i],
         sound: "chime", burstColor: crysCols[i],
@@ -306,6 +315,7 @@
       var pl = new THREE.PointLight(0xffcb69, 0, 28); pl.position.y = 3.2; tg.add(pl);
       if (ch4St.steps["torch" + idx]) { orb.material.color.setHex(0xffe066); orb.material.emissive.setHex(0xff9f1c); orb.material.emissiveIntensity = 1.2; pl.intensity = 3.2; }
       ctx.add(tg);
+      ctx.addCollider(tp.x, tp.z, 0.72, "torch_ped", { minY: tp.y - 0.5, maxY: tp.y + 2.6 });
       torchFlames.push({ orb: orb, pl: pl });
     });
 
@@ -322,6 +332,7 @@
     var echoMeshes = echoCoords.map(function (ec, idx) {
       var m = makeCrystalCluster(ec.col, 1.35, false);
       m.position.copy(ec.pos); ctx.add(m);
+      ctx.addCollider(ec.pos.x, ec.pos.z, 0.92, "echo_crystal", { minY: ec.pos.y - 0.5, maxY: ec.pos.y + 3.6 });
       return m;
     });
     var echoProgress = ch4St.steps.echoDone ? 3 : 0;
@@ -333,12 +344,12 @@
       });
     }
 
-    /* TRÙM CHƯƠNG 4: 🗿 Golem Pha Lê Khổng Lồ (Echo Titan — Dùng 💎 phá Giáp Đá -> ☀️ thanh tẩy lõi!) */
-    var titanMesh = MAY.makeMonsterMesh("stonegolem", 2.55);
+    /* TRÙM CHƯƠNG 4: 🗿 Golem Pha Lê Khổng Lồ (Rigged Blender GLB — Dùng 💎 phá Giáp Đá -> ☀️ thanh tẩy lõi!) */
+    var titanMesh = MAY.makeRiggedBoss("golem", 1.08, "stonegolem", 2.55, { tagMat: { armor: "GolemObsidian" } });
     var ch4Npc;
     var ch4Boss = ctx.setBoss({
       name: "Golem Pha Lê Khổng Lồ", icon: "🗿",
-      pos: new THREE.Vector3(0, 2.48, -8), arenaR: 25, maxHp: 3, mesh: titanMesh,
+      pos: new THREE.Vector3(0, 2.45, -8), arenaR: 25, maxHp: 3, mesh: titanMesh,
       startActive: ch4St.stage === 3 && !ch4St.bossDown,
       tipFn: function (b) {
         return b.subState.armorBroken
@@ -348,16 +359,18 @@
       onTick: function (dt, t, bs) {
         var ang = Math.atan2(MAY.player.pos.x - bs.pos.x, MAY.player.pos.z - bs.pos.z);
         bs.mesh.rotation.y = ang + Math.PI;
-        bs.mesh.position.y = 2.48 + Math.sin(t * 2.0) * 0.32;
+        bs.mesh.position.y = bs.mesh.userData.mixer ? 2.45 : (2.48 + Math.sin(t * 2.0) * 0.32);
         bs.atkT -= dt;
         if (bs.atkT <= 0 && bs.pos.distanceTo(MAY.player.pos) < 34) {
           bs.atkT = 3.5;
+          if (bs.mesh.userData.playClip) bs.mesh.userData.playClip("attack", false);
           var dir = new THREE.Vector3().subVectors(MAY.player.pos, bs.pos).normalize();
-          ctx.spawnBossOrb(bs.pos.clone().add(new THREE.Vector3(0, 2.2, 0)), dir, {
+          ctx.spawnBossOrb(bs.pos.clone().add(new THREE.Vector3(0, 2.6, 0)), dir, {
             speed: 10.5, radius: 0.95, reflectable: true, reflectSpell: "crystal", color: 0x3b355c, emissive: 0xc084fc,
             onReflectHitBoss: function (b) {
               b.subState.armorBroken = true;
               if (b.mesh.userData.armor) b.mesh.userData.armor.material.emissive.setHex(0xa855f7);
+              if (b.mesh.userData.playClip) b.mesh.userData.playClip("hit", false);
               b.syncHUD();
               MAY.sndShatter(b.pos);
               MAY.toast("💎 Tảng đá bật ngược đập vỡ Giáp Đá của Titan! Bắn ngay ☀️ Tia Nắng (3 + R)!");
@@ -370,6 +383,7 @@
         if (spellId === "crystal") {
           bs.subState.armorBroken = true;
           if (bs.mesh.userData.armor) bs.mesh.userData.armor.material.emissive.setHex(0xc084fc);
+          if (bs.mesh.userData.playClip) bs.mesh.userData.playClip("hit", false);
           MAY.sndShatter(bs.pos);
           MAY.VFX.spawnShatterBurst(bs.pos.clone().add(new THREE.Vector3(0, 2, 0)), 0xc084fc);
           bs.syncHUD();
@@ -378,6 +392,7 @@
           if (bs.subState.armorBroken) {
             bs.subState.armorBroken = false;
             if (bs.mesh.userData.armor) bs.mesh.userData.armor.material.emissive.setHex(0x000000);
+            if (bs.mesh.userData.playClip) bs.mesh.userData.playClip("hit", false);
             bs.damage("☀️ Tia Nắng chiếu thẳng vào lõi thanh tẩy Golem Pha Lê!");
           } else {
             MAY.toast("💡 Giáp đá chặn mất tia nắng rồi! Dùng 💎 Cộng Hưởng (Phím 4 + R) phá giáp trước nhé!");
@@ -385,6 +400,7 @@
         }
       },
       onDefeat: function () {
+        if (titanMesh.userData.playClip) titanMesh.userData.playClip("defeat", false);
         ch4St.stage = 4; MAY.persist();
         ch4Npc.setMarker("★");
         ctx.setObjective("★", "QUAY LẠI NHẠC SƯ CÚ MÈO NHẬN 🟣 NGỌC TÍM PHA LÊ!", ch4Npc.pos);
@@ -432,10 +448,11 @@
       ch4St.stage = 3; MAY.persist();
       ch4Npc.setMarker("?");
       if (!ch4Boss.active) {
-        ch4Boss.activate();
-        MAY.openDialogue({
-          name: ch4Sc.npcName, role: ch4Sc.npcRole, icon: ch4Sc.npcIcon, color: ch4Sc.npcColor,
-          pages: ch4Sc.bossIntro, endBtn: "🗿 Chiến đấu với Golem Pha Lê!", voiceClip: "boss_appear"
+        ch4Boss.activate(function () {
+          MAY.openDialogue({
+            name: ch4Sc.npcName, role: ch4Sc.npcRole, icon: ch4Sc.npcIcon, color: ch4Sc.npcColor,
+            pages: ch4Sc.bossIntro, endBtn: "🗿 Chiến đấu với Golem Pha Lê!", voiceClip: "boss_appear"
+          });
         });
       }
       ctx.setObjective("🗿", "PHÁ GIÁP (💎) + CHIẾU NẮNG (☀️) HẠ GOLEM PHA LÊ!", ch4Boss.pos);
@@ -532,6 +549,16 @@
       }
     });
     updateCh4Story();
+
+    /* ---- Nhiệm Vụ Phụ Tương Tác Chương 4: Mạng Lưới Đèn Pha Lê Thợ Mỏ ---- */
+    ctx.setupSideQuest({
+      npcPos: [8.5, 31], npcRotY: -0.45, npcScale: 1.25, labelY: 2.0,
+      tasks: [
+        { id: "relay_w", kind: "beacon", label: "Bật Trạm Pha Lê Hốc Tây",    pos: [-30, 14], color: 0xc084fc },
+        { id: "relay_n", kind: "beacon", label: "Bật Trạm Pha Lê Bờ Bắc",     pos: [-16, -34], color: 0x38bdf8 },
+        { id: "relay_e", kind: "beacon", label: "Bật Trạm Pha Lê Cột Đông",   pos: [32, -8],  color: 0x2dd4bf }
+      ]
+    });
 
     MAY.player.spawnAt(0, ctx.groundH(0, 36) + 1.05, 36, 0, false);
     return ctx;

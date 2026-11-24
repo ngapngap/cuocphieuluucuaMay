@@ -23,7 +23,7 @@
     MAY.diveLight.intensity = 0.12;
     MAY.diveLight.castShadow = false;
     MAY.setAmbientTone(520, 0.032, "level2");
-    MAY.setPostGrade({ tint: 0xfafff4, vignette: 0.24, bloom: 0.34, ssao: 0.54 });
+    MAY.setPostGrade({ tint: 0xfafff4, vignette: 0.24, bloom: 0.34, ssao: 0.54, godRay: 0.36, godRayColor: 0xfff4be });
     ctx.getSurface = function (x, z) {
       if (Math.abs(x) < 2.6 && Math.abs(z - streamCenterZ(0)) < 8.5) return "wood";
       return "grass";
@@ -72,7 +72,12 @@
       roughness: 0.92
     });
     MAY.applyCaustics(forestMat, 0.25, 0.65);
-    ctx.buildTerrain(230, 120, forestMat);
+    ctx.buildTerrain(230, 120, forestMat, {
+      staticLights: [
+        { x: 0, z: 25.5, r: 1.0, g: 0.84, b: 0.50, radius: 16, intensity: 0.48 },
+        { x: 0, z: -12,  r: 1.0, g: 0.82, b: 0.45, radius: 14, intensity: 0.36 }
+      ]
+    });
 
     /* Dòng suối trong vắt có phản chiếu bầu trời & sóng quanh chân Mây (chảy xuyên dưới gầm cầu gỗ!) */
     ctx.addWater({
@@ -94,13 +99,8 @@
       return base;
     };
 
-    /* Tia nắng khối xuyên tán cây + Đom đóm vàng bay lơ lửng */
-    var rayMat = MAY.makeGodRayMat(0xfff4be, 0.18);
-    [[-22, 10], [18, 16], [-12, -26], [30, -18], [6, 36], [-34, 24]].forEach(function (rp) {
-      var ray = new THREE.Mesh(new THREE.ConeGeometry(2.8, 34, 10, 1, true), rayMat);
-      ray.position.set(rp[0], 16, rp[1]); ray.rotation.z = 0.26;
-      ctx.add(ray);
-    });
+    /* Tia nắng khối Screen-Space Volumetric God Rays + Đom đóm vàng bay lơ lửng */
+    if (MAY.setGodRays) MAY.setGodRays({ color: 0xfff4be, strength: 0.36, density: 0.90, decay: 0.94 });
     ctx.addAmbientParticles({ count: 240, spread: 110, minY: 1.2, maxY: 14, vy: 0.25, color: 0xeaff7a, size: 0.22, opacity: 0.85 });
 
     /* Cầu gỗ có đèn lồng ấm bắc qua suối tại x = 0 */
@@ -128,6 +128,9 @@
     var brLan2 = MAY.makeCagedLantern(0xffd478, 2.2, 20, false); brLan2.position.set(-2.05, 4.15, -6); bridge.add(brLan2);
     bridge.position.set(0, 0, bridgeZ);
     ctx.add(bridge);
+    /* Va chạm 3D OBB cho 2 thành lan can cầu gỗ */
+    ctx.addBoxCollider(-2.15, bridgeZ, 0.35, 16.0, 1.8, 4.1, 0, "bridge_rail_l");
+    ctx.addBoxCollider(2.15,  bridgeZ, 0.35, 16.0, 1.8, 4.1, 0, "bridge_rail_r");
 
     /* Cây Cổ Thụ Mẹ Giữa Rừng (0, 22) — Ban đầu chết khô xám xịt, hồi sinh rực rỡ khi hạ Vua Nấm Khô Héo! */
     var ancient = new THREE.Group();
@@ -229,7 +232,7 @@
       var ry = ctx.groundH(rx, rz);
       rm.position.set(rx, ry + rs * 0.25, rz);
       rm.castShadow = true; rm.receiveShadow = true; ctx.add(rm);
-      ctx.addCollider(rx, rz, rs * 0.78, "rock", { maxY: ry + rs * 0.78 });
+      ctx.addSphereCollider(rx, ry + rs * 0.25, rz, rs * 0.86, "rock", { maxY: ry + rs * 0.85 });
     }
 
     /* 6 Nấm Lò Xo Khổng Lồ (nhảy lên là nảy bật cao vút!) */
@@ -253,6 +256,7 @@
       g.position.set(bm[0], y, bm[1]);
       g.traverse(function (o) { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
       ctx.add(g);
+      ctx.addCollider(bm[0], bm[1], 0.68, "mushroom_stem", { minY: y - 0.5, maxY: y + 1.35 });
       ctx.addBouncePad(bm[0], y + 2.3, bm[1], 2.2, bm[2]);
     });
 
@@ -372,7 +376,7 @@
     }
     mudDam.visible = !ch2St.steps.mudClear;
     ctx.add(mudDam);
-    if (!ch2St.steps.mudClear) ctx.addCollider(mudPos.x, mudPos.z, 2.8, "muddam");
+    if (!ch2St.steps.mudClear) ctx.addBoxCollider(mudPos.x, mudPos.z, 6.4, 3.0, mudPos.y - 0.5, mudPos.y + 3.0, 0, "muddam");
 
     /* 3 Cây Cổ Thụ Chết Khô quanh rừng (hồi sinh bằng 🌿 Nở Hoa -> mọc lá xanh + hoa + nấm lò xo!) */
     var deadTreeCoords = [[-22, 22], [22, 16], [-16, -24]];
@@ -389,8 +393,8 @@
       });
     }
 
-    /* TRÙM CHƯƠNG 2: 🍄 Vua Nấm Khô Héo (Phối hợp 2 phép: 🌊 làm ướt vỏ khô -> 🌿 Nở Hoa quấn bung hoa!) */
-    var bossShroomMesh = MAY.makeMonsterMesh("thornshroom", 2.35);
+    /* TRÙM CHƯƠNG 2: 🍄 Vua Nấm Khô Héo (Rigged Blender GLB + Phối hợp 2 phép: 🌊 làm ướt vỏ khô -> 🌿 Nở Hoa quấn bung hoa!) */
+    var bossShroomMesh = MAY.makeRiggedBoss("mushroomking", 1.15, "thornshroom", 2.35, { tagMat: { cap: "ShroomCap" } });
     var ch2Npc;
     var ch2Boss = ctx.setBoss({
       name: "Vua Nấm Khô Héo", icon: "🍄",
@@ -404,10 +408,11 @@
       onTick: function (dt, t, bs) {
         var ang = Math.atan2(MAY.player.pos.x - bs.pos.x, MAY.player.pos.z - bs.pos.z);
         bs.mesh.rotation.y = ang + Math.PI;
-        bs.mesh.position.y = ctx.groundH(bs.pos.x, bs.pos.z) + Math.abs(Math.sin(t * 2.5)) * 0.65;
+        bs.mesh.position.y = ctx.groundH(bs.pos.x, bs.pos.z) + (bs.mesh.userData.mixer ? 0 : Math.abs(Math.sin(t * 2.5)) * 0.65);
         bs.atkT -= dt;
         if (bs.atkT <= 0 && bs.pos.distanceTo(MAY.player.pos) < 28) {
           bs.atkT = 3.6;
+          if (bs.mesh.userData.playClip) bs.mesh.userData.playClip("attack", false);
           MAY.VFX.spawnTelegraph(bs.pos.clone(), 8.5, 1.0, 0xff3b5c);
           MAY.toast("🍄 Vua Nấm chuẩn bị dậm sóng đất! Nhấn Space nhảy lên né nhé!");
           ctx.scheduleEvent(1.0, function () {
@@ -423,12 +428,14 @@
         if (spellId === "wave") {
           bs.subState.wet = true;
           if (bs.mesh.userData.cap) bs.mesh.userData.cap.material.emissive.setHex(0x0284c7);
+          if (bs.mesh.userData.playClip) bs.mesh.userData.playClip("hit", false);
           bs.syncHUD();
           MAY.toast("🌊 Vỏ Vua Nấm đã mềm ướt! Tung ngay 🌿 Nở Hoa (Phím 2 + R) nào!");
         } else if (spellId === "growth") {
           if (bs.subState.wet) {
             bs.subState.wet = false;
             if (bs.mesh.userData.cap) bs.mesh.userData.cap.material.emissive.setHex(0x3b0764);
+            if (bs.mesh.userData.playClip) bs.mesh.userData.playClip("hit", false);
             MAY.VFX.spawnVineTrap(bs.pos.clone(), 2.8);
             bs.damage("🌿 Dây hoa bùng nở trói chặt Vua Nấm Khô Héo!");
           } else {
@@ -437,6 +444,7 @@
         }
       },
       onDefeat: function () {
+        if (bossShroomMesh.userData.playClip) bossShroomMesh.userData.playClip("defeat", false);
         ch2St.stage = 4;
         MAY.persist();
         barkMat.color.setHex(0xffffff);
@@ -487,10 +495,11 @@
         MAY.persist();
         ch2Npc.setMarker("?");
         if (!ch2Boss.active) {
-          ch2Boss.activate();
-          MAY.openDialogue({
-            name: ch2Sc.npcName, role: ch2Sc.npcRole, icon: ch2Sc.npcIcon, color: ch2Sc.npcColor,
-            pages: ch2Sc.bossIntro, endBtn: "🍄 Chiến đấu với Vua Nấm!", voiceClip: "boss_appear"
+          ch2Boss.activate(function () {
+            MAY.openDialogue({
+              name: ch2Sc.npcName, role: ch2Sc.npcRole, icon: ch2Sc.npcIcon, color: ch2Sc.npcColor,
+              pages: ch2Sc.bossIntro, endBtn: "🍄 Chiến đấu với Vua Nấm!", voiceClip: "boss_appear"
+            });
           });
         }
         ctx.setObjective("🍄", "PHỐI HỢP 🌊 + 🌿 ĐÁNH BẠI VUA NẤM KHÔ HÉO!", ch2Boss.pos);
@@ -566,6 +575,16 @@
       }
     });
     updateCh2Story();
+
+    /* ---- Nhiệm Vụ Phụ Tương Tác Chương 2: Bữa Tiệc Đèn Lồng Rừng Nấm ---- */
+    ctx.setupSideQuest({
+      npcPos: [-7.5, 36], npcRotY: 0.35, npcScale: 1.25, labelY: 2.0,
+      tasks: [
+        { id: "basket", kind: "basket",  label: "Nhặt Giỏ Hạt Dẻ Vàng bên kia suối", pos: [-10, -26], color: 0xffd93d },
+        { id: "flan1",  kind: "lantern", label: "Thắp Đèn Nấm Tiệc Bờ Nam",         pos: [-6.5, bridgeZ + 9.5], color: 0x4ade80 },
+        { id: "flan2",  kind: "lantern", label: "Thắp Đèn Nấm Tiệc Bờ Bắc",         pos: [6.5,  bridgeZ - 9.5], color: 0x4ade80 }
+      ]
+    });
 
     ctx.onUpdate = function (dt, t) {
       deadTrees.forEach(function (d) { d.update(dt); });

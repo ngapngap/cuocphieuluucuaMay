@@ -23,7 +23,7 @@
     MAY.diveLight.intensity = 0.12;
     MAY.diveLight.castShadow = false;
     MAY.setAmbientTone(640, 0.032, "level3");
-    MAY.setPostGrade({ tint: 0xfffaf0, vignette: 0.22, bloom: 0.30, ssao: 0.50 });
+    MAY.setPostGrade({ tint: 0xfffaf0, vignette: 0.22, bloom: 0.30, ssao: 0.50, godRay: 0.38, godRayColor: 0xffe099 });
     ctx.getSurface = function (x, z) {
       return Math.hypot(x - OAS.x, z - OAS.z) < 20 && ctx.groundH(x, z) > 0.5 ? "grass" : "sand";
     };
@@ -75,7 +75,12 @@
       roughness: 0.88
     });
     MAY.applyCaustics(sandMat, 0.15, 0.72);
-    ctx.buildTerrain(240, 124, sandMat);
+    ctx.buildTerrain(240, 124, sandMat, {
+      staticLights: [
+        { x: -4.3, z: PYR.z + PYR.half + 1.4, r: 1.0, g: 0.68, b: 0.28, radius: 18, intensity: 0.45 },
+        { x:  4.3, z: PYR.z + PYR.half + 1.4, r: 1.0, g: 0.68, b: 0.28, radius: 18, intensity: 0.45 }
+      ]
+    });
 
     /* Hồ Ốc Đảo nước ngọc bích bơi lặn được */
     var oasisWater = ctx.addWater({
@@ -86,14 +91,8 @@
     });
     oasisWater.position.set(OAS.x, 0.15, OAS.z);
 
-    /* Tia nắng vàng xuyên bụi sa mạc (giống mẫu level1_ocean.js) + Hạt cát vàng bay trong gió */
-    var rayMat = MAY.makeGodRayMat(0xffe099, 0.20);
-    [[-32, 24], [28, 18], [0, -14], [-22, -44], [26, -42], [6, 36]].forEach(function (rp, ri) {
-      var ray = new THREE.Mesh(new THREE.ConeGeometry(3.2 + (ri % 3) * 0.9, 40, 12, 1, true), rayMat);
-      ray.position.set(rp[0], 20, rp[1]);
-      ray.rotation.z = 0.30;
-      ctx.add(ray);
-    });
+    /* Tia nắng khối Screen-Space Volumetric God Rays + Hạt cát vàng bay trong gió */
+    if (MAY.setGodRays) MAY.setGodRays({ color: 0xffe099, strength: 0.38, density: 0.92, decay: 0.94 });
     ctx.addAmbientParticles({ count: 280, spread: 120, minY: 0.5, maxY: 16, vy: -0.15, vx: 2.4, color: 0xffe4a0, size: 0.16, opacity: 0.55 });
 
     /* ---- Kim Tự Tháp Đá Sa Thạch Bậc Thang (0, -48) có vết phong hóa không lặp ---- */
@@ -170,9 +169,11 @@
       col.castShadow = true; col.receiveShadow = true; ctx.add(col);
       ctx.addCollider(cp[0], cp[1], 1.1);
     });
+    var lintelY = ctx.groundH(-40, 0);
     var lintel = new THREE.Mesh(new THREE.BoxGeometry(14, 1.4, 2.2), sandstoneMat);
-    lintel.position.set(-40, ctx.groundH(-40, 0) + 8.2, 0);
+    lintel.position.set(-40, lintelY + 8.2, 0);
     lintel.castShadow = true; lintel.receiveShadow = true; ctx.add(lintel);
+    ctx.addBoxCollider(-40, 0, 14.0, 2.2, lintelY + 7.5, lintelY + 9.0, 0, "ruin_lintel", { walkable: true });
 
     /* ---- 10 Đá Mặt Trời (Nhiệm vụ chính) ---- */
     var sunStoneGeo = new THREE.OctahedronGeometry(0.78, 0);
@@ -228,6 +229,7 @@
     });
     ctx.addInteractProps([[22, 6], [-22, 6], [30, -10], [-28, -14], [14, 34]].map(function (p, i) {
       var cg = makeCactus(p[0], p[1], true);
+      ctx.addCollider(p[0], p[1], 0.52, "cactus_int", { maxY: ctx.groundH(p[0], p[1]) + 3.0 });
       return {
         id: "cac" + i, obj: cg, label: "Chạm xương rồng nở hoa", burstColor: 0xff6b9d,
         toastText: "Cây xương rồng nở hoa hồng rực rỡ!",
@@ -383,10 +385,11 @@
         }
         ch3Npc.setMarker("?");
         if (!ch3Boss.active) {
-          ch3Boss.activate();
-          MAY.openDialogue({
-            name: ch3Sc.npcName, role: ch3Sc.npcRole, icon: ch3Sc.npcIcon, color: ch3Sc.npcColor,
-            pages: ch3Sc.bossIntro, endBtn: "🦂 Chiến đấu với Bọ Cạp Sa Mạc!", voiceClip: "boss_appear"
+          ch3Boss.activate(function () {
+            MAY.openDialogue({
+              name: ch3Sc.npcName, role: ch3Sc.npcRole, icon: ch3Sc.npcIcon, color: ch3Sc.npcColor,
+              pages: ch3Sc.bossIntro, endBtn: "🦂 Chiến đấu với Bọ Cạp Sa Mạc!", voiceClip: "boss_appear"
+            });
           });
         }
         ctx.setObjective("🦂", "DÙNG ☀️ TIA NẮNG ĐÁNH BẠI BỌ CẠP SA MẠC!", ch3Boss.pos);
@@ -459,6 +462,16 @@
       }
     });
     updateCh3Story();
+
+    /* ---- Nhiệm Vụ Phụ Tương Tác Chương 3: Bí Ẩn Đồng Hồ Mặt Trời Cổ ---- */
+    ctx.setupSideQuest({
+      npcPos: [-12, 34], npcRotY: 0.5, npcScale: 1.2, labelY: 2.0,
+      tasks: [
+        { id: "gnomon",  kind: "gnomon",  label: "Tìm Kim Vàng ven Ốc Đảo",        pos: [-11, 18], color: 0xffd93d },
+        { id: "shadow1", kind: "beacon",  label: "Phủi cát Cột Đo Bóng Tây Bắc",   pos: [-46, 4],  color: 0xfacc15 },
+        { id: "sundial", kind: "sundial", label: "Lắp Đồng Hồ Mặt Trời ở Tàn Tích", pos: [-40, 12], color: 0xff9f1c, finalOnly: true }
+      ]
+    });
 
     ctx.onUpdate = function (dt, t) {
       oasisTree.update(dt);
