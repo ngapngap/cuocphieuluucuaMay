@@ -52,7 +52,7 @@ Chạy qua bản đồ ở chế độ Cốt truyện từ bản lưu mới. K�
 | --- | --- |
 | Tải bị ngắt | Máy chủ trả 503 giữa gói Golem. Game vào được Đảo Mây. Kết nối lại tải tiếp đến khi báo đủ nội dung. |
 | Chơi khi mất mạng | Tắt máy chủ và cho trình duyệt ngoại tuyến. Tải lại game, mở đủ sáu vùng qua bản đồ, tải lại ở chương 6. Trang phục giải mã đủ sáu ảnh và đoạn thoại trả đúng 128 byte được yêu cầu. |
-| Nội dung | 36/36 GLB qua bộ kiểm tra. Cache có 47 đoạn thoại, bảy âm thanh vùng và sáu ảnh trang phục. |
+| Nội dung | 36/36 GLB qua bộ kiểm tra. Ở đợt đo trước #17, cache có 47 đoạn thoại, bảy âm thanh vùng và sáu ảnh trang phục. |
 | Điều khiển | Nút Chơi nằm trong khung 360 × 640, 390 × 844 và 844 × 390. Đã thử thao tác NPC, thoại, Sổ tay và chọn/tung phép trong Chrome. Có kiểm tra bố cục thanh máu trùm khi đủ sáu phép. |
 | Trang phục | Tên, trạng thái khóa, đang mặc và toàn thân được kiểm tra ở 390 × 844 và 1180 × 760. Sáu ảnh WebP dùng 48.794 byte. Ba ảnh cũ và ảnh đại diện dùng chung trước đây chiếm 139.902 byte tính theo tệp duy nhất. Ảnh đại diện vẫn dùng ở màn mở đầu. |
 | Câu đố | Đã thử sai, xem gợi ý, tự sửa, bỏ qua, mở lại và tải lại khi tắt tiếng, ngoại tuyến. Điểm được lưu một lần cho mỗi đáp án đúng. |
@@ -60,3 +60,13 @@ Chạy qua bản đồ ở chế độ Cốt truyện từ bản lưu mới. K�
 | Hang Pha Lê | Đã thử nốt đúng/sai, hai nút phát lại, tín hiệu sáng, tải lại giữa câu, hai mẫu và mở giáp rồi chiếu Nắng gây sát thương. |
 
 **Bản thử** sẵn sàng cho buổi chơi thử. Chờ kết quả tổng hợp của ít nhất năm trẻ ở #10 để quyết định cơ chế cho #11–#13. Việc chơi xuyên sáu chương mới và kiểm tra trên điện thoại thật của #14 vẫn cần thực hiện trước khi phát hành. [Phiếu buổi thử](choi-thu-hang-pha-le.md)
+
+## Giọng hướng dẫn và âm thanh ở Vịnh và Hang (#17–#18)
+
+Bản thử bổ sung 14 câu tiếng Việt được tổng hợp sẵn thành MP3. Sáu tệp của Vịnh San Hô chiếm 283.584 byte, tám tệp của Hang Pha Lê chiếm 413.952 byte. Mỗi câu gắn với một trang thoại. Nút **Nghe lại** phát lại trang đang mở. Service worker lưu các tệp theo chương sau khi nút Chơi đã bật. Bảy tệp WAV môi trường hiện có chiếm 4.480.308 byte. Bản thử giữ định dạng WAV cho vòng lặp và dùng Web Audio cho tiếng san hô khi cứu Bubi và tiếng nước nhỏ giọt trong hang.
+
+- Trên Chrome ở khung cảm ứng 390 × 844, đã mở hội thoại của Cụ Rùa và Cú Mèo, đi qua sáu trang, nghe lại, tắt/bật tiếng và nhấn Escape. Sự kiện của phần tử âm thanh thật ghi mỗi trang dừng MP3 cũ, nghe lại đúng câu và tối đa một giọng phát. Bài kiểm tra riêng gửi phím và sự kiện chạm trên Chrome, mô phỏng cả thiết bị có và thiếu giọng tiếng Việt. Giữ phím và bấm đúp chỉ chuyển một trang. [Kiểm tra hội thoại](../tools/check_voice.py)
+- Sau khi dừng máy chủ, Chrome tải lại game, giải mã đủ 14 câu từ bộ nhớ đệm và vào đủ sáu chương. [Kiểm tra ngoại tuyến](../tools/check_offline.py)
+- Đầu ra Web Audio của Vịnh được lấy mẫu trong 60,43 giây và của Hang trong 60,08 giây. Cả 119 mẫu của Vịnh và 118 mẫu của Hang đều có tín hiệu. Lúc phát nốt câu đố, mức nền giảm và tiếng nước nhỏ giọt tạm dừng. Thử nghe qua loa điện thoại và tai nghe thật, đánh giá mối nối và chọn định dạng cuối vẫn cần người thử. [Đo tín hiệu âm thanh](../tools/check_ambience.py)
+
+Đo lại trên cùng cấu hình sau khi thêm các câu thu sẵn, trung vị năm lần mở mới đến khi Mây di chuyển là 1,79 giây, so với 1,97 giây trước khi thêm âm thanh và 3,70 giây ở bản gốc. Lượt đầu trong tiến trình Chrome mới mất 10,89 giây. [Năm lượt đo sau khi thêm giọng](../tools/startup-audio.json)

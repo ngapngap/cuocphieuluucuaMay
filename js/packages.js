@@ -12,5 +12,9 @@
     level6: ["companion_milo", "cc0_unicorn", "cc0_alpaca", "boss_storm_king", "hero_castle", "cc0_windmill", "jelly"]
   };
   function modelURL(name) { return "assets/models/" + name + ".glb"; }
-  scope.MayPackages = { models: models, modelURL: modelURL };
+  var guides = {
+    level1: ["ocean_greeting", "ocean_boss", "ocean_trap", "ocean_wave", "ocean_jelly", "ocean_pearl"],
+    level4: ["cave_greeting", "cave_boss", "cave_dark", "cave_torch", "cave_spell", "cave_listen", "cave_rock", "cave_core"]
+  };
+  scope.MayPackages = { models: models, modelURL: modelURL, guides: guides };
 })(self);

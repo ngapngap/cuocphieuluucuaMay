@@ -666,7 +666,7 @@
           ch1Boss.activate(function () {
             MAY.openDialogue({
               name: ch1Sc.npcName, role: ch1Sc.npcRole, icon: ch1Sc.npcIcon, color: ch1Sc.npcColor,
-              pages: ch1Sc.bossIntro, endBtn: "🐙 Chiến đấu với Bạch Tuộc Mực!", voiceClip: "boss_appear"
+              pages: ch1Sc.bossIntro, endBtn: "🐙 Chiến đấu với Bạch Tuộc Mực!", voiceClips: ["ocean_boss", "ocean_pearl"]
             });
           });
         }
@@ -690,7 +690,7 @@
           bubiFriend.following = true;
         }
         tg.markDone();
-        MAY.sndShatter(bubiCagePos);
+        MAY.sndCoralRelease(bubiCagePos);
         MAY.VFX.spawnShatterBurst(bubiCagePos, 0x38bdf8);
         MAY.toast("🐬 Tuyệt quá! Cá heo Bubi được giải cứu và bơi theo Mây rồi! Giờ hãy thổi tan 3 Đám Mây Mực quanh Tàu Đắm!");
         updateCh1Story();
@@ -730,7 +730,7 @@
         } else if (ch1St.stage === 0) {
           MAY.openDialogue({
             name: ch1Sc.npcName, role: ch1Sc.npcRole, icon: ch1Sc.npcIcon, color: ch1Sc.npcColor,
-            pages: ch1Sc.intro, endBtn: ch1Sc.introBtn, voiceClip: "npc_ch1",
+            pages: ch1Sc.intro, endBtn: ch1Sc.introBtn, voiceClips: ["ocean_greeting", "ocean_trap", "ocean_wave"],
             onDone: function () {
               ch1St.stage = 1; MAY.persist();
               MAY.unlockSpell("wave");
@@ -738,7 +738,7 @@
             }
           });
         } else {
-          MAY.openDialogue({ name: ch1Sc.npcName, role: ch1Sc.npcRole, icon: ch1Sc.npcIcon, color: ch1Sc.npcColor, pages: ch1Sc.inProgress, endBtn: "🌊 Đi tiếp nào!" });
+          MAY.openDialogue({ name: ch1Sc.npcName, role: ch1Sc.npcRole, icon: ch1Sc.npcIcon, color: ch1Sc.npcColor, pages: ch1Sc.inProgress, voiceClips: ["ocean_wave", "ocean_jelly"], endBtn: "🌊 Đi tiếp nào!" });
         }
       }
     });

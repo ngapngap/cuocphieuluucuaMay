@@ -517,7 +517,7 @@
         ch4Boss.activate(function () {
           MAY.openDialogue({
             name: ch4Sc.npcName, role: ch4Sc.npcRole, icon: ch4Sc.npcIcon, color: ch4Sc.npcColor,
-            pages: ch4Sc.bossIntro, endBtn: "🗿 Chiến đấu với Golem Pha Lê!", voiceClip: "boss_appear"
+            pages: ch4Sc.bossIntro, endBtn: "🗿 Chiến đấu với Golem Pha Lê!", voiceClips: ["cave_boss", "cave_core"]
           });
         });
       }
@@ -638,7 +638,7 @@
         } else if (ch4St.stage === 0) {
           MAY.openDialogue({
             name: ch4Sc.npcName, role: ch4Sc.npcRole, icon: ch4Sc.npcIcon, color: ch4Sc.npcColor,
-            pages: ch4Sc.intro, endBtn: ch4Sc.introBtn, voiceClip: "npc_ch4",
+            pages: ch4Sc.intro, endBtn: ch4Sc.introBtn, voiceClips: ["cave_greeting", "cave_dark", "cave_torch"],
             onDone: function () {
               ch4St.stage = 1; MAY.persist();
               if (!MAY.isSpellUnlocked("solar")) MAY.unlockSpell("solar", true);
@@ -648,7 +648,7 @@
         } else if (ch4St.steps.torch0 && ch4St.steps.torch1 && ch4St.stage < 2) {
           MAY.openDialogue({
             name: ch4Sc.npcName, role: ch4Sc.npcRole, icon: ch4Sc.npcIcon, color: ch4Sc.npcColor,
-            pages: ch4Sc.stage2GiveSkill, endBtn: ch4Sc.stage2Btn,
+            pages: ch4Sc.stage2GiveSkill, voiceClips: ["cave_spell", "cave_listen", "cave_rock"], endBtn: ch4Sc.stage2Btn,
             onDone: function () {
               ch4St.stage = 2; MAY.persist();
               MAY.unlockSpell("crystal");
@@ -656,7 +656,7 @@
             }
           });
         } else {
-          MAY.openDialogue({ name: ch4Sc.npcName, role: ch4Sc.npcRole, icon: ch4Sc.npcIcon, color: ch4Sc.npcColor, pages: ch4Sc.inProgress, endBtn: "💎 Tiếp tục hành trình!" });
+          MAY.openDialogue({ name: ch4Sc.npcName, role: ch4Sc.npcRole, icon: ch4Sc.npcIcon, color: ch4Sc.npcColor, pages: ch4St.stage < 2 ? [ch4Sc.intro[2]] : ch4Sc.inProgress, voiceClips: [ch4St.stage < 2 ? "cave_torch" : "cave_listen"], endBtn: "💎 Tiếp tục hành trình!" });
         }
       }
     });

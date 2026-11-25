@@ -53,6 +53,18 @@ def main():
           return outside.status === 416 && outside.headers.get('Content-Range') === 'bytes */'+size;
         }""")
         assert audio_ok
+        guides = page.evaluate("""async () => {
+          const decoder = new AudioContext(), durations = {};
+          try {
+            for (const key of Object.values(MayPackages.guides).flat()) {
+              const res = await fetch('assets/voice/' + key + '.mp3');
+              if (!res.ok) throw new Error(key + ' ' + res.status);
+              durations[key] = (await decoder.decodeAudioData(await res.arrayBuffer())).duration;
+            }
+          } finally { await decoder.close(); }
+          return durations;
+        }""")
+        assert len(guides) == 14 and min(guides.values()) > 1, guides
         previews = page.evaluate("""async () => Promise.all(Object.values(MAY.OUTFITS).map(async outfit => {
           const image = new Image();
           image.src = outfit.img;

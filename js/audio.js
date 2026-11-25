@@ -2,7 +2,7 @@
 /* ============================================================================
    AUDIO.JS — Master Bus (Compressor + Reverb), Biến Thiên Cao Độ/Âm Lượng,
    Tiếng Nền 3 Lớp Theo Màn, Nguồn Âm 3D Lặp Gắn Vật Thể, Ducking Khi Đọc Thoại
-   & 47 Clip Giọng Đọc Tiếng Việt Offline
+   & Giọng Đọc Tiếng Việt Offline
    ============================================================================ */
 (function (MAY) {
 
@@ -20,6 +20,7 @@
   var reverbNode = null;
   var reverbSend = null;
   var isDucked = false;
+  var chimeTimer = null;
 
   function buildReverbIR(ac, seconds, decay) {
     var rate = ac.sampleRate;
@@ -121,12 +122,17 @@
   /* Giảm nhạc nền & nguồn 3D mượt mà khi giọng đọc đang phát (Audio Ducking) */
   function setVoiceDuck(active) {
     isDucked = !!active;
+    updateAmbienceGain();
+  }
+
+  function updateAmbienceGain() {
     if (!AC || !ambBus) return;
     try {
       var now = AC.currentTime;
+      var target = chimeTimer !== null ? 0.16 : isDucked ? 0.26 : 1;
       ambBus.gain.cancelScheduledValues(now);
       ambBus.gain.setValueAtTime(ambBus.gain.value, now);
-      ambBus.gain.linearRampToValueAtTime(active ? 0.26 : 1.0, now + (active ? 0.14 : 0.45));
+      ambBus.gain.linearRampToValueAtTime(target, now + (target < 1 ? 0.08 : 0.45));
     } catch (e) {}
   }
 
@@ -177,10 +183,27 @@
     } catch (e) {}
   };
   MAY.sndChime = function (idx) {
+    if (!MAY.voiceOn) return;
     var scale = [523.25, 587.33, 659.25, 783.99, 880.0, 1046.5];
     var f = scale[idx % scale.length];
-    MAY.beep(f, 0.55, "sine", 0.12, { tight: true });
-    MAY.beep(f * 2, 0.35, "triangle", 0.04, { tight: true });
+    if (currentBiome === "level4") {
+      clearTimeout(chimeTimer);
+      chimeTimer = setTimeout(function () { chimeTimer = null; updateAmbienceGain(); }, 750);
+      updateAmbienceGain();
+    }
+    MAY.beep(f, 0.55, "sine", 0.12, { exact: true });
+    MAY.beep(f * 2, 0.35, "triangle", 0.04, { exact: true });
+  };
+
+  MAY.sndCoralRelease = function (pos) {
+    if (!MAY.voiceOn) return;
+    var ctx = MAY.currentCtx;
+    MAY.sndShatter(pos);
+    [660, 990, 1320].forEach(function (f, i) {
+      setTimeout(function () {
+        if (MAY.currentCtx === ctx && MAY.voiceOn) MAY.play3DSound(pos, f, 0.48, "sine", 0.10);
+      }, 270 + 150 * i);
+    });
   };
 
   /* ---- Foley: Tiếng bước chân & bơi thay đổi theo chất liệu bề mặt ---- */
@@ -641,13 +664,17 @@
   }
 
   function tickBiomeSoundscape() {
-    if (!MAY.voiceOn || !MAY.started || MAY.modalOpen) return;
+    musicTimer = setTimeout(tickBiomeSoundscape, 5500 + Math.random() * 8000);
+    if (!MAY.voiceOn || !MAY.started || MAY.modalOpen || (MAY.Cutscene && MAY.Cutscene.isPlaying()) || isDucked || chimeTimer !== null) return;
     try {
       var scale = BIOME_SCALES[currentBiome] || BIOME_SCALES.hub;
       var f = scale[Math.floor(Math.random() * scale.length)];
       /* Nốt nhạc nền ngũ cung cực nhẹ kết hợp cùng track môi trường WAV stereo */
       if (currentBiome === "level4") {
-        MAY.beep(f * 2, 0.65, "sine", 0.018, { tight: true, bus: "amb" });
+        var panel = document.getElementById("crystal-music");
+        if (panel && !panel.classList.contains("hidden")) return;
+        // A brief drop, distinct from the sustained notes of the puzzle.
+        MAY.beep(900 + Math.random() * 260, 0.095, "sine", 0.036, { bus: "amb" });
       } else if (currentBiome === "level5" || currentBiome === "level6") {
         MAY.beep(f * 2, 0.72, "sine", 0.016, { tight: true, bus: "amb" });
       } else {
@@ -687,7 +714,7 @@
       /* Khởi động các nguồn âm 3D HRTF lặp đã đăng ký trước khi người chơi bấm Bắt Đầu */
       while (pending3DLoops.length) startOne3DLoop(pending3DLoops.shift());
     } catch (e) {}
-    if (!musicTimer) musicTimer = setInterval(tickBiomeSoundscape, 3800);
+    if (!musicTimer) musicTimer = setTimeout(tickBiomeSoundscape, 6200);
   };
 
   MAY.setAmbientTone = function (freq, vol, biomeId) {

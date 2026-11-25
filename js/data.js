@@ -84,18 +84,18 @@ window.MAY = window.MAY || {};
       npcIcon: "🐢",
       npcColor: "#38bdf8",
       intro: [
-        "Chào bé Mây! Vịnh San Hô của chúng ta gặp nạn lớn rồi! Bạch Tuộc Mực Khổng Lồ bị Sương Xám làm mờ mắt, đang phun mây mực đen kịt từ khoang Tàu Đắm.",
-        "Cá heo Bubi khi cố bơi đi gọi đàn cá nhỏ đã bị lưới đá mực đè kẹt ngay bên kia! Còn 3 Đám Mây Mực đen đang che kín chiếc Chuông Tàu Cổ không ai rung lên được.",
-        "Cụ trao cho Mây Viên Đá Sóng đầu tiên — thức tỉnh Phép 🌊 Sóng Xung Kích (Phím 1 + R)! Hãy dùng Sóng Xung Kích phá lưới đá cứu Bubi và thổi tan 3 Đám Mây Mực quanh Tàu Đắm nhé!"
+        "Mây ơi, bạch tuộc đang phun mực từ con tàu đắm. Vịnh San Hô cần Mây giúp!",
+        "Bubi bị kẹt dưới lưới đá. Ba đám mực đang che chuông tàu.",
+        "Chọn phép Sóng, bơi đến lưới đá rồi tung phép để cứu Bubi. Dùng Sóng thổi tan ba đám mực quanh tàu đắm."
       ],
       introBtn: "🌊 Nhận Phép Sóng Xung Kích & Giải cứu!",
       inProgress: [
-        "Mây bấm phím 1 rồi bấm R để tung 🌊 Sóng Xung Kích nhé! Thổi tan đám đá mực đang đè Cá heo Bubi và 3 Đám Mây Mực quanh Tàu Đắm!",
-        "Nếu gặp Sứa Điện Xám phóng mực, cứ dùng 🌊 Sóng Xung Kích hất văng chúng đi để bảo vệ Trái Tim Ánh Sáng!"
+        "Chọn phép Sóng, bơi đến lưới đá rồi tung phép để cứu Bubi. Dùng Sóng thổi tan ba đám mực quanh tàu đắm.",
+        "Nếu sứa đến gần, dùng phép Sóng đẩy sứa ra xa."
       ],
       bossIntro: [
-        "Tiếng Chuông Tàu Cổ vang lên rồi! Nhưng cẩn thận — Bạch Tuộc Mực Khổng Lồ đang nổi giận chặn trước Cổng Đá!",
-        "Đừng lao thẳng vào xúc tu đỏ nhé! Khi Bạch Tuộc nhả quả Ngọc Trai Đen Nổ về phía Mây, hãy tung 🌊 Sóng Xung Kích đẩy ngược quả cầu bay thẳng vào mũ sương xám trên đầu nó 3 lần!"
+        "Chuông tàu đã vang. Bạch tuộc đang chặn cổng đá!",
+        "Chờ bạch tuộc nhả ngọc trai đen. Dùng Sóng đẩy ngọc trở lại ba lần."
       ],
       reward: [
         "Hoan hô bé Mây! Lớp mực đen đã tan sạch, Bạch Tuộc cũng tỉnh lại cười tươi rồi kìa! Cả Vịnh San Hô lại trong xanh lấp lánh ánh nắng!",
@@ -179,23 +179,23 @@ window.MAY = window.MAY || {};
       npcIcon: "🦉",
       npcColor: "#c084fc",
       intro: [
-        "Hú... chào vị khách nhỏ dũng cảm! Hang Động Pha Lê vốn là Hộp Nhạc Của Đất Mẹ, nơi tiếng đàn tinh thể ru êm cả lòng đất. Nhưng Golem Đá Bóng Đêm đã đập sập vách đá và tắt hết đèn hang.",
-        "Bầy Dơi Bóng Đêm đang quấy phá quanh 2 Ngọn Đuốc Pha Lê ngay đầu hang, khiến ta không thể mở nắp Đàn Đá Cổ để trao bí thuật âm vang cho con.",
-        "Mây hãy dùng Phép ☀️ Tia Nắng Rực Rỡ (Phím 3 + R) thắp sáng 2 Ngọn Đuốc Pha Lê kia trước để xua bóng tối giúp ta nhé!"
+        "Chào Mây! Golem đã làm tắt đèn trong Hang Pha Lê. Mây giúp ta thắp sáng hang nhé!",
+        "Hai ngọn đuốc ở đầu hang đã tắt. Hãy tìm cả hai.",
+        "Chọn phép Tia Nắng rồi chiếu vào từng ngọn đuốc. Khi cả hai sáng, quay lại gặp cú mèo."
       ],
       introBtn: "☀️ Mây đi thắp đuốc hang ngay!",
       stage2GiveSkill: [
-        "Ánh sáng ấm áp quá! Đàn Đá Cổ đã ngân lên — ta trao cho Mây Phép 💎 Cộng Hưởng Pha Lê (Phím 4 + R)!",
-        "Lần này Mây sẽ vừa phá hầm vừa giải đố âm nhạc: trước hết dùng 💎 Cộng Hưởng đập vỡ Bức Tường Pha Lê Nứt chắn lối sâu, rồi gõ 3 Trụ Pha Lê Nhạc theo đúng thứ tự Đô (1) → Mi (2) → Son (3) để triệu hồi Cầu Ánh Sáng Tím qua hồ ngầm!",
-        "Nếu gặp Golem Nhỏ ném đá, dùng 💎 Cộng Hưởng sẽ đập vỡ tảng đá và làm nứt giáp chúng!"
+        "Đàn đá đã sáng. Mây nhận phép Cộng Hưởng Pha Lê.",
+        "Dùng Cộng Hưởng phá vách nứt. Nghe và nhìn các trụ sáng lên, rồi gõ lại theo đúng thứ tự. Mây có thể nghe lại mẫu.",
+        "Khi Golem nhỏ ném đá, dùng Cộng Hưởng phá đá."
       ],
       stage2Btn: "💎 Nhận Cộng Hưởng & Giải Đàn Nhạc!",
       inProgress: [
-        "Nhớ đập vỡ Bức Tường Pha Lê Nứt bằng 💎 (Phím 4 + R), rồi bắn 💎 vào 3 Trụ Pha Lê Nhạc theo đúng thứ tự số 1 → 2 → 3 để triệu hồi cầu sang đảo giữa hồ nhé!"
+        "Dùng Cộng Hưởng phá vách nứt. Nghe và nhìn các trụ sáng lên, rồi gõ lại theo đúng thứ tự. Mây có thể nghe lại mẫu."
       ],
       bossIntro: [
-        "Bản giao hưởng Đô–Mi–Son đã mở Cầu Ánh Sáng Tím rồi! Nhưng Golem Pha Lê Khổng Lồ đang gầm vang giữa hồ ngầm với lớp Giáp Đá Đen!",
-        "Mẹo hạ Golem: trước tiên tung 💎 Cộng Hưởng Pha Lê (Phím 4 + R) để rung nứt tan Giáp Đá của nó (khi nó đổi màu tím phát sáng), rồi lập tức tung ☀️ Tia Nắng (Phím 3 + R) chiếu vào lõi để thanh tẩy (3 lần)!"
+        "Cầu ánh sáng đã mở. Golem đang đợi trên đảo giữa hồ.",
+        "Gõ lại giai điệu để mở giáp. Khi lõi sáng, chọn Tia Nắng và chiếu vào lõi. Nếu giáp khép lại, dùng Cộng Hưởng mở giáp rồi chiếu tiếp."
       ],
       reward: [
         "Tuyệt diệu! Tiếng chuông pha lê lại ngân vang khắp hang động, mặt nước vũng đá phản chiếu ánh tím lung linh như bầu trời sao!",

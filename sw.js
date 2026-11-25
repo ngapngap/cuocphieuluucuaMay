@@ -1,6 +1,6 @@
 /* Shell installation is independent of optional world downloads. */
 importScripts("js/packages.js");
-var CACHE = "may-phieu-luu-v14.0-2";
+var CACHE = "may-phieu-luu-v14.0-3";
 var SHELL = [
   "./", "index.html", "style.css", "three.min.js",
   "game.js", "manifest.json", "favicon.ico", "js/data.js",
@@ -69,6 +69,7 @@ async function cacheWorlds(first) {
   order.forEach(function (id) {
     if (!Object.prototype.hasOwnProperty.call(models, id)) return;
     models[id].forEach(function (name) { urls.add(MayPackages.modelURL(name)); });
+    (MayPackages.guides[id] || []).forEach(function (key) { urls.add("assets/voice/" + key + ".mp3"); });
     if (id !== "common") urls.add("assets/audio/amb_" + id + ".wav");
   });
   SHARED_MEDIA.forEach(function (url) { urls.add(url); });
