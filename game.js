@@ -48,6 +48,8 @@
         MAY.currentCtx.save.playSecs = Math.round(MAY.currentCtx.playSecs);
       }
       MAY.currentCtx = null;
+      var crystalPanel = document.getElementById("crystal-music");
+      if (crystalPanel) crystalPanel.classList.add("hidden");
       if (MAY.clear3DLoops) MAY.clear3DLoops();
       if (MAY.VFX) MAY.VFX.clear();
       if (MAY.PlanarReflector) MAY.PlanarReflector.clear();

@@ -335,7 +335,45 @@
       ctx.addCollider(ec.pos.x, ec.pos.z, 0.92, "echo_crystal", { minY: ec.pos.y - 0.5, maxY: ec.pos.y + 3.6 });
       return m;
     });
-    var echoProgress = ch4St.steps.echoDone ? 3 : 0;
+    var echoPatterns = [[0, 1, 2], [2, 0, 1]];
+    var echoRound = ch4St.steps.echoRound === 1 ? 1 : 0;
+    var echoProgress = Math.max(0, Math.min(2, Number(ch4St.steps.echoProgress) || 0));
+    var practiceActive = false, practiceProgress = 0;
+    var noteNames = ["● ĐÔ", "▲ MI", "◆ SON"], replayToken = 0;
+    var played = echoPatterns[echoRound].slice(0, echoProgress);
+    var musicPanel = document.getElementById("crystal-music");
+    var musicStatus = document.getElementById("crystal-music-status");
+    var noteButtons = musicPanel.querySelectorAll("[data-note]");
+    var echoTargets = [];
+    musicPanel.querySelectorAll("button").forEach(function (b) {
+      b.onkeydown = function (event) { if (event.code === "Space") { event.preventDefault(); b.click(); } };
+    });
+    document.getElementById("crystal-close").onclick = function () { ++replayToken; musicPanel.classList.add("hidden"); };
+    function replayNotes(notes) {
+      var token = ++replayToken;
+      noteButtons.forEach(function (b) { b.classList.remove("flash"); });
+      notes.forEach(function (n, i) {
+        setTimeout(function () {
+          if (token !== replayToken || MAY.currentCtx !== ctx) return;
+          noteButtons.forEach(function (b) { b.classList.remove("flash"); });
+          noteButtons[n].classList.add("flash");
+          musicStatus.textContent = "♪ " + noteNames[n];
+          MAY.sndChime(echoCoords[n].noteIdx);
+          setTimeout(function () {
+            if (token === replayToken && MAY.currentCtx === ctx) noteButtons[n].classList.remove("flash");
+          }, 360);
+        }, i * 600);
+      });
+    }
+    document.getElementById("crystal-replay-target").onclick = function () { replayNotes(practiceActive ? [1, 2, 0] : echoPatterns[echoRound]); };
+    document.getElementById("crystal-replay-played").onclick = function () { if (played.length) replayNotes(played); else musicStatus.textContent = "Mây chưa gõ nốt nào."; };
+    noteButtons.forEach(function (b, i) { b.onclick = function () { if (MAY.currentCtx === ctx && echoTargets[i] && echoTargets[i].isActive()) echoTargets[i].onHit(); }; });
+    function echoLesson() {
+      var phrase = echoPatterns[echoRound].map(function (n) { return noteNames[n]; }).join(" → ");
+      MAY.toast("🎵 Nghe và nhìn nhịp: " + phrase + ". Hãy tự gõ lại bằng phép 💎!");
+      musicPanel.classList.remove("hidden");
+      replayNotes(echoPatterns[echoRound]);
+    }
 
     /* 3 Golem Đá Nhỏ canh giữ khu vực pha lê */
     if (!ch4St.bossDown) {
@@ -391,6 +429,7 @@
         } else if (spellId === "solar") {
           if (bs.subState.armorBroken) {
             bs.subState.armorBroken = false;
+            if (ch4St.steps.echoArmor) { ch4St.steps.echoArmor = false; MAY.persist(); }
             if (bs.mesh.userData.armor) bs.mesh.userData.armor.material.emissive.setHex(0x000000);
             if (bs.mesh.userData.playClip) bs.mesh.userData.playClip("hit", false);
             bs.damage("☀️ Tia Nắng chiếu thẳng vào lõi thanh tẩy Golem Pha Lê!");
@@ -442,7 +481,7 @@
       }
       if (!ch4St.steps.echoDone) {
         ch4Npc.setMarker("?");
-        ctx.setObjective("🎵", "GÕ ĐÀN PHA LÊ BẰNG 💎 ĐÚNG THỨ TỰ: ĐÔ→MI→SON (" + echoProgress + "/3)", echoCoords[Math.min(2, echoProgress)].pos);
+        ctx.setObjective("🎵", "NHỚ VÀ GÕ NHỊP " + (echoRound + 1) + "/2 BẰNG 💎 (" + echoProgress + "/3) · ● ĐÔ  ▲ MI  ◆ SON", null);
         return;
       }
       ch4St.stage = 3; MAY.persist();
@@ -455,7 +494,12 @@
           });
         });
       }
-      ctx.setObjective("🗿", "PHÁ GIÁP (💎) + CHIẾU NẮNG (☀️) HẠ GOLEM PHA LÊ!", ch4Boss.pos);
+      if (ch4St.steps.echoArmor) {
+        ch4Boss.subState.armorBroken = true;
+        if (ch4Boss.mesh.userData.armor) ch4Boss.mesh.userData.armor.material.emissive.setHex(0xc084fc);
+        ch4Boss.syncHUD();
+      }
+      ctx.setObjective("🗿", ch4Boss.subState.armorBroken ? "NHỊP PHA LÊ ĐÃ MỞ GIÁP! CHIẾU ☀️ VÀO LÕI GOLEM!" : "PHÁ GIÁP (💎) + CHIẾU NẮNG (☀️) HẠ GOLEM PHA LÊ!", ch4Boss.pos);
     }
 
     torchPositions.forEach(function (tp, idx) {
@@ -485,30 +529,71 @@
         ch4St.steps.wallBroken = true; MAY.persist();
         crackedWall.shatter(false);
         tg.markDone();
-        MAY.toast("💥 Bức tường pha lê vỡ tan! Giờ hãy gõ 3 Trụ Đàn Nhạc theo thứ tự 1→2→3!", "Ầm! Sóng cộng hưởng pha lê đã phá vỡ tan bức tường đá rồi!");
+        echoLesson();
         updateCh4Story();
       }
     });
 
     echoCoords.forEach(function (ec, idx) {
-      ctx.addSkillTarget({
+      echoTargets[idx] = ctx.addSkillTarget({
         id: "l4_echo_" + idx, pos: ec.pos, radius: 9.0, reqSpell: "crystal",
-        hint: "💎 " + ec.label, done: !!ch4St.steps.echoDone,
-        isActive: function () { return ch4St.stage >= 2 && !!ch4St.steps.wallBroken && !ch4St.steps.echoDone && echoProgress === idx; },
+        hint: "💎 " + ["● ĐÔ", "▲ MI", "◆ SON"][idx], done: false,
+        isActive: function () { return practiceActive || (ch4St.stage >= 2 && !!ch4St.steps.wallBroken && !ch4St.steps.echoDone); },
         onHit: function () {
+          ++replayToken;
+          noteButtons.forEach(function (b) { b.classList.remove("flash"); });
+          played = played.slice(0, practiceActive ? practiceProgress : echoProgress);
+          played.push(idx);
+          musicStatus.textContent = "Đã gõ: " + played.map(function (n) { return noteNames[n]; }).join(" → ");
           MAY.sndChime(ec.noteIdx);
           MAY.burstAt(ec.pos.clone().add(new THREE.Vector3(0, 2, 0)), ec.col, 22);
           echoMeshes[idx].scale.setScalar(1.22);
+          if (practiceActive) {
+            if ([1, 2, 0][practiceProgress] !== idx) {
+              MAY.toast("🎵 Thử lại nốt " + (practiceProgress + 1) + ": ▲ MI → ◆ SON → ● ĐÔ");
+              return;
+            }
+            practiceProgress++;
+            if (practiceProgress === 3) {
+              practiceActive = false; ch4St.steps.echoPracticeDone = true; MAY.persist(); musicPanel.classList.add("hidden");
+              MAY.sndStar(); MAY.burstAt(MAY.player.pos.clone(), 0xffd93d, 28);
+              MAY.toast("⭐ Giỏi quá! Mây nhận một màn pháo sao luyện nhạc!");
+            } else MAY.toast("🎵 Đúng nốt " + practiceProgress + "/3 trong bài luyện!");
+            return;
+          }
+          if (echoPatterns[echoRound][echoProgress] !== idx) {
+            MAY.toast("🎵 Chưa đúng nốt " + (echoProgress + 1) + ". Nhớ lại nhịp và thử lại nốt này nhé!");
+            return;
+          }
           echoProgress++;
-          if (echoProgress >= 3) {
-            ch4St.steps.echoDone = true; MAY.persist();
-            MAY.toast("🎵 Bản giao hưởng Đô–Mi–Son hoàn hảo! Golem Pha Lê thức giấc giữa hồ!");
+          if (echoProgress >= 3 && echoRound === 0) {
+            echoRound = 1; echoProgress = 0; played = [];
+            ch4St.steps.echoRound = 1; ch4St.steps.echoProgress = 0; MAY.persist();
+            echoLesson();
+          } else if (echoProgress >= 3) {
+            ch4St.steps.echoProgress = 3; ch4St.steps.echoDone = true; ch4St.steps.echoArmor = true; MAY.persist();
+            musicPanel.classList.add("hidden");
+            MAY.toast("🎵 Nhịp mới làm nứt giáp Golem! Dùng ☀️ chiếu vào lõi!");
           } else {
-            MAY.toast("🎵 Chuẩn xác " + ec.label + "! Tiếp theo hãy tìm " + echoCoords[echoProgress].label + "!");
+            ch4St.steps.echoProgress = echoProgress; MAY.persist();
+            MAY.toast("🎵 Đúng nốt " + echoProgress + "/3! Hãy nhớ nốt tiếp theo.");
           }
           updateCh4Story();
         }
       });
+    });
+
+    ctx.interactives.push({
+      obj: echoMeshes[0], label: "🎵 Mở đàn pha lê / luyện nhạc",
+      isActive: function () { return (ch4St.stage >= 2 && ch4St.steps.wallBroken && !ch4St.steps.echoDone) || !!ch4St.bossDown; },
+      onInteract: function () {
+        if (ch4St.stage >= 2 && ch4St.steps.wallBroken && !ch4St.steps.echoDone) { echoLesson(); return; }
+        if (!ch4St.bossDown) return;
+        if (practiceActive) { musicPanel.classList.remove("hidden"); replayNotes([1, 2, 0]); return; }
+        practiceActive = true; practiceProgress = 0; played = []; musicPanel.classList.remove("hidden");
+        MAY.toast("🎵 Bài luyện: ▲ MI → ◆ SON → ● ĐÔ. Dùng phép 💎 gõ lại nhé!");
+        replayNotes([1, 2, 0]);
+      }
     });
 
     ch4Npc = ctx.addQuestNPC({
@@ -549,6 +634,9 @@
       }
     });
     updateCh4Story();
+    if (ch4St.stage >= 2 && ch4St.steps.wallBroken && !ch4St.steps.echoDone) {
+      setTimeout(function () { if (MAY.currentCtx === ctx && !ch4St.steps.echoDone) echoLesson(); }, 1200);
+    }
 
     /* ---- Nhiệm Vụ Phụ Tương Tác Chương 4: Mạng Lưới Đèn Pha Lê Thợ Mỏ ---- */
     ctx.setupSideQuest({
