@@ -502,6 +502,34 @@
         var wr = wl.clone(); wr.position.x = 0.46; g.add(wr);
         g.userData.wl = wl; g.userData.wr = wr;
       }
+    } else if (kind === "wolf") {
+      // A rounded snow pup with a darker saddle and light cheeks, facing -Z.
+      var wolfFur = stdMat(0xaebdcb, 0.88), wolfLight = stdMat(0xf3f8fc, 0.9);
+      var wolfDark = stdMat(0x728696, 0.88), wolfPink = stdMat(0xd99fab, 0.9);
+      animalOval(g, wolfFur, 0, 0.55, 0.05, 0.42, 0.36, 0.62);
+      animalOval(g, wolfDark, 0, 0.79, 0.08, 0.35, 0.16, 0.47);
+      animalOval(g, wolfLight, 0, 0.39, -0.34, 0.30, 0.29, 0.25);
+      [-0.25, 0.25].forEach(function (x) {
+        [-0.30, 0.38].forEach(function (z) {
+          animalOval(g, wolfFur, x, 0.25, z, 0.13, 0.23, 0.14);
+          animalOval(g, wolfLight, x, 0.09, z - 0.05, 0.15, 0.09, 0.19);
+        });
+      });
+      animalOval(g, wolfFur, 0, 0.90, -0.53, 0.38, 0.34, 0.34);
+      [-0.25, 0.25].forEach(function (x) {
+        var ear = new THREE.Mesh(new THREE.ConeGeometry(0.15, 0.40, 6), wolfDark);
+        ear.position.set(x, 1.23, -0.48); ear.rotation.z = x < 0 ? 0.15 : -0.15; g.add(ear);
+        var inner = new THREE.Mesh(new THREE.ConeGeometry(0.075, 0.24, 6), wolfPink);
+        inner.position.set(x, 1.23, -0.61); inner.rotation.z = ear.rotation.z; g.add(inner);
+        animalOval(g, wolfLight, x * 0.72, 0.75, -0.80, 0.20, 0.14, 0.10);
+      });
+      animalOval(g, wolfLight, 0, 0.76, -0.84, 0.21, 0.14, 0.20);
+      animalOval(g, blackEye, 0, 0.81, -1.025, 0.075, 0.055, 0.045);
+      addEyes(g, 0.16, 0.97, -0.815, 0.055);
+      var wolfTail = new THREE.Mesh(new THREE.SphereGeometry(0.25, 10, 8), wolfFur);
+      wolfTail.scale.set(0.75, 0.85, 1.7); wolfTail.position.set(0, 0.63, 0.80); wolfTail.rotation.x = -0.45; g.add(wolfTail);
+      animalOval(g, wolfLight, 0, 0.78, 1.08, 0.16, 0.16, 0.20);
+      g.userData.tail = wolfTail;
     } else if (kind === "rabbit" || kind === "forestrabbit" || kind === "snowhare") {
       var wm = stdMat(kind === "forestrabbit" ? 0x997755 : 0xffffff, 0.9);
       var b = new THREE.Mesh(new THREE.SphereGeometry(0.45, 12, 10), wm); b.scale.set(0.95, 0.85, 1.2); b.position.y = 0.42; g.add(b);

@@ -551,6 +551,118 @@
       }
     };
 
+    // A separate mountain route keeps the village and existing boss saves intact.
+    var expedition = MAY.createChapterJourney(ctx, {
+      title: "Qua cầu cùng sói non", entry: [-18, ctx.groundH(-18, 26), 26], color: 0x9eeaff,
+      sections: [
+        { name: "Trạm trú tuyết", brief: "Rời trạm một mình, nhìn cờ để tìm phía khuất gió.", landmark: "Trạm trú tuyết", length: 620, sky: 0x8faec7, ground: 0xdbeaf4, path: 0xb9d5e6, scenery: "shelter", events: [
+          { at: 0.07, kind: "pass", lane: -1, cue: "Cờ bay sang phải: nép sau vách trái", success: "Mây nép sau mái trú" },
+          { at: 0.16, kind: "cast", spell: "solar", lane: 0, cue: "Nắng làm tan băng cửa trạm", success: "Cửa trạm mở" },
+          { at: 0.25, kind: "fork", choices: ["Sau vách đá", "Sườn gió"], lane: -1, cue: "Chọn đường sau vách đá", success: "Vách đá che tuyết" },
+          { at: 0.34, kind: "pass", lane: 1, cue: "Tuyết cuộn bên trái: đi bên phải", success: "Mây qua đợt gió" },
+          { at: 0.43, kind: "cast", spell: "frost", lane: 0, cue: "Đóng băng vũng nước trước bậc đá", success: "Mặt nước kết tinh" },
+          { at: 0.52, kind: "pass", lane: -1, cue: "Cờ đổi chiều: tìm chỗ khuất bên trái", success: "Mây tìm được chỗ tránh gió" },
+          { at: 0.61, kind: "switch", choices: ["Mở cửa trú", "Đi tiếp"], answer: 0, cue: "Mở cửa trạm để đàn sói nghỉ trên đường về", success: "Đèn ấm sáng trong trạm trú" },
+          { at: 0.70, kind: "pass", lane: 1, cue: "Theo dấu chân bên phải tảng đá", success: "Dấu chân tiếp tục lên núi" },
+          { at: 0.79, kind: "cast", spell: "solar", lane: 0, cue: "Làm tan băng trên biển chỉ đường", success: "Biển chỉ tới sườn khuất gió" },
+          { at: 0.89, kind: "pass", lane: -1, cue: "Núp bên trái trước luồng tuyết mới", success: "Mây thấy sườn núi phía trước" }
+        ] },
+        { name: "Sườn khuất gió", brief: "Đọc chiều gió và tìm đàn sói bên kia sườn núi.", landmark: "Sườn khuất gió", length: 650, sky: 0x789cb7, ground: 0xd4e6f2, path: 0xb5d3e4, scenery: "ice", events: [
+          { at: 0.07, kind: "pass", lane: 1, cue: "Cờ bay sang trái: đi bên phải vách đá", success: "Vách đá chắn gió" },
+          { at: 0.16, kind: "cast", spell: "solar", lane: 0, cue: "Nắng làm tan băng phủ cờ", success: "Cờ lại bay rõ ràng" },
+          { at: 0.25, kind: "pass", lane: -1, cue: "Gió đổi chiều: chuyển sang bên trái", success: "Mây đổi sườn kịp lúc" },
+          { at: 0.34, kind: "fork", choices: ["Lối sau đá", "Lối ngoài gió"], lane: -1, cue: "Theo dấu chân nhỏ sau tảng đá", success: "Mây thấy dấu chân sói non" },
+          { at: 0.43, kind: "cast", spell: "frost", lane: 0, cue: "Kết băng suối để tìm đàn sói", success: "Mặt băng nối hai bờ" },
+          { at: 0.52, kind: "pass", lane: 1, cue: "Tuyết bay từ trái: nép bên phải", success: "Mây tránh luồng gió" },
+          { at: 0.61, kind: "switch", choices: ["Gọi đàn sói", "Chạy qua"], answer: 0, cue: "Gọi khẽ để sói non biết có người giúp", success: "Sói con đáp lại phía cầu" },
+          { at: 0.70, kind: "pass", lane: -1, cue: "Theo dấu chân bên trái tảng băng", success: "Dấu chân dẫn tới cầu cũ" },
+          { at: 0.79, kind: "cast", spell: "solar", lane: 0, cue: "Làm tan băng che lối vào chỗ trú", success: "Lối vào đã thông" },
+          { at: 0.89, kind: "pass", lane: 1, cue: "Chọn phía khuất gió trước khi tới cầu", success: "Mây gặp đàn sói non" }
+        ] },
+        { name: "Cầu băng", brief: "Sửa cầu cho cả đàn; Mây qua một mình chưa đủ.", landmark: "Cầu băng", length: 650, sky: 0x8bb5ce, ground: 0xe3f2fa, path: 0xa9d9ef, scenery: "bridge", companion: "wolf", events: [
+          { at: 0.07, kind: "escort", lane: -1, cue: "Đợi sói non sau vách trái", success: "Cả đàn vào chỗ khuất" },
+          { at: 0.16, kind: "cast", spell: "frost", lane: 0, cue: "Khoảng hở quá rộng cho sói: dùng Băng nối cầu", success: "Cầu băng nối liền cho cả đàn" },
+          { at: 0.25, kind: "escort", lane: 0, cue: "Dẫn đàn giữa cầu, chờ bạn cuối", success: "Sói non theo Mây qua cầu" },
+          { at: 0.34, kind: "pass", lane: 1, cue: "Gió thổi từ trái: chọn phía phải", success: "Vách đá che đàn sói" },
+          { at: 0.43, kind: "cast", spell: "solar", lane: 0, cue: "Nắng làm tan băng chắn cửa trú", success: "Chỗ trú mở cho đàn sói" },
+          { at: 0.52, kind: "escort", lane: 1, cue: "Đưa cả đàn vào chỗ trú bên phải", success: "Sói non nghỉ trong mái trú" },
+          { at: 0.61, kind: "cast", spell: "frost", lane: 0, cue: "Đóng băng vũng nước ở nhịp cầu tiếp", success: "Nhịp cầu thứ hai đã vững" },
+          { at: 0.70, kind: "escort", lane: 0, cue: "Đi giữa cầu và chờ bạn cuối theo kịp", success: "Bạn cuối đã qua cầu" },
+          { at: 0.79, kind: "pass", lane: -1, cue: "Cờ đổi chiều: chuyển sang bên trái", success: "Đàn tránh được gió đổi chiều" },
+          { at: 0.89, kind: "escort", lane: -1, cue: "Đưa sói non tới mái trú bên trái", success: "Cả đàn đã qua cây cầu" }
+        ] },
+        { name: "Đường về làng", brief: "Đàn sói đã an toàn; Mây trở về báo tin cho làng.", landmark: "Đường về làng", length: 670, sky: 0xa5c9df, ground: 0xe5f3fa, path: 0xc4deed, scenery: "shelter", events: [
+          { at: 0.07, kind: "pass", lane: 1, cue: "Gió từ trái: nép bên phải", success: "Mây nấp sau vách đá" },
+          { at: 0.16, kind: "cast", spell: "frost", lane: 0, cue: "Tạo mặt băng qua suối trên đường về", success: "Mặt suối thành đường an toàn" },
+          { at: 0.25, kind: "pass", lane: 0, cue: "Đi giữa nhịp băng mới", success: "Mây đã qua suối" },
+          { at: 0.34, kind: "pass", lane: -1, cue: "Cờ đổi chiều: chọn vách trái", success: "Mây thấy phía khuất gió mới" },
+          { at: 0.43, kind: "pass", lane: -1, cue: "Nép vào mái trú bên trái", success: "Mây nghỉ qua cơn gió" },
+          { at: 0.52, kind: "cast", spell: "solar", lane: 0, cue: "Làm tan băng che biển đường về làng", success: "Biển chỉ đường hiện ra" },
+          { at: 0.61, kind: "fork", choices: ["Qua mái trú", "Qua sườn trống"], lane: -1, cue: "Chọn lối có mái trú", success: "Mái trú che Mây khỏi tuyết" },
+          { at: 0.70, kind: "pass", lane: 1, cue: "Đổi sang phía phải khi cờ đổi chiều", success: "Mây đổi sườn kịp lúc" },
+          { at: 0.79, kind: "cast", spell: "frost", lane: 0, cue: "Sửa nhịp cầu cuối trên đường về", success: "Nhịp cầu cuối đã nối" },
+          { at: 0.89, kind: "pass", lane: 0, cue: "Theo dấu đèn về làng báo tin", success: "Mây trở về báo đàn sói đã an toàn!" }
+        ] }
+      ],
+      clearing: {
+        section: 2, name: "Đưa sói non về nhà", brief: "Tìm hai sói non, sửa cầu và dẫn cả đàn về mái trú.",
+        devices: [
+          { id: "pup1", name: "Sói non sau vách đá", x: -17, z: -10, form: "wolf", color: 0xe5f4ff },
+          { id: "pup2", name: "Sói non bên suối", x: 16, z: -23, form: "wolf", color: 0xd9ebf7 },
+          { id: "bridge", name: "Nhịp cầu băng bị nứt", x: 0, z: -20, form: "bridge", color: 0x7dd3fc, spell: "frost" },
+          { id: "home", name: "Mái trú ấm", x: 0, z: -32, form: "shelter", color: 0xffd98a }
+        ],
+        hint: function (v) { return !v.pup1 ? "Tìm sói non phía trái, sau vách đá." : !v.pup2 ? "Tìm sói non thứ hai phía phải bên suối." : !v.bridge ? "Sửa nhịp cầu phía trước bằng Sương Băng." : "Dẫn cả hai sói non qua cầu tới mái trú phía trước."; },
+        action: function (id, v) {
+          if (id === "pup1" || id === "pup2") { v[id] = true; return { text: "Sói non đã tìm thấy Mây và đi theo bạn.", done: false }; }
+          if (id === "bridge") { v.bridge = true; return { text: "Nhịp cầu đã nối: dẫn đàn qua được rồi!", done: false }; }
+          if (!v.pup1 || !v.pup2) return { text: "Còn sói non đang đợi. Hãy tìm đủ hai bạn!", done: false };
+          if (!v.bridge) return { text: "Cầu còn nứt; hãy sửa cầu cho đàn sói.", done: false };
+          v.home = true; return { text: "Sói non cuối cùng đã về mái trú và cất tiếng báo an toàn!", done: true };
+        },
+        look: function (id, v) { var pup = id === "pup1" || id === "pup2"; return { lit: !!v[id], angle: pup ? Math.PI : 0, hide: !!v.home && pup }; },
+        links: function (v) { return v.bridge ? [["bridge", "home", 0x7dd3fc]] : []; },
+        followers: function (v) { return ["pup1", "pup2"].filter(function (id) { return !!v[id] && !v.home; }); }
+      },
+      makeVista: function (index) {
+        var group = new THREE.Group(), flags = [], wolves = [];
+        var poleMat = new THREE.MeshStandardMaterial({ color: 0x586e7d });
+        var flagMat = new THREE.MeshStandardMaterial({ color: 0xef826f, side: THREE.DoubleSide });
+        [-7, 7].forEach(function (x) {
+          var pole = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 4, 6), poleMat); pole.position.set(x, 2, -16); group.add(pole);
+          var flag = new THREE.Mesh(new THREE.PlaneGeometry(2.3, 1.1), flagMat); flag.position.set(x + 1.1, 3.5, -16); group.add(flag); flags.push(flag);
+        });
+        if (index === 2) {
+          for (var i = 0; i < 3; i++) {
+            var wolf = MAY.makeAnimal("wolf");
+            wolf.position.set((i - 1) * 1.4, 0, 4 + i); group.add(wolf); wolves.push(wolf);
+          }
+        }
+        return { group: group, tick: function (distance, lateral, eventIndex, time) {
+          flags.forEach(function (flag, i) { flag.rotation.y = Math.sin(time * 3 + i) * 0.35 + (eventIndex % 2 ? -0.6 : 0.6); });
+          wolves.forEach(function (wolf, i) { wolf.position.x += (lateral + (i - 1) * 1.4 - wolf.position.x) * 0.04; wolf.position.y = Math.abs(Math.sin(time * 3 + i)) * 0.12; });
+        } };
+      },
+      makeLandmark: function (index) {
+        var g = new THREE.Group();
+        var wall = new THREE.MeshStandardMaterial({ color: index === 2 ? 0x9ad9f2 : 0xd7edf7, roughness: 0.75 });
+        var roof = new THREE.MeshStandardMaterial({ color: 0x4e829c, roughness: 0.8 });
+        if (index === 0) {
+          var hut = new THREE.Mesh(new THREE.SphereGeometry(4.3, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), wall); hut.scale.z = 0.55; g.add(hut);
+        } else if (index === 1) {
+          [-3.3, 3.3].forEach(function (x, i) { var cliff = new THREE.Mesh(new THREE.ConeGeometry(3.5, 6.5 - i, 5), wall); cliff.position.set(x, 2.7, 0); g.add(cliff); });
+        } else if (index === 2) {
+          [-4, 4].forEach(function (x) { var pier = new THREE.Mesh(new THREE.BoxGeometry(1.4, 5, 2), wall); pier.position.set(x, 2.5, 0); g.add(pier); });
+          var span = new THREE.Mesh(new THREE.BoxGeometry(9, 0.7, 2), roof); span.position.y = 3.4; g.add(span);
+        } else {
+          var house = new THREE.Mesh(new THREE.BoxGeometry(9, 3.5, 3), wall); house.position.y = 1.75; g.add(house);
+          var top = new THREE.Mesh(new THREE.ConeGeometry(6, 3, 4), roof); top.rotation.y = Math.PI / 4; top.position.y = 4.7; g.add(top);
+        }
+        var sign = new THREE.Mesh(new THREE.BoxGeometry(1.2, 2.2, 0.2), new THREE.MeshBasicMaterial({ color: [0xffcf75, 0xf58b81, 0x77d9f4, 0xffd68b][index] })); sign.position.set(3.8, 3.2, 1.1); g.add(sign);
+        return g;
+      }, onComplete: function () { updateCh5Story(); }
+    });
+
     function updateCh5Story() {
       if (ch5St.rewarded || ctx.save.gem) {
         ch5Npc.setMarker("♥");
@@ -588,6 +700,7 @@
         ch5Npc.setMarker("?");
         ctx.setObjective("❄️", "ĐÓNG CỨNG QUẢ CẦU TUYẾT LĂN BẰNG ❄️ SƯƠNG BĂNG", snowBall.position);
       } else {
+        if (ch5St.stage < 3 && expedition.block()) return;
         ch5St.stage = 3; MAY.persist();
         ch5Npc.setMarker("?");
         if (!ch5Boss.active) {
