@@ -335,7 +335,32 @@
       });
       [-0.22, 0.22].forEach(function (ex) { var e = new THREE.Mesh(new THREE.SphereGeometry(0.11, 8, 6), glowRedEye); e.position.set(ex, 2.42, -0.52); g.add(e); });
       g.userData.armor = torso; g.userData.core = core;
-    } else if (kind === "icewolf" || kind === "frostbear") {
+    } else if (kind === "frostbear") {
+      var frostBear = MAY.makeAnimal("polarbear", {});
+      var frostCoat = stdM(0x526a80, 0.75, { emissive: 0x123c55, emissiveIntensity: 0.22 });
+      var frostDark = stdM(0x304656, 0.85);
+      frostBear.traverse(function (o) {
+        if (o.isMesh) {
+          var c = o.material.color;
+          if (o.isSkinnedMesh && o.geometry.attributes.color) frostCoat.vertexColors = true;
+          o.material = c && c.r < 0.3 && c.g < 0.3 && c.b < 0.3 ? frostDark : frostCoat;
+        }
+      });
+      g.add(frostBear);
+      if (frostBear.userData.mixer) {
+        g.userData.mixer = frostBear.userData.mixer;
+        g.userData.playClip = frostBear.userData.playClip;
+      }
+      var frostIce = new THREE.MeshPhysicalMaterial({ color: 0x8cddf5, emissive: 0x38bdf8, emissiveIntensity: 0.5, roughness: 0.25 });
+      for (var fbi = 0; fbi < 4; fbi++) {
+        var shard = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.42, 5), frostIce);
+        shard.position.set(0, 1.41, -0.22 + fbi * 0.30); shard.rotation.x = 0.30; g.add(shard);
+      }
+      [-1, 1].forEach(function (side) {
+        var redEye = new THREE.Mesh(new THREE.SphereGeometry(0.055, 8, 6), glowRedEye);
+        redEye.position.set(side * 0.21, 1.13, -0.72); g.add(redEye);
+      });
+    } else if (kind === "icewolf") {
       var fm = stdM(0x364963, 0.55, { emissive: 0x0c4a6e, emissiveIntensity: 0.42 });
       var iceMat = new THREE.MeshPhysicalMaterial({ color: 0x7dd3fc, emissive: 0x38bdf8, emissiveIntensity: 0.75, roughness: 0.1, clearcoat: 1.0 });
       var bd = new THREE.Mesh(new THREE.CapsuleGeometry(0.55, 0.95, 8, 12), fm); bd.rotation.x = Math.PI / 2; bd.position.y = 0.88; g.add(bd);
@@ -757,10 +782,12 @@
 
       var nameLb = MAY.makeLabel(cfg.icon + " " + cfg.name, { w: 480, sx: 3.6, sy: 0.82, bg: "rgba(10,32,56,.88)", color: "#ffd93d" });
       nameLb.position.set(0, (cfg.labelY || 2.3), 0); g.add(nameLb);
+      ctx.trackLabel(nameLb, 30, 3);
 
       var marker = makeQuestMarkerSprite("!", "#ffd93d");
       marker.position.set(0, (cfg.labelY || 2.3) + 1.15, 0);
       g.add(marker);
+      ctx.trackLabel(marker, 30, 3);
       ctx.add(g);
 
       var npc = {
@@ -771,6 +798,7 @@
         onTalk: cfg.onTalk,
         setMarker: function (sym) {
           npc.state = sym;
+          ctx.untrackLabel(npc.marker);
           g.remove(npc.marker);
           if (npc.marker.material && npc.marker.material.map) npc.marker.material.map.dispose();
           if (npc.marker.material) npc.marker.material.dispose();
@@ -778,6 +806,7 @@
           npc.marker = makeQuestMarkerSprite(sym, bg);
           npc.marker.position.set(0, npc.labelY + 1.15, 0);
           g.add(npc.marker);
+          ctx.trackLabel(npc.marker, 30, 3);
         }
       };
       ctx.questNPCs.push(npc);
@@ -842,11 +871,12 @@
       aura.position.y = cfg.floating ? -1.2 : 0.07; npcG.add(aura);
       var nameLb = MAY.makeLabel(def.npcIcon + " " + def.npcName, { w: 460, sx: 3.3, sy: 0.78, bg: "rgba(6,44,58,0.90)", color: "#67e8f9" });
       nameLb.position.set(0, cfg.labelY || 2.15, 0); npcG.add(nameLb);
-      ctx.trackLabel(nameLb, 24);
+      ctx.trackLabel(nameLb, 24, 2);
 
       var marker = makeQuestMarkerSprite("!", "#22d3ee");
       marker.position.set(0, (cfg.labelY || 2.15) + 1.05, 0);
       npcG.add(marker);
+      ctx.trackLabel(marker, 24, 2);
       ctx.add(npcG);
 
       var stations = [];
@@ -856,6 +886,7 @@
         baseY: ny, floating: !!cfg.floating, labelY: cfg.labelY || 2.15,
         stations: stations,
         setMarker: function (sym) {
+          ctx.untrackLabel(sqObj.marker);
           npcG.remove(sqObj.marker);
           if (sqObj.marker.material && sqObj.marker.material.map) sqObj.marker.material.map.dispose();
           if (sqObj.marker.material) sqObj.marker.material.dispose();
@@ -863,6 +894,7 @@
           sqObj.marker = makeQuestMarkerSprite(sym, bg);
           sqObj.marker.position.set(0, sqObj.labelY + 1.05, 0);
           npcG.add(sqObj.marker);
+          ctx.trackLabel(sqObj.marker, 24, 2);
         },
         syncState: function () {
           var total = stations.length;
@@ -1361,6 +1393,10 @@
       for (var ei = 0; ei < ctx.enemies.length; ei++) {
         var en = ctx.enemies[ei];
         if (en.state === "purified") continue;
+        if (en.kind === "frostbear" && en.mesh.userData.mixer) {
+          en.mesh.userData.playClip(en.state === "patrol" || en.state === "chase" ? "walk" : "idle");
+          en.mesh.userData.mixer.update(dt);
+        }
         if (en.state === "launched") {
           en.launchT += dt;
           en.mesh.position.y += en.vy * dt;

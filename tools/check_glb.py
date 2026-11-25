@@ -117,10 +117,13 @@ BOSS_WEAKPOINT_HINTS = {
 }
 
 LANDMARK_CC0_FILES = {"cc0_cabin.glb", "cc0_windmill.glb", "cc0_shipwreck.glb"}
-CREATURE_CC0_FILES = {
+CREATURE_FILES = {
     "cc0_alpaca.glb", "cc0_deer.glb", "cc0_fox.glb", "cc0_reindeer.glb",
     "cc0_unicorn.glb", "cc0_crab.glb", "cc0_dolphin.glb", "cc0_whale.glb",
     "cc0_clownfish.glb",
+    "polyfork_bear.glb", "polyfork_camel.glb", "polyfork_deer.glb", "polyfork_hare.glb",
+    "polyfork_octopus.glb", "polyfork_owl.glb", "polyfork_penguin.glb",
+    "polyfork_rabbit.glb", "polyfork_sheep.glb",
 }
 
 
@@ -136,7 +139,7 @@ def detect_category(path):
         return "boss"
     if base.startswith(("lm_", "hero_")) or base in LANDMARK_CC0_FILES:
         return "landmark"
-    if base in CREATURE_CC0_FILES or base.startswith("creature_"):
+    if base in CREATURE_FILES or base.startswith("creature_"):
         return "creature"
     if base.startswith("env_"):
         return "env"
@@ -293,6 +296,15 @@ def compute_world_matrices(gltf):
     return [world(i) for i in range(n)], set(i for i, p in enumerate(parents) if p == -1), ident
 
 
+def material_uses_texture(value):
+    if isinstance(value, dict):
+        return any((key.endswith("Texture") and isinstance(item, dict))
+                   or material_uses_texture(item) for key, item in value.items())
+    if isinstance(value, list):
+        return any(material_uses_texture(item) for item in value)
+    return False
+
+
 def audit_glb(path, forced_type=None, strict_uv2=False):
     cat = forced_type or detect_category(path)
     cfg = BUDGETS[cat]
@@ -392,7 +404,12 @@ def audit_glb(path, forced_type=None, strict_uv2=False):
         for prim in mesh.get("primitives", []):
             mesh_tris += primitive_tris(prim, accessors)
             attrs = prim.get("attributes", {})
-            if "TEXCOORD_0" not in attrs:
+            # Vertex-colored, texture-free materials do not sample UVs. Keep
+            # the UV requirement for every primitive that uses a texture,
+            # including texture slots supplied by material extensions.
+            mat_index = prim.get("material")
+            mat = materials[mat_index] if isinstance(mat_index, int) and 0 <= mat_index < len(materials) else {}
+            if "TEXCOORD_0" not in attrs and ("COLOR_0" not in attrs or material_uses_texture(mat)):
                 missing_uv1.append(m_name)
             if "TEXCOORD_1" in attrs:
                 has_uv2_any = True

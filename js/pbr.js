@@ -191,6 +191,15 @@
         normalMap: makeRepeatTex(heightToNormalCanvas(hArr, S, S, 2.4), 18, 18, false),
         roughnessMap: makeRepeatTex(heightToRoughCanvas(hArr, S, S, 0.58, 0.98, true), 18, 18, false)
       };
+      // A neutral grain can tint from wet sand to meadow without stamping green patches on the beach.
+      var grain = document.createElement("canvas");
+      grain.width = grain.height = S;
+      for (var pixel = 0; pixel < hArr.length; pixel++) {
+        var value = 90 + 74 * hArr[pixel];
+        d[pixel * 4] = d[pixel * 4 + 1] = d[pixel * 4 + 2] = value;
+      }
+      grain.getContext("2d").putImageData(img, 0, 0);
+      PBR.coastalGrain = makeRepeatTex(grain, 13, 13, true);
     })();
 
     /* 4. Vỏ cây rừng có thớ dọc sâu */
@@ -315,7 +324,7 @@
       PBR.contactShadowTex = new THREE.CanvasTexture(cs);
     })();
 
-    /* 8. Lá cây, Lá dừa lông chim & Cỏ đa ngọn */
+    /* 8. Lá cây & Cỏ đa ngọn */
     (function () {
       var c = document.createElement("canvas"); c.width = c.height = 256;
       var g = c.getContext("2d");
@@ -336,29 +345,12 @@
       var lt = new THREE.CanvasTexture(c); lt.encoding = THREE.sRGBEncoding;
       PBR.leafClusterTex = lt;
 
-      var pc = document.createElement("canvas"); pc.width = 256; pc.height = 512;
-      var pg = pc.getContext("2d");
-      pg.strokeStyle = "#52782d"; pg.lineWidth = 6;
-      pg.beginPath(); pg.moveTo(128, 504); pg.lineTo(128, 20); pg.stroke();
-      for (var y = 36; y < 484; y += 15) {
-        var span = Math.sin((y / 512) * Math.PI) * 120;
-        [-1, 1].forEach(function (side) {
-          pg.fillStyle = side > 0 ? "#4a9136" : "#3a782b";
-          pg.beginPath(); pg.moveTo(128, y);
-          pg.quadraticCurveTo(128 + side * span * 0.6, y - 14, 128 + side * span, y + 18);
-          pg.quadraticCurveTo(128 + side * span * 0.5, y + 10, 128, y + 8);
-          pg.closePath(); pg.fill();
-        });
-      }
-      var pt = new THREE.CanvasTexture(pc); pt.encoding = THREE.sRGBEncoding;
-      PBR.palmFrondTex = pt;
-
       var gc = document.createElement("canvas"); gc.width = gc.height = 128;
       var gg = gc.getContext("2d");
       for (var bi = 0; bi < 16; bi++) {
         var bx = 20 + (bi / 15) * 88, lean = (Math.random() - 0.5) * 44, bh = 60 + Math.random() * 62;
         var ggrd = gg.createLinearGradient(0, 128, 0, 128 - bh);
-        ggrd.addColorStop(0, "#245826"); ggrd.addColorStop(0.55, "#4da63c"); ggrd.addColorStop(1, "#9be05a");
+        ggrd.addColorStop(0, "#638667"); ggrd.addColorStop(0.55, "#87ad79"); ggrd.addColorStop(1, "#b9cb86");
         gg.fillStyle = ggrd;
         gg.beginPath(); gg.moveTo(bx - 4.5, 128);
         gg.quadraticCurveTo(bx + lean * 0.4, 128 - bh * 0.55, bx + lean, 128 - bh);
@@ -1245,7 +1237,61 @@
     return m;
   };
 
-  /* ---- Dựng Cây Dừa & Cây Rừng Gộp Hình Học Dùng Chung (29 draw calls -> 2 draw calls/cây!) ---- */
+  function coloredGeometry(positions, colors, indices) {
+    var geo = new THREE.BufferGeometry();
+    geo.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+    geo.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
+    geo.setIndex(indices);
+    geo.computeVertexNormals();
+    return geo;
+  }
+
+  // Split and fold each blade around a curved midrib so the crown reads from below as well as above.
+  function palmCrown(top) {
+    var positions = [], colors = [], indices = [];
+    var jade = new THREE.Color(0x43876a), sunlit = new THREE.Color(0xaac875);
+    var vein = new THREE.Color(0xc1ae75), shade = new THREE.Color(0x367661);
+    [jade,sunlit,vein,shade].forEach(function (c) { c.convertSRGBToLinear(); });
+    function blade(angle, length, lift, droop, tint) {
+      var sn = Math.sin(angle), cs = Math.cos(angle);
+      function vertex(t, width, height, color) {
+        var bend = 0.23 * Math.sin(t * Math.PI) + width;
+        positions.push(top.x + sn * length * t + cs * bend,
+          top.y + lift * Math.sin(Math.PI * t) - droop * t * t + height,
+          top.z + cs * length * t - sn * bend);
+        colors.push(color.r, color.g, color.b);
+        return positions.length / 3 - 1;
+      }
+      for (var j = 0; j < 9; j++) {
+        var t = j / 9, next = (j + 1) / 9;
+        var rib = 0.075 * (1 - 0.85 * t);
+        var k = vertex(t, -rib, 0, vein);
+        vertex(next, -rib * 0.88, 0, vein);
+        vertex(next, rib * 0.88, 0, vein);
+        vertex(t, rib, 0, vein);
+        indices.push(k, k + 1, k + 2, k, k + 2, k + 3);
+        for (var side = -1; side <= 1; side += 2) {
+          var spread = length * (0.07 + 0.14 * Math.sin(Math.PI * (t + 0.08))) * (1 - 0.5 * t);
+          var tip = Math.min(1.04, next + 0.07 + 0.03 * side);
+          var start = vertex(t, side * rib * 0.55, -0.012, shade);
+          vertex(t + 0.065, side * spread * 0.59, -0.025, tint);
+          vertex(tip, side * spread, -0.11 - spread * 0.29, tint);
+          vertex(next, side * rib * 0.55, -0.012, jade);
+          if (side > 0) indices.push(start, start + 3, start + 1, start + 3, start + 2, start + 1);
+          else indices.push(start, start + 1, start + 3, start + 3, start + 1, start + 2);
+        }
+      }
+    }
+    for (var i = 0; i < 12; i++) {
+      var lower = i < 7, a = i * 2.4;
+      var tint = jade.clone().lerp(sunlit, lower ? 0.14 + (i % 3) * 0.15 : 0.74);
+      blade(a, lower ? 3.6 + (i % 3) * 0.27 : 2.45 + (i % 3) * 0.22,
+        lower ? 0.68 : 1.15, lower ? 1.15 + (i % 2) * 0.26 : -0.25, tint);
+    }
+    return coloredGeometry(positions, colors, indices);
+  }
+
+  /* ---- Dựng Cây Dừa & Cây Rừng Gộp Hình Học Dùng Chung ---- */
   var _palmCache = null;
   function getPalmAssets() {
     if (_palmCache) return _palmCache;
@@ -1253,32 +1299,30 @@
       new THREE.Vector3(0, 0, 0), new THREE.Vector3(0.35, 1.9, 0.15),
       new THREE.Vector3(0.75, 3.8, 0.25), new THREE.Vector3(0.95, 5.4, 0.18)
     ]);
-    var trunkGeo = new THREE.TubeGeometry(curve, 12, 0.26, 7, false);
-    var trunkMat = new THREE.MeshStandardMaterial({ map: PBR.bark.map, normalMap: PBR.bark.normalMap, roughnessMap: PBR.bark.roughnessMap, color: 0x9b7a58, roughness: 0.95 });
-    var frondMat = new THREE.MeshStandardMaterial({ map: PBR.palmFrondTex, alphaTest: 0.35, side: THREE.DoubleSide, roughness: 0.65 });
-    var nutMat = new THREE.MeshStandardMaterial({ color: 0x5c3e1d, roughness: 0.85 });
-
     var top = new THREE.Vector3(0.95, 5.4, 0.18);
-    var frondParts = [];
-    var mRot = new THREE.Matrix4();
-    var mTrans = new THREE.Matrix4().makeTranslation(top.x, top.y, top.z);
-    for (var i = 0; i < 10; i++) {
-      var a = (i / 10) * Math.PI * 2 + (i % 2) * 0.18;
-      var len = 3.4 + (i % 3) * 0.4;
-      var fGeo = new THREE.PlaneGeometry(1.5, len, 2, 7);
-      var pos = fGeo.attributes.position;
-      for (var k = 0; k < pos.count; k++) {
-        var ox = pos.getX(k), oy = pos.getY(k) + len * 0.5, frac = oy / len;
-        pos.setXYZ(k, ox, Math.sin(frac * 2.15) * 0.82 - frac * frac * 1.48 + (i % 2) * 0.22 * frac - Math.abs(ox) * 0.24, oy);
+    var positions = [], colors = [], indices = [];
+    var bark = new THREE.Color(0xb79970), scar = new THREE.Color(0x876e58);
+    bark.convertSRGBToLinear(); scar.convertSRGBToLinear();
+    for (var ring = 0; ring <= 32; ring++) {
+      var t = (Math.floor(ring / 2) + (ring % 2) * 0.82) / 16;
+      var center = curve.getPoint(t);
+      var radius = 0.21 + 0.12 * (1 - t) + 0.18 * Math.pow(1 - t, 9) + (ring % 2) * 0.025;
+      var tone = ring % 2 ? bark : scar;
+      for (var k = 0; k < 10; k++) {
+        var angle = k * Math.PI / 5;
+        positions.push(center.x + radius * Math.cos(angle), center.y, center.z + radius * Math.sin(angle));
+        colors.push(tone.r, tone.g, tone.b);
+        if (ring < 32) {
+          var n = ring * 10 + k, m = ring * 10 + (k + 1) % 10;
+          indices.push(n, n + 10, m, m, n + 10, m + 10);
+        }
       }
-      fGeo.computeVertexNormals();
-      mRot.makeRotationY(a);
-      fGeo.applyMatrix4(mRot);
-      fGeo.applyMatrix4(mTrans);
-      frondParts.push(fGeo);
     }
-    var frondsGeo = mergeSimpleGeometries(frondParts);
-    frondParts.forEach(function (fg) { fg.dispose(); });
+    var trunkGeo = coloredGeometry(positions, colors, indices);
+    var trunkMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.91 });
+    var frondsGeo = palmCrown(top);
+    var frondMat = new THREE.MeshStandardMaterial({ vertexColors: true, side: THREE.DoubleSide, roughness: 0.84 });
+    var nutMat = new THREE.MeshStandardMaterial({ color: 0xbd9158, roughness: 0.86 });
 
     var nutParts = [];
     for (var c = 0; c < 3; c++) {
@@ -1419,13 +1463,34 @@
     /* Hoa dại nhiều màu rải trên đồng cỏ giống Fable 5.2 (đỏ anh túc, hồng, xanh, vàng, trắng) */
     if (opts.flowers !== false && pts.length > 40) {
       var fCount = Math.min(240, Math.floor(pts.length * 0.22));
-      var fGeo = new THREE.SphereGeometry(0.13, 6, 5); fGeo.scale(1.2, 0.55, 1.2);
-      var fMat = new THREE.MeshStandardMaterial({ roughness: 0.55 });
+      var flowerPositions = [], flowerColors = [], flowerIndices = [];
+      function flowerVertex(x, y, z, color) {
+        flowerPositions.push(x, y, z); flowerColors.push(color.r, color.g, color.b);
+        return flowerPositions.length / 3 - 1;
+      }
+      var leaf = new THREE.Color(0x527b55), petal = new THREE.Color(0xfff4e3), pollen = new THREE.Color(0xe2ad4f);
+      for (var p = 0; p < 5; p++) {
+        var a = p * Math.PI * 2 / 5, dx = Math.cos(a), dz = Math.sin(a);
+        var stem = flowerVertex(dx*0.012,0,dz*0.012,leaf);
+        flowerVertex(dx*0.008,0.38,dz*0.008,leaf);
+        flowerIndices.push(stem,stem+1,(stem+2)%10, (stem+2)%10,stem+1,(stem+3)%10);
+      }
+      for (var pet = 0; pet < 5; pet++) {
+        var direction = pet * 2*Math.PI/5, x = Math.cos(direction), z = Math.sin(direction);
+        var first = flowerVertex(0,0.40,0,pollen);
+        flowerVertex(0.11*x-0.068*z,0.435,0.11*z+0.068*x,petal);
+        flowerVertex(0.16*x,0.427,0.16*z,petal);
+        flowerVertex(0.11*x+0.068*z,0.435,0.11*z-0.068*x,petal);
+        flowerVertex(0.055*x,0.38,0.055*z,pollen);
+        flowerIndices.push(first,first+1,first+4, first+1,first+2,first+4, first+2,first+3,first+4, first+3,first,first+4);
+      }
+      var fGeo = coloredGeometry(flowerPositions,flowerColors,flowerIndices);
+      var fMat = new THREE.MeshStandardMaterial({ vertexColors: true, side: THREE.DoubleSide, roughness: 0.86 });
       var fim = new THREE.InstancedMesh(fGeo, fMat, fCount);
-      var palette = [new THREE.Color(0xff4d6d), new THREE.Color(0xff8fab), new THREE.Color(0x60a5fa), new THREE.Color(0xfef08a), new THREE.Color(0xffffff)];
+      var palette = [new THREE.Color(0xe9a09a), new THREE.Color(0xdeb7a9), new THREE.Color(0xb3bfdf), new THREE.Color(0xf3d89c), new THREE.Color(0xfff9df)];
       for (var fi = 0; fi < fCount; fi++) {
         var p = pts[(fi * 4) % pts.length];
-        dum.position.set(p[0], p[1] + 0.36 + (fi % 3) * 0.12, p[2]);
+        dum.position.set(p[0], p[1] - 0.03, p[2]);
         dum.scale.setScalar(0.8 + (fi % 4) * 0.25); dum.rotation.set(0, fi, 0); dum.updateMatrix();
         fim.setMatrixAt(fi, dum.matrix);
         fim.setColorAt(fi, palette[fi % palette.length]);
@@ -1509,20 +1574,53 @@
     return im;
   };
 
-  /* ---- Vòng Cảnh Quan Đường Chân Trời Tầm Xa (1–2 InstancedMesh thay vì 44 Mesh riêng lẻ!) ---- */
-  var _vistaConeGeo = new THREE.ConeGeometry(1, 1, 7);
-  if (MAY.protectGeometry) MAY.protectGeometry(_vistaConeGeo);
+  // Uneven rock shelves meet a narrow, off-centre crest. Reuse the same relief at different scales.
+  function ridgeGeometry(baseColor, snowCap) {
+    var positions = [], colors = [], indices = [];
+    var foot = new THREE.Color(baseColor), shoulder = foot.clone().lerp(new THREE.Color(0xbbc7b5), 0.24);
+    var crest = snowCap ? new THREE.Color(0xe1edf1) : shoulder.clone().lerp(new THREE.Color(0xe1dfc7), 0.22);
+    [foot, shoulder, crest].forEach(function (color) { color.convertSRGBToLinear(); });
+    var levels = [[1, -0.12, 0], [0.81, 0.16, 0.02], [0.72, 0.25, 0.02],
+      [0.47, 0.53, 0.10], [0.39, 0.65, 0.11], [0.19, 0.87, 0.21]];
+    var segments = 12;
+    levels.forEach(function (level, ring) {
+      for (var i = 0; i < segments; i++) {
+        var a = 2 * Math.PI * i / segments;
+        var margin = 1 + 0.13 * Math.sin(3 * a + 0.4) + 0.12 * Math.cos(5 * a + ring * 0.12);
+        var ledge = Math.sin(a * 2 + 0.6) * 0.085 + Math.cos(a * 3) * 0.048;
+        positions.push(level[2] + Math.cos(a) * level[0] * margin,
+          level[1] + ledge * Math.min(1, ring * 0.55), Math.sin(a) * level[0] * margin * 0.73);
+        var tone = (ring < 3 ? foot : ring === 3 ? shoulder : crest).clone();
+        tone.multiplyScalar(0.91 + 0.08 * Math.cos(a * 3) + (ring % 2) * 0.05);
+        colors.push(tone.r, tone.g, tone.b);
+        if (ring < levels.length - 1) {
+          var k = ring * segments + i, n = ring * segments + (i + 1) % segments;
+          indices.push(k, k + segments, n, n, k + segments, n + segments);
+        }
+      }
+    });
+    var peak = positions.length / 3;
+    positions.push(0.26, 1.0, 0.04);
+    colors.push(crest.r, crest.g, crest.b);
+    for (var i = 0; i < segments; i++) {
+      var start = peak - segments;
+      indices.push(start + i, peak, start + (i + 1) % segments);
+    }
+    return coloredGeometry(positions, colors, indices);
+  }
+
   MAY.buildVistaRing = function (ctx, opts) {
     opts = opts || {};
     var count = opts.count || 22, rMin = opts.radius || 135, hMin = opts.hMin || 18, hMax = opts.hMax || 46;
-    var mat = new THREE.MeshStandardMaterial({
-      map: opts.map || MAY.TEX.rock, color: opts.color || 0x5c7c94,
-      roughness: 0.96, flatShading: opts.flat !== false
-    });
-    var im = new THREE.InstancedMesh(_vistaConeGeo, mat, count);
-    im.userData.sharedGeo = true;
-    var capIm = opts.snowCap ? new THREE.InstancedMesh(_vistaConeGeo, new THREE.MeshStandardMaterial({ color: 0xecf5ff, roughness: 0.78 }), count) : null;
-    if (capIm) capIm.userData.sharedGeo = true;
+    var mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.94, flatShading: true });
+    // Distant snow keeps a soft fog fade without losing its pale summits entirely.
+    if (opts.snowCap) {
+      mat.onBeforeCompile = function (shader) {
+        shader.vertexShader = shader.vertexShader.replace('#include <fog_vertex>', '#include <fog_vertex>\n#ifdef USE_FOG\nvFogDepth *= 0.42;\n#endif');
+      };
+      mat.customProgramCacheKey = function () { return "snow-ridge-fog-v1"; };
+    }
+    var im = new THREE.InstancedMesh(ridgeGeometry(opts.color || 0x5c7c94, opts.snowCap), mat, count);
     var dum = new THREE.Object3D();
     var baseY = opts.baseY !== undefined ? opts.baseY : -2;
     for (var i = 0; i < count; i++) {
@@ -1530,22 +1628,14 @@
       var r = rMin + (i % 3) * 16;
       var w = (opts.wBase || 24) + (i % 4) * 9;
       var h = hMin + ((i * 7) % 10) / 10 * (hMax - hMin);
-      var px = Math.cos(a) * r, py = baseY + h * 0.42, pz = Math.sin(a) * r;
-      dum.position.set(px, py, pz);
+      dum.position.set(Math.cos(a) * r, baseY, Math.sin(a) * r);
       dum.rotation.set(0, i * 1.3, 0);
       dum.scale.set(w, h, w);
       dum.updateMatrix();
       im.setMatrixAt(i, dum.matrix);
-      if (capIm) {
-        dum.position.set(px, py + h * 0.30, pz);
-        dum.scale.set(w * 0.44, h * 0.42, w * 0.44);
-        dum.updateMatrix();
-        capIm.setMatrixAt(i, dum.matrix);
-      }
     }
     im.instanceMatrix.needsUpdate = true;
     ctx.add(im);
-    if (capIm) { capIm.instanceMatrix.needsUpdate = true; ctx.add(capIm); }
   };
 
   /* ---- HẬU KỲ ĐIỆN ẢNH DEPTH-BUFFER 32-BIT (WebGL1 RGBA-Packed & WebGL2 Native):

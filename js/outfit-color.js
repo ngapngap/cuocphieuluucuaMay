@@ -3,7 +3,7 @@ window.MAY = window.MAY || {};
 window.MAY.prepareForestOutfit = function (root) {
   var parts = [];
   root.traverse(function (object) {
-    if (object.name !== "May_Body") return;
+    if (object.name !== "May_Body" && object.name.indexOf("May_Dress") !== 0) return;
     object.traverse(function (mesh) {
       if (!mesh.isMesh || !mesh.material || !mesh.material.map) return;
       var original = mesh.material, image = original.map.image;

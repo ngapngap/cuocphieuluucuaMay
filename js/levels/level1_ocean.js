@@ -319,6 +319,16 @@
       } else {
         var jm = new THREE.MeshStandardMaterial({ color: jCols[ji], emissive: jCols[ji], emissiveIntensity: 0.7, transparent: true, opacity: 0.78 });
         jg.add(new THREE.Mesh(new THREE.SphereGeometry(0.7, 14, 10, 0, Math.PI * 2, 0, Math.PI * 0.5), jm));
+        // Fine trailing tentacles keep the fallback identifiable as a jellyfish.
+        var tentacles = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.025, 0.012, 0.9, 5), jm, 6);
+        var strand = new THREE.Object3D();
+        for (var jt = 0; jt < 6; jt++) {
+          var ja = jt * Math.PI / 3;
+          strand.position.set(Math.cos(ja) * 0.38, -0.43, Math.sin(ja) * 0.38);
+          strand.rotation.set(Math.sin(ja) * 0.12, 0, -Math.cos(ja) * 0.12);
+          strand.updateMatrix(); tentacles.setMatrixAt(jt, strand.matrix);
+        }
+        jg.add(tentacles);
       }
       jg.position.set(jp[0], jp[1], jp[2]);
       ctx.add(jg);
@@ -361,7 +371,27 @@
     if (MAY.modelsReady) populateManta();
 
     /* Đàn cá nhỏ 140 con bơi theo luồng giống đàn cá xa trong ảnh 2 */
-    var tinyGeo = new THREE.SphereGeometry(0.13, 6, 4); tinyGeo.scale(2.4, 0.7, 0.55);
+    // One shared silhouette (body, forked tail and dorsal fin), instanced 140 times.
+    var tinyBody = new THREE.SphereGeometry(0.13, 6, 4).toNonIndexed();
+    tinyBody.scale(2.4, 0.7, 0.55);
+    var tinyPositions = Array.from(tinyBody.getAttribute("position").array);
+    var tinyNormals = Array.from(tinyBody.getAttribute("normal").array);
+    function tinyFin(a, b, c) {
+      var av = new THREE.Vector3().fromArray(a), bv = new THREE.Vector3().fromArray(b), cv = new THREE.Vector3().fromArray(c);
+      var normal = bv.clone().sub(av).cross(cv.clone().sub(av)).normalize();
+      [a, b, c, c, b, a].forEach(function (v, i) {
+        tinyPositions.push(v[0], v[1], v[2]);
+        var sign = i < 3 ? 1 : -1;
+        tinyNormals.push(normal.x * sign, normal.y * sign, normal.z * sign);
+      });
+    }
+    tinyFin([-0.22, 0, 0], [-0.43, 0.13, 0], [-0.38, 0, 0]);
+    tinyFin([-0.22, 0, 0], [-0.38, 0, 0], [-0.43, -0.13, 0]);
+    tinyFin([-0.04, 0.06, 0], [-0.13, 0.18, 0], [0.10, 0.07, 0]);
+    var tinyGeo = new THREE.BufferGeometry();
+    tinyGeo.setAttribute("position", new THREE.Float32BufferAttribute(tinyPositions, 3));
+    tinyGeo.setAttribute("normal", new THREE.Float32BufferAttribute(tinyNormals, 3));
+    tinyGeo.computeBoundingSphere(); tinyBody.dispose();
     var tinyMesh = new THREE.InstancedMesh(tinyGeo, new THREE.MeshStandardMaterial({ color: 0xb6e6f5, roughness: 0.3, metalness: 0.65 }), 140);
     tinyMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     ctx.add(tinyMesh);
@@ -404,9 +434,9 @@
     ctx.addFriends([
       { name: "Cá hề",       kind: "clownfish", pos: [14, 2.8, 2],    behavior: "swim",  greet: "🐠 Mây gặp bạn Cá hề cam sọc trắng nè!" },
       { name: "Ngọc trai",   kind: "pearl",     pos: [-40, 1.4, -20], behavior: "still", greet: "🦪 Ngọc trai mở vỏ lấp lánh chào Mây!" },
-      { name: "Bạch tuộc",   kind: "octopus",   pos: [-15, 2.2, -55], behavior: "still", greet: "🐙 Bạch tuộc tím vẫy cả 6 xúc tu chào Mây!" },
+      { name: "Bạch tuộc",   kind: "octopus",   pos: [-15, 2.2, -55], behavior: "still", greet: "🐙 Bạch tuộc vẫy cả tám cánh tay chào Mây!" },
       { name: "Cá heo Bubi", kind: "dolphin",   pos: [16, 3.6, -10],  behavior: "swim",  isCompanion: true, greet: "🐬 Cá heo Bubi được cứu rồi! Bubi sẽ bơi cùng Mây luôn!" },
-      { name: "Sao biển tím", kind: "pearl",    pos: [-66, 2.4, 28],  behavior: "still", greet: "🐚 Ngọc trai biển sâu gật đầu chào bé Mây!" },
+      { name: "Sao biển tím", kind: "starfish", pos: [-66, 2.4, 28],  behavior: "still", greet: "⭐ Mây tìm thấy bạn sao biển tím đang nghỉ trên đáy vịnh!" },
       { name: "Cua đỏ",      kind: "crab",      pos: [25, 1.3, -72],  behavior: "still", greet: "🦀 Cua đỏ giơ càng chào Mây nè!" }
     ]);
 

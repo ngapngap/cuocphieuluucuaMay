@@ -184,22 +184,46 @@
 
     /* Các cụm Pha Lê khổng lồ trong suốt phản chiếu + Đèn thực tế tỏa sáng lên mặt đá ướt */
     var crysCols = [0xc084fc, 0x38bdf8, 0xf472b6, 0x2dd4bf, 0xa78bfa];
-    var crystalGeo = new THREE.ConeGeometry(0.45, 1, 6);
+    // Broad hexagonal prisms with cut points read as mineral growth, even in dim light.
+    function facetColors(geometry) {
+      var geo = geometry.index ? geometry.toNonIndexed() : geometry;
+      var normal = geo.getAttribute("normal"), colors = [];
+      for (var n = 0; n < normal.count; n++) {
+        // Fixed face values preserve the cut planes under the bright player lamp.
+        var v = Math.max(0.42, Math.min(1, 0.70 + normal.getX(n) * 0.22 + normal.getY(n) * 0.14 + normal.getZ(n) * 0.12));
+        colors.push(v, v, v);
+      }
+      geo.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
+      return geo;
+    }
+    var crystalBodyGeo = facetColors(new THREE.CylinderGeometry(0.45, 0.53, 0.72, 6, 1));
+    var crystalTipGeo = facetColors(new THREE.ConeGeometry(0.45, 0.38, 6, 1));
+    var crystalRockGeo = new THREE.DodecahedronGeometry(0.8, 0);
+    var crystalFootGeo = new THREE.CircleGeometry(1.12, 10); crystalFootGeo.rotateX(-Math.PI / 2);
+    var crystalFootMat = new THREE.MeshBasicMaterial({ color: 0x0b1022, transparent: true, opacity: 0.45, depthWrite: false });
+    var crystalRockMat = new THREE.MeshStandardMaterial({ color: 0x302c40, roughness: 0.95, flatShading: true });
     var crystalMats = {};
     function makeCrystalCluster(color, sc, addLight) {
       var g = new THREE.Group();
-      var mat = crystalMats[color] || (crystalMats[color] = new THREE.MeshStandardMaterial({
-        color: color, emissive: color, emissiveIntensity: 0.24, roughness: 0.55, metalness: 0.08
-      }));
-      for (var k = 0; k < 5; k++) {
-        var h = (1.8 + (k % 3) * 1.1) * sc;
-        var sp = new THREE.Mesh(crystalGeo, mat);
-        sp.scale.set(sc, h, sc);
-        var a = (k / 5) * Math.PI * 2;
-        sp.position.set(Math.cos(a) * 0.45 * sc, h * 0.42, Math.sin(a) * 0.45 * sc);
-        sp.rotation.z = Math.cos(a) * 0.28; sp.rotation.x = -Math.sin(a) * 0.28;
-        g.add(sp);
-      }
+      var mat = crystalMats[color] || (crystalMats[color] = new THREE.MeshBasicMaterial({ color: new THREE.Color(color).multiplyScalar(0.6), vertexColors: true }));
+      var footprint = new THREE.Mesh(crystalFootGeo, crystalFootMat);
+      footprint.position.y = 0.03; footprint.scale.setScalar(sc); g.add(footprint);
+      var rock = new THREE.Mesh(crystalRockGeo, crystalRockMat);
+      rock.scale.set(1.25 * sc, 0.4 * sc, 1.1 * sc); rock.position.y = 0.22 * sc; g.add(rock);
+      // Instance the growths so each cluster needs only a body and a tip draw.
+      var bodies = new THREE.InstancedMesh(crystalBodyGeo, mat, 4);
+      var tips = new THREE.InstancedMesh(crystalTipGeo, mat, 4);
+      var transform = new THREE.Object3D(), local = new THREE.Object3D();
+      [[0, 0, 2.5, 0, 0], [-0.55, 0.06, 1.55, 0.1, -0.27],
+       [0.48, 0.18, 1.8, -0.1, 0.3], [0.08, -0.48, 1.25, 0.25, 0.05]].forEach(function (v, k) {
+        transform.position.set(v[0] * sc, 0.25 * sc, v[1] * sc);
+        transform.rotation.set(v[3], 0, v[4]); transform.updateMatrix();
+        local.position.set(0, 0.36 * v[2] * sc, 0); local.scale.set(sc, v[2] * sc, sc); local.updateMatrix();
+        bodies.setMatrixAt(k, new THREE.Matrix4().multiplyMatrices(transform.matrix, local.matrix));
+        local.position.y = (0.72 * v[2] + 0.19) * sc; local.scale.set(sc, sc, sc); local.updateMatrix();
+        tips.setMatrixAt(k, new THREE.Matrix4().multiplyMatrices(transform.matrix, local.matrix));
+      });
+      g.add(bodies, tips);
       if (addLight) {
         var pl = MAY.makePooledLight ? MAY.makePooledLight(color, 2.2, 28) : new THREE.PointLight(color, 2.2, 28);
         pl.position.y = 2.5 * sc; g.add(pl);
@@ -216,6 +240,21 @@
     });
 
     /* Cá & Sứa phát sáng bơi trong hồ ngầm */
+    // Faceted mineral motes orbit the underground lake as one instanced draw.
+    var shardMotes = new THREE.InstancedMesh(new THREE.OctahedronGeometry(0.12, 0),
+      new THREE.MeshBasicMaterial({ color: 0x76b9d8 }), 18);
+    var moteDummy = new THREE.Object3D(); ctx.add(shardMotes);
+    var animateMinerals = ctx.onUpdate;
+    ctx.onUpdate = function (dt, t) {
+      if (animateMinerals) animateMinerals(dt, t);
+      for (var mi = 0; mi < 18; mi++) {
+        var angle = mi * 2.399 + t * 0.12, radius = 9 + (mi % 4) * 2;
+        moteDummy.position.set(Math.cos(angle) * radius, 3.2 + (mi % 5) * 0.55 + Math.sin(t + mi) * 0.25, -8 + Math.sin(angle) * radius);
+        moteDummy.rotation.set(t * 0.5 + mi, angle, mi); moteDummy.updateMatrix(); shardMotes.setMatrixAt(mi, moteDummy.matrix);
+      }
+      shardMotes.instanceMatrix.needsUpdate = true;
+    };
+
     var lakeCreatures = [];
     for (var lc = 0; lc < 6; lc++) {
       var fg = MAY.fishBody(lc % 2 === 0 ? 0x38bdf8 : 0xe879f9, 1.1, lc % 3);
@@ -334,21 +373,49 @@
       { pos: new THREE.Vector3(0, ctx.groundH(0, -28), -28),   label: "🎵 Nốt 3: SON", noteIdx: 3, col: 0xf472b6 }
     ];
     var echoBaseGeo = new THREE.CylinderGeometry(1.05, 1.22, 0.48, 8);
-    var echoBaseMat = new THREE.MeshStandardMaterial({ color: 0x554e6a, roughness: 0.8 });
-    var echoShapeGeo = [new THREE.SphereGeometry(0.72, 14, 10), new THREE.ConeGeometry(0.78, 2.05, 3), new THREE.OctahedronGeometry(0.9, 0)];
+    var echoBaseMat = new THREE.MeshBasicMaterial({ color: 0x494456 });
+    var echoMetal = new THREE.MeshBasicMaterial({ color: 0x655b4b });
+    var echoPatina = new THREE.MeshBasicMaterial({ color: 0x315c5c });
     var echoMeshes = echoCoords.map(function (ec, idx) {
       var m = new THREE.Group();
       var base = new THREE.Mesh(echoBaseGeo, echoBaseMat); base.position.y = 0.24; m.add(base);
-      var top = new THREE.Mesh(echoShapeGeo[idx], new THREE.MeshStandardMaterial({ color: ec.col, emissive: ec.col, emissiveIntensity: 0.3, roughness: 0.35, flatShading: true }));
-      top.position.y = 1.65; if (idx === 2) top.scale.y = 1.25; m.add(top);
-      var symbol = MAY.makeLabel(["●", "▲", "◆"][idx], { sx: 1.2, sy: 1.2, w: 96, h: 96, fontSize: 56, bg: "rgba(20,20,32,.95)", color: "#ffffff" });
+      var foot = new THREE.Mesh(new THREE.CylinderGeometry(0.78, 0.9, 0.16, 8), echoPatina);
+      foot.position.y = 0.56; m.add(foot);
+      var top = new THREE.Group(); top.position.y = 1.65; m.add(top);
+      var mineral = new THREE.MeshBasicMaterial({ color: [0x1683a5, 0x32a765, 0xc04c7c][idx], vertexColors: true });
+      function part(geo, mat, x, y, z) {
+        var mesh = new THREE.Mesh(mat === mineral ? facetColors(geo) : geo, mat); mesh.position.set(x, y, z); top.add(mesh); return mesh;
+      }
+      if (idx === 0) {
+        // A broad crystal bell with a bronze lip and visible clapper.
+        part(new THREE.CylinderGeometry(0.35, 0.83, 1.05, 8), mineral, 0, 0, 0);
+        part(new THREE.CylinderGeometry(0.84, 0.84, 0.13, 8), echoMetal, 0, -0.53, 0);
+        part(new THREE.SphereGeometry(0.16, 8, 6), echoMetal, 0, -0.69, 0);
+        part(new THREE.CylinderGeometry(0.13, 0.2, 0.3, 8), echoPatina, 0, 0.67, 0);
+      } else if (idx === 1) {
+        // A low drum, its broad crystal head held between patinated hoops.
+        part(new THREE.CylinderGeometry(0.82, 0.68, 0.85, 8), echoPatina, 0, -0.05, 0);
+        part(new THREE.CylinderGeometry(0.77, 0.77, 0.16, 8), mineral, 0, 0.42, 0);
+        part(new THREE.CylinderGeometry(0.86, 0.86, 0.12, 8), echoMetal, 0, -0.48, 0);
+        part(new THREE.TorusGeometry(0.78, 0.07, 6, 8), echoMetal, 0, 0.49, 0).rotation.x = Math.PI / 2;
+      } else {
+        // Three hanging crystal bars under a crossbar make the chime distinct at a distance.
+        part(new THREE.BoxGeometry(1.65, 0.14, 0.18), echoMetal, 0, 0.71, 0);
+        [-0.52, 0, 0.52].forEach(function (x, n) {
+          part(new THREE.CylinderGeometry(0.025, 0.025, 0.24, 5), echoMetal, x, 0.54, 0);
+          var bar = part(new THREE.CylinderGeometry(0.19, 0.25, 0.9 + n * 0.15, 6), mineral, x, -0.03 - n * 0.075, 0);
+          bar.rotation.z = (n - 1) * 0.05;
+        });
+      }
+      var symbol = MAY.makeLabel(["?", "?", "?"][idx], { sx: 1.2, sy: 1.2, w: 96, h: 96, fontSize: 56, bg: "rgba(20,20,32,.95)", color: "#ffffff" });
       symbol.position.set(0, 2.8, 0); m.add(symbol);
-      m.userData.noteTop = top; m.userData.noteTime = 0;
+      m.userData.noteTop = top; m.userData.noteMaterial = mineral; m.userData.noteTime = 0;
       m.position.copy(ec.pos); ctx.add(m);
       ctx.addCollider(ec.pos.x, ec.pos.z, 0.92, "echo_crystal", { minY: ec.pos.y - 0.5, maxY: ec.pos.y + 3.6 });
       return m;
     });
     function pulseEcho(idx) { echoMeshes[idx].userData.noteTime = 0.65; }
+    var echoFlashWhite = new THREE.Color(0xffffff);
     var caveUpdate = ctx.onUpdate;
     ctx.onUpdate = function (dt, t) {
       if (caveUpdate) caveUpdate(dt, t);
@@ -357,8 +424,8 @@
         data.noteTime = Math.max(0, data.noteTime - dt);
         var hit = data.noteTime / 0.65;
         top.position.y = 1.65 + Math.sin(t * 1.8 + i) * 0.07 - Math.sin(hit * Math.PI) * 0.3;
-        top.material.emissiveIntensity = 0.3 + hit * 1.4;
-        top.rotation.y += dt * (0.3 + hit * 2);
+        data.noteMaterial.color.setHex([0x1683a5, 0x32a765, 0xc04c7c][i]).lerp(echoFlashWhite, hit * 0.35);
+        top.rotation.z = Math.sin(hit * Math.PI * 3) * hit * 0.12;
       });
     };
     var echoPatterns = [[0, 1, 2], [2, 0, 1]];

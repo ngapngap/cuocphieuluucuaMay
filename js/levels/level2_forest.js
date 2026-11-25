@@ -287,7 +287,7 @@
 
     /* ---- 5 Bạn Rừng + Cún Milo ---- */
     ctx.addFriends([
-      { name: "Thỏ Rừng Bông",  kind: "rabbit",    pos: [14, 24],  greet: "🐇 Thỏ Rừng Bông vẫy đôi tai dài chào Mây!" },
+      { name: "Thỏ Rừng Bông",  kind: "forestrabbit",    pos: [14, 24],  greet: "🐇 Thỏ Rừng Bông vẫy đôi tai dài chào Mây!" },
       { name: "Hươu Sao",       kind: "deer",      pos: [-24, 8],  greet: "🦌 Hươu Sao cúi đầu chào bé Mây xinh!" },
       { name: "Cáo Cam Nhỏ",    kind: "fox",       pos: [34, -22], greet: "🦊 Cáo Cam vẫy chiếc đuôi xù chào Mây!" },
       { name: "Bướm Xanh Lớn",  kind: "butterfly", pos: [-8, 6.2, -16], behavior: "fly", orbitR: 6, opts: { color: 0x4dd0ff, scale: 1.35 }, greet: "🦋 Bướm Xanh đập cánh lấp lánh quanh Mây!" },

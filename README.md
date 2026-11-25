@@ -33,6 +33,10 @@ Nhặt vật phẩm là nhánh khám phá tùy chọn: mỗi vật phẩm hồi 
 - **Mặt nước hấp thụ độ sâu Beer-Lambert + tán xạ sóng SSS + bọt bờ theo độ sâu thật**, **Planar Reflections**, **Depth-Buffer SSAO 32-bit sạch sọc**, **Decal Runic ôm độ dốc địa hình**, **Va chạm rắn 3D** & tạo hình thú hữu cơ mượt mà hơn.
 
 ## Cấu trúc mã nguồn
+
+Tác giả, giấy phép và các thay đổi của chín mẫu thú được ghi trong [danh sách mô hình Polyfork](assets/models/POLYFORK.md).
+Ảnh trước và sau của Mây, gấu, thỏ, Đảo Mây và cầu mây nằm trong [báo cáo kiểm tra hình ảnh](docs/kiem-tra-hinh-anh.md).
+
 - `index.html`, `style.css`, `game.js`: Giao diện HUD, Thanh Phép Thuật, Bản Đồ Thế Giới (`M`), Sổ Tay & Tủ Đồ (`J`), và vòng lặp chính.
 - `js/data.js`: Dữ liệu 6 màn, 6 phép thuật, trang phục, trang bị, câu đố giáo dục & lưu `localStorage`.
 - `js/audio.js`: Giọng đọc tiếng Việt offline (`assets/voice/*.mp3`), Foley bước chân theo chất liệu, nhạc nền từng vùng đất & âm thanh phép thuật.

@@ -235,6 +235,26 @@
     });
   }
 
+  var animalOvalGeo = MAY.protectGeometry(new THREE.SphereGeometry(1, 12, 8));
+  function animalOval(parent, material, x, y, z, width, height, length) {
+    var part = new THREE.Mesh(animalOvalGeo, material);
+    part.userData.sharedGeo = true;
+    part.scale.set(width, height, length);
+    part.position.set(x, y, z);
+    parent.add(part);
+    return part;
+  }
+
+  function taperedLimb(parent, mat, start, end, shoulder, tip) {
+    var a = new THREE.Vector3().fromArray(start), b = new THREE.Vector3().fromArray(end);
+    var direction = b.clone().sub(a);
+    var limb = new THREE.Mesh(new THREE.CylinderGeometry(tip, shoulder, direction.length(), 8), mat);
+    limb.position.copy(a).lerp(b, 0.5);
+    limb.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.normalize());
+    parent.add(limb);
+    return limb;
+  }
+
   MAY.fishBody = function (color, len, species) {
     var g = new THREE.Group();
     if (MAY.modelsReady) {
@@ -258,7 +278,43 @@
     return g;
   };
 
-  /* Helper tạo thú / NPC có xương Blender & CC0 Quaternius (SkinnedMesh + AnimationMixer) */
+  function dressFox(mesh, snowy) {
+    var source = mesh.material.map;
+    if (!source || !source.image) return;
+    var canvas = document.createElement("canvas");
+    canvas.width = source.image.width; canvas.height = source.image.height;
+    var context = canvas.getContext("2d");
+    context.drawImage(source.image, 0, 0);
+    var image = context.getImageData(0, 0, canvas.width, canvas.height), pixels = image.data;
+    // The fox atlas has five flat swatches. Keep the eyes and white bib intact.
+    for (var i = 0; i < pixels.length; i += 4) {
+      if (pixels[i] === 165 && pixels[i + 1] === 103) {
+        pixels[i] = snowy ? 227 : 224; pixels[i + 1] = snowy ? 234 : 185; pixels[i + 2] = snowy ? 238 : 130;
+      } else if (pixels[i] === 79 && pixels[i + 1] === 79) {
+        pixels[i] = snowy ? 161 : 142; pixels[i + 1] = snowy ? 177 : 110; pixels[i + 2] = snowy ? 187 : 85;
+      }
+    }
+    context.putImageData(image, 0, 0);
+    mesh.material = mesh.material.clone();
+    mesh.material.map = source.clone();
+    mesh.material.map.source = new THREE.Source(canvas);
+    mesh.material.map.needsUpdate = true;
+    if (snowy) return;
+    // In this mesh the ear tips sit above the brow at y=2.38 toward +Z.
+    mesh.geometry = mesh.geometry.clone();
+    mesh.userData.sharedGeo = false;
+    var pos = mesh.geometry.attributes.position;
+    for (var k = 0; k < pos.count; k++) {
+      var rise = Math.max(0, pos.getY(k) - 2.38);
+      if (rise > 0 && pos.getZ(k) > 1.95) {
+        pos.setXYZ(k, pos.getX(k) + Math.sign(pos.getX(k)) * rise * 0.65, pos.getY(k) + rise * 1.6, pos.getZ(k));
+      }
+    }
+    mesh.geometry.computeVertexNormals();
+    mesh.geometry.computeBoundingSphere();
+  }
+
+  /* Helper tạo thú / NPC có xương Blender & GLB (SkinnedMesh + AnimationMixer) */
   function buildRiggedAnimal(key, cfg, opts) {
     if (!MAY.RIGGED || !MAY.RIGGED[key] || !MAY.cloneSkinnedGLB) return null;
     var cl = MAY.cloneSkinnedGLB(key);
@@ -269,20 +325,30 @@
     root.rotation.y = cfg.rotY !== undefined ? cfg.rotY : Math.PI;
     root.scale.setScalar(cfg.scale || 1.0);
     if (cfg.yOff) root.position.y = cfg.yOff;
-    if (cfg.tint !== undefined && cfg.tint !== null) {
-      var tintCol = new THREE.Color(cfg.tint);
-      var amt = cfg.tintAmt !== undefined ? cfg.tintAmt : 0.5;
+    if (cfg.foxCoat) {
       root.traverse(function (o) {
-        if (o.isMesh && o.material) {
-          var mats = Array.isArray(o.material) ? o.material : [o.material];
-          var cloned = mats.map(function (m) {
-            if (!m || !m.color) return m;
-            var nm = m.clone();
-            nm.color.lerp(tintCol, amt);
-            return nm;
-          });
-          o.material = Array.isArray(o.material) ? cloned : cloned[0];
+        if (o.isMesh && o.material.name === "Mat_FoxAtlas") dressFox(o, cfg.foxCoat === "snow");
+      });
+    }
+    // Polyfork's rabbit has baked vertex colors. Recolor the fur on a private
+    // geometry clone while keeping the dark eyes and rose inner ears intact.
+    if (cfg.whiteRabbit) {
+      root.traverse(function (o) {
+        if (!o.isMesh || !o.geometry || !o.geometry.attributes.color) return;
+        o.geometry = o.geometry.clone();
+        o.userData.sharedGeo = false;
+        var colors = o.geometry.attributes.color;
+        for (var i = 0; i < colors.count; i++) {
+          var r = colors.getX(i), green = colors.getY(i), blue = colors.getZ(i);
+          if (r > 0.25 && r < 0.4 && green > 0.2 && green < 0.32) {
+            colors.setXYZ(i, 0.86, 0.86, 0.82);
+          } else if (r > 0.6 && green > 0.5 && blue < 0.55) {
+            colors.setXYZ(i, 0.93, 0.91, 0.86);
+          } else if (r > 0.09 && r < 0.13 && green > 0.045 && green < 0.08) {
+            colors.setXYZ(i, 0.70, 0.70, 0.68);
+          }
         }
+        colors.needsUpdate = true;
       });
     }
     var mixer = new THREE.AnimationMixer(root);
@@ -318,15 +384,21 @@
   }
 
   var RIGGED_ANIMAL_MAP = {
+    rabbit:       { key: "rabbit", scale: 3.6, whiteRabbit: true, defaultClip: "idle" },
+    forestrabbit: { key: "rabbit", scale: 3.6, defaultClip: "idle" },
+    snowhare:     { key: "snowhare", scale: 2.7, defaultClip: "idle" },
     tortoise:  { key: "tortoise",  scale: 0.86, defaultClip: "idle" },
     fox:       { key: "fox",       scale: 0.42, defaultClip: "idle" },
-    fennec:    { key: "fox",       scale: 0.36, tint: 0xf4c989, tintAmt: 0.48, defaultClip: "idle" },
-    snowfox:   { key: "fox",       scale: 0.40, tint: 0xf5fbff, tintAmt: 0.80, defaultClip: "idle" },
-    deer:      { key: "deer",      scale: 0.44, defaultClip: "idle" },
+    fennec:    { key: "fox",       scale: 0.36, foxCoat: "sand", defaultClip: "idle" },
+    snowfox:   { key: "fox",       scale: 0.40, foxCoat: "snow", defaultClip: "idle" },
+    deer:      { key: "deer",      scale: 0.85, defaultClip: "idle" },
     reindeer:  { key: "reindeer",  scale: 0.40, defaultClip: "idle" },
     unicorn:   { key: "unicorn",   scale: 0.42, defaultClip: "idle" },
-    sheep:     { key: "alpaca",    scale: 0.28, tint: 0xffffff, tintAmt: 0.65, defaultClip: "idle" },
-    camel:     { key: "alpaca",    scale: 0.36, tint: 0xdcb06c, tintAmt: 0.55, defaultClip: "idle" },
+    sheep:     { key: "sheep",     scale: 1.08, defaultClip: "idle" },
+    camel:     { key: "camel",     scale: 0.95, defaultClip: "idle" },
+    owl:       { key: "owl",       scale: 4.1, defaultClip: "idle" },
+    penguin:   { key: "penguin",   scale: 1.8, defaultClip: "idle" },
+    octopus:   { key: "octopus",   scale: 0.59, defaultClip: "idle" },
     crab:      { key: "crab",      scale: 0.52, defaultClip: "idle" },
     dolphin:   { key: "dolphin",   scale: 0.34, rotY: Math.PI / 2, defaultClip: "swim" },
     clownfish: { key: "clownfish", scale: 0.24, rotY: Math.PI / 2, defaultClip: "swim" }
@@ -336,7 +408,16 @@
     opts = opts || {};
     if (RIGGED_ANIMAL_MAP[kind]) {
       var rg = buildRiggedAnimal(RIGGED_ANIMAL_MAP[kind].key, RIGGED_ANIMAL_MAP[kind], opts);
-      if (rg) return rg;
+      if (rg) {
+        if (kind === "penguin") {
+          var scarfMat = stdMat(0xe34c58, 0.85);
+          var scarf = new THREE.Mesh(new THREE.TorusGeometry(0.26, 0.045, 6, 16), scarfMat);
+          scarf.rotation.x = Math.PI / 2; scarf.position.y = 0.91; rg.add(scarf);
+          var scarfEnd = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.29, 0.065), scarfMat);
+          scarfEnd.position.set(0.12, 0.73, -0.25); scarfEnd.rotation.z = 0.12; rg.add(scarfEnd);
+        }
+        return rg;
+      }
     }
     var g = new THREE.Group();
     g.rotation.order = "YXZ";
@@ -350,7 +431,7 @@
           mRoot.rotation.y = Math.PI;
           mRoot.scale.setScalar(1.42);
           mRoot.traverse(function (o) {
-            if (o.isMesh && (o.name === "Wing_L" || o.name === "Wing_R")) {
+            if (o.isMesh && /^Wing_[LR](?:_\d+)?$/.test(o.name)) {
               o.visible = (kind === "miloWinged");
             }
             if (o.isMesh && o.material && o.material.name === "Mat_Body") {
@@ -410,8 +491,8 @@
         var wr = wl.clone(); wr.position.x = 0.46; g.add(wr);
         g.userData.wl = wl; g.userData.wr = wr;
       }
-    } else if (kind === "rabbit") {
-      var wm = stdMat(0xffffff, 0.9);
+    } else if (kind === "rabbit" || kind === "forestrabbit" || kind === "snowhare") {
+      var wm = stdMat(kind === "forestrabbit" ? 0x997755 : 0xffffff, 0.9);
       var b = new THREE.Mesh(new THREE.SphereGeometry(0.45, 12, 10), wm); b.scale.set(0.95, 0.85, 1.2); b.position.y = 0.42; g.add(b);
       var h = new THREE.Mesh(new THREE.SphereGeometry(0.3, 10, 8), wm); h.position.set(0, 0.8, -0.48); g.add(h);
       [-0.12, 0.12].forEach(function (ex) {
@@ -427,6 +508,14 @@
       var f = new THREE.Mesh(new THREE.SphereGeometry(0.26, 10, 8), m2); f.scale.set(1, 0.9, 0.5); f.position.set(0, 1.22, -0.22); g.add(f);
       addEyes(g, 0.1, 1.28, -0.35, 0.045);
       [-0.36, 0.36].forEach(function (ex) { var er = new THREE.Mesh(new THREE.SphereGeometry(0.13, 8, 6), m2); er.position.set(ex, 1.32, 0); g.add(er); });
+      [-1,1].forEach(function (side) {
+        var elbow = [side*0.44,0.66,0.07], wrist = [side*0.48,0.39,-0.12];
+        taperedLimb(g,m1,[side*0.28,0.93,0],elbow,0.112,0.080);
+        taperedLimb(g,m1,elbow,wrist,0.080,0.067);
+        animalOval(g,m2,wrist[0],wrist[1],wrist[2],0.082,0.09,0.07);
+        animalOval(g,m1,side*0.23,0.26,0.045,0.147,0.22,0.18);
+        animalOval(g,m2,side*0.24,0.093,-0.055,0.112,0.071,0.17);
+      });
       var tail = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.06, 6, 12, Math.PI), m1); tail.position.set(0, 0.65, 0.45); tail.rotation.y = Math.PI / 2; g.add(tail);
     } else if (kind === "crab") {
       var rm = stdMat(0xe8483f, 0.6);
@@ -449,6 +538,11 @@
       [-0.14, 0.14].forEach(function (x) { var er = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.22, 6), m); er.position.set(x, 1.24, -0.2); g.add(er); });
       var nut = new THREE.Mesh(new THREE.SphereGeometry(0.13, 8, 6), stdMat(0x7c4a1d, 0.8)); nut.position.set(0, 0.58, -0.46); g.add(nut);
       var fl = new THREE.Mesh(new THREE.SphereGeometry(0.36, 10, 8), bel); fl.scale.set(0.65, 1.4, 0.9); fl.position.set(0, 0.86, 0.48); fl.rotation.x = 0.35; g.add(fl);
+      [-1,1].forEach(function (side) {
+        animalOval(g,m,side*0.20,0.20,0.10,0.16,0.18,0.19);
+        animalOval(g,bel,side*0.17,0.075,-0.07,0.085,0.06,0.16);
+        taperedLimb(g,m,[side*0.23,0.69,-0.10],[side*0.10,0.56,-0.43],0.083,0.046);
+      });
       addEyes(g, 0.11, 1.0, -0.46, 0.045);
     } else if (kind === "deer" || kind === "reindeer") {
       var isRein = (kind === "reindeer");
@@ -494,17 +588,60 @@
       var wr = wl.clone(); wr.position.x = 0.62; g.add(wr);
       g.userData.wl = wl; g.userData.wr = wr;
     } else if (kind === "panda" || kind === "polarbear") {
-      var isPanda = (kind === "panda");
-      var wh = stdMat(0xf8fbff, 0.9), dk = stdMat(isPanda ? 0x1d1f26 : 0xe4f1fa, 0.9);
-      var b = new THREE.Mesh(new THREE.SphereGeometry(0.58, 12, 10), wh); b.scale.set(1, 1.05, 0.95); b.position.y = 0.62; g.add(b);
-      var hd = new THREE.Mesh(new THREE.SphereGeometry(0.42, 12, 10), wh); hd.position.set(0, 1.32, -0.1); g.add(hd);
-      [-0.3, 0.3].forEach(function (x) {
-        var er = new THREE.Mesh(new THREE.SphereGeometry(0.14, 8, 6), dk); er.position.set(x, 1.66, -0.05); g.add(er);
-        var arm = new THREE.Mesh(new THREE.SphereGeometry(0.2, 8, 6), dk); arm.position.set(x * 1.75, 0.85, -0.18); g.add(arm);
-        var leg = new THREE.Mesh(new THREE.SphereGeometry(0.22, 8, 6), dk); leg.position.set(x * 1.1, 0.22, -0.2); g.add(leg);
+      var isPanda = kind === "panda";
+      // Prefer the locally cached Polyfork bear; the procedural shape below remains offline fallback.
+      var realBear = buildRiggedAnimal("polyfork_bear", { rotY: Math.PI, scale: 1.0 }, opts);
+      if (realBear) {
+        realBear.traverse(function (o) {
+          if (!o.isMesh || !o.geometry.attributes.color) return;
+          o.geometry = o.geometry.clone();
+          o.userData.sharedGeo = false;
+          var colors = o.geometry.attributes.color, pos = o.geometry.attributes.position;
+          // The source is unindexed, so coloring each triangle by its center keeps its facets crisp.
+          for (var i = 0; i < colors.count; i += 3) {
+            var x = 0, y = 0, z = 0, old = 0;
+            for (var k = 0; k < 3; k++) { x += pos.getX(i+k); y += pos.getY(i+k); z += pos.getZ(i+k); old += colors.getX(i+k); }
+            x /= 3; y /= 3; z /= 3; old /= 3;
+            var faceDetail = old < 0.025 && z > 0.52;
+            var pandaBlack = isPanda && (y < 0.64 || (z > -0.13 && z < 0.30 && y < 1.18) ||
+              (z > 0.38 && y > 1.17 && Math.abs(x) > 0.12) ||
+              (z > 0.57 && y > 0.92 && y < 1.18 && Math.abs(x) > 0.10));
+            var value = faceDetail ? 0.018 : pandaBlack ? 0.035 : (isPanda ? 0.84 : 0.88);
+            for (var c = 0; c < 3; c++) colors.setXYZ(i+c, value, value * (faceDetail || pandaBlack ? 1.04 : 0.99), value * (isPanda ? 0.96 : 1.0));
+          }
+          colors.needsUpdate = true;
+        });
+        return realBear;
+      }
+      var fur = stdMat(isPanda ? 0xf4f0e6 : 0xeaf4f5, 0.92);
+      var darkFur = stdMat(isPanda ? 0x25272b : 0xd3e5e8, 0.94);
+      var muzzleMat = stdMat(isPanda ? 0xf5eee4 : 0xf9fbf7, 0.94);
+      var noseMat = stdMat(0x252c31, 0.78);
+      var bearGeo = new THREE.SphereGeometry(1, 10, 7);
+      function bearOval(mat, x, y, z, sx, sy, sz) {
+        var o = new THREE.Mesh(bearGeo, mat);
+        o.position.set(x, y, z); o.scale.set(sx, sy, sz); g.add(o); return o;
+      }
+      bearOval(fur, 0, 0.73, 0.18, 0.57, 0.57, 0.86); // rump and back
+      bearOval(isPanda ? darkFur : fur, 0, 0.80, -0.31, 0.58, 0.60, 0.48); // shoulders
+      [-1, 1].forEach(function (side) {
+        [-0.45, 0.58].forEach(function (z) {
+          bearOval(darkFur, side * 0.38, 0.36, z, 0.23, 0.37, 0.25);
+          bearOval(darkFur, side * 0.38, 0.12, z - 0.09, 0.25, 0.12, 0.31);
+        });
       });
-      addEyes(g, 0.14, 1.38, -0.48, isPanda ? 0.075 : 0.05);
-      var ns = new THREE.Mesh(new THREE.SphereGeometry(0.075, 6, 5), blackEye); ns.position.set(0, 1.26, -0.52); g.add(ns);
+      bearOval(fur, 0, 1.02, -0.70, 0.46, 0.41, 0.42); // round head
+      [-1, 1].forEach(function (side) {
+        bearOval(darkFur, side * 0.32, 1.32, -0.67, 0.15, 0.16, 0.13);
+        if (isPanda) {
+          var patch = bearOval(darkFur, side * 0.20, 1.08, -1.04, 0.13, 0.17, 0.065);
+          patch.rotation.z = side * 0.22;
+        }
+        bearOval(noseMat, side * 0.20, 1.10, -1.10, 0.039, 0.045, 0.03);
+      });
+      bearOval(muzzleMat, 0, 0.93, -1.04, 0.24, 0.16, 0.19);
+      bearOval(noseMat, 0, 1.01, -1.22, 0.095, 0.055, 0.045);
+      bearOval(fur, 0, 0.81, 0.97, 0.11, 0.10, 0.12); // short tail
     } else if (kind === "camel") {
       var cm = stdMat(0xdcb06c, 0.88), dm = stdMat(0xb68642, 0.88);
       var b = new THREE.Mesh(new THREE.CapsuleGeometry(0.38, 0.78, 8, 12), cm); b.rotation.x = Math.PI / 2; b.position.y = 1.15; g.add(b);
@@ -515,20 +652,45 @@
       var hd = new THREE.Mesh(new THREE.SphereGeometry(0.27, 12, 10), cm); hd.scale.set(0.85, 0.85, 1.3); hd.position.set(0, 1.98, -1.08); g.add(hd);
       addEyes(g, 0.14, 2.04, -1.28, 0.05);
     } else if (kind === "lizard") {
-      var lm = stdMat(0x88c456, 0.7);
-      var b = new THREE.Mesh(new THREE.SphereGeometry(0.32, 10, 8), lm); b.scale.set(1.0, 0.5, 2.2); b.position.y = 0.24; g.add(b);
-      var hd = new THREE.Mesh(new THREE.SphereGeometry(0.24, 8, 6), lm); hd.position.set(0, 0.34, -0.78); g.add(hd);
-      var tl = new THREE.Mesh(new THREE.ConeGeometry(0.16, 1.1, 6), lm); tl.rotation.x = Math.PI / 2; tl.position.set(0, 0.22, 1.15); g.add(tl);
-      addEyes(g, 0.12, 0.44, -0.92, 0.05);
+      var lm = stdMat(0x759362, 0.86), gold = stdMat(0xe8bb70, 0.9);
+      animalOval(g, lm, 0,0.21,0, 0.24,0.16,0.62);
+      animalOval(g, lm, 0,0.29,-0.58, 0.235,0.14,0.31);
+      taperedLimb(g,lm,[0,0.20,0.43],[0.11,0.13,0.90],0.145,0.082);
+      taperedLimb(g,lm,[0.11,0.13,0.90],[0.28,0.06,1.49],0.082,0.007);
+      [-1, 1].forEach(function (side) {
+        [-0.34, 0.33].forEach(function (z) {
+          var knee = [side*0.35,0.14,z+0.10], ankle = [side*0.51,0.055,z-0.07];
+          taperedLimb(g,lm,[side*0.14,0.21,z],knee,0.081,0.065);
+          taperedLimb(g,lm,knee,ankle,0.065,0.034);
+          for (var toe = -1; toe <= 1; toe++)
+            animalOval(g,gold,ankle[0]+toe*0.033,0.035,ankle[2]-0.041,0.015,0.015,0.060).rotation.y = -toe*0.35;
+        });
+      });
+      [-0.25,0,0.22,0.39].forEach(function (z) {
+        animalOval(g,gold,0,0.21+0.16*Math.sqrt(1-z*z/0.39),z,0.038,0.011,0.063);
+      });
+      addEyes(g,0.177,0.36,-0.70,0.045);
     } else if (kind === "meerkat") {
-      var mm = stdMat(0xc99c68, 0.85), bm = stdMat(0x5b3f24, 0.9);
-      var b = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.26, 0.9, 10), mm); b.position.y = 0.48; g.add(b);
-      var hd = new THREE.Mesh(new THREE.SphereGeometry(0.24, 10, 8), mm); hd.position.set(0, 1.06, -0.05); g.add(hd);
-      var mask = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.1, 0.12), bm); mask.position.set(0, 1.08, -0.24); g.add(mask);
-      addEyes(g, 0.1, 1.08, -0.31, 0.045);
+      var mm = stdMat(0xb48960, 0.89), mask = stdMat(0x4b4038, 0.88), cream = stdMat(0xe3c6a0, 0.88);
+      animalOval(g,mm,0,0.53,0.04,0.205,0.46,0.18).rotation.x = -0.15;
+      animalOval(g,cream,0,0.56,-0.06,0.151,0.32,0.116).rotation.x = -0.15;
+      animalOval(g,mm,0,1.035,-0.055,0.22,0.185,0.196);
+      animalOval(g,cream,0,0.995,-0.209,0.124,0.080,0.145);
+      animalOval(g,blackEye,0,1.013,-0.348,0.047,0.028,0.033);
+      taperedLimb(g,mm,[0,0.22,0.15],[0.035,0.10,0.47],0.077,0.052);
+      taperedLimb(g,mm,[0.035,0.10,0.47],[0.14,0.042,0.86],0.052,0.009);
+      [-1, 1].forEach(function (side) {
+        animalOval(g,mask,side*0.108,1.07,-0.207,0.093,0.071,0.046).rotation.z=side*0.25;
+        animalOval(g,mask,side*0.199,1.08,0.006,0.065,0.073,0.039);
+        animalOval(g,mm,side*0.134,0.096,-0.018,0.094,0.106,0.15);
+        var elbow = [side*0.194,0.62,-0.10];
+        taperedLimb(g,mm,[side*0.136,0.77,-0.025],elbow,0.063,0.049);
+        taperedLimb(g,mm,elbow,[side*0.115,0.55,-0.215],0.049,0.030);
+      });
+      addEyes(g,0.105,1.077,-0.249,0.035);
     } else if (kind === "bat" || kind === "bird" || kind === "eagle" || kind === "phoenix") {
       var col = opts.color || (kind === "bat" ? 0x9b6dff : kind === "eagle" ? 0xd99b26 : kind === "phoenix" ? 0xff6b9d : 0xffffff);
-      var em = (kind === "bat" || kind === "phoenix") ? { emissive: col, emissiveIntensity: 0.45 } : null;
+      var em = kind === "phoenix" ? { emissive: col, emissiveIntensity: 0.18 } : null;
       var bm = stdMat(col, 0.55, em);
       var bd = new THREE.Mesh(new THREE.SphereGeometry(0.34, 14, 10), bm); bd.scale.set(0.88, 0.82, 1.52); g.add(bd);
       var hd = new THREE.Mesh(new THREE.SphereGeometry(0.24, 12, 10), bm); hd.position.set(0, 0.18, -0.48); g.add(hd);
@@ -545,6 +707,32 @@
       function makeFeatherWing(side) {
         var piv = new THREE.Group();
         piv.position.set(side * 0.22, 0.10, -0.04);
+        if (kind === "bat") {
+          var membrane = new THREE.BufferGeometry();
+          // Thumb and elbow form the leading edge; the shorter fingers scallop the trailing edge.
+          var outline = [[0,0.00,-0.10],[0.43,0.13,-0.31],[0.98,0.08,-0.19],
+            [1.26,-0.035,0.005],[0.84,0.018,0.15],[0.68,-0.055,0.33],
+            [0.46,0.018,0.21],[0.32,-0.05,0.43],[0.18,0.014,0.28],[0,0.0,0.32]];
+          var points = [];
+          outline.forEach(function (p) { points.push(side*p[0],p[1],p[2]); });
+          membrane.setAttribute("position",new THREE.Float32BufferAttribute(points,3));
+          membrane.setIndex([1,2,3,1,3,4,1,4,5,1,5,6,1,6,7,1,7,8,1,8,9,1,9,0]);
+          membrane.computeVertexNormals();
+          piv.add(new THREE.Mesh(membrane,stdMat(0x604775,0.84,{side:THREE.DoubleSide})));
+          [3,5,7].forEach(function (i) {
+            var finger = outline[i];
+            taperedLimb(piv,bm,[side*0.43,0.14,-0.31],[side*finger[0],finger[1]+0.012,finger[2]],0.022,0.007);
+          });
+          return piv;
+        }
+        if (kind === "eagle" || kind === "phoenix") {
+          var tips = kind === "phoenix" ? wTipM : stdMat(0x4f3f37,0.85);
+          for (var f = 0; f < 5; f++) {
+            var feather = animalOval(piv,f % 3 === 0 ? bm : tips,side*(0.70 + f*0.095),0.009*f,
+              0.31-f*0.118,wLen*(0.56-f*0.035),0.037,0.102);
+            feather.rotation.y = side*(0.45-f*0.095);
+          }
+        }
         var inner = new THREE.Mesh(new THREE.SphereGeometry(0.36, 10, 8), bm);
         inner.scale.set(wLen * 1.05, 0.14, 0.68); inner.position.set(side * wLen * 0.42, 0, 0.02); piv.add(inner);
         var tip = new THREE.Mesh(new THREE.ConeGeometry(0.22, wLen * 0.72, 8), wTipM);
@@ -595,12 +783,28 @@
       addEyes(g, 0.13, 0.6, -0.45, 0.04);
     } else if (kind === "firefly" || kind === "shootingstar") {
       var col = kind === "firefly" ? 0xcaff70 : 0xffd93d;
-      var orb = new THREE.Mesh(kind === "shootingstar" ? MAY.starGeo : new THREE.SphereGeometry(0.35, 12, 10),
+      var orb = new THREE.Mesh(kind === "shootingstar" ? MAY.starGeo : new THREE.SphereGeometry(0.16, 12, 10),
         stdMat(col, 0.25, { emissive: col, emissiveIntensity: 0.95 }));
       if (kind === "shootingstar") orb.scale.setScalar(0.75);
+      else {
+        orb.position.z = 0.245;
+        var beetle = stdMat(0x443d41,0.75), wing = stdMat(0xb3cbc4,0.7);
+        animalOval(g,beetle,0,0,0.01,0.135,0.11,0.23);
+        animalOval(g,beetle,0,0.035,-0.19,0.108,0.096,0.11);
+        [-1,1].forEach(function (side) {
+          var cover = animalOval(g,beetle,side*0.09,0.095,0.07,0.065,0.058,0.16);
+          cover.rotation.y = side*0.46;
+          var fw = animalOval(g,wing,side*0.21,0.13,0.085,0.25,0.016,0.088);
+          fw.rotation.y = -side*0.48;
+          if (side < 0) g.userData.wl = fw; else g.userData.wr = fw;
+          taperedLimb(g,beetle,[side*0.056,0.11,-0.22],[side*0.12,0.21,-0.31],0.014,0.007);
+        });
+      }
       g.add(orb);
       var halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: MAY.TEX.glow, color: col, transparent: true, opacity: 0.75, blending: THREE.AdditiveBlending, depthWrite: false }));
-      halo.scale.set(2.4, 2.4, 1); g.add(halo);
+      halo.scale.setScalar(kind === "firefly" ? 0.78 : 2.4);
+      if (kind === "firefly") { halo.position.copy(orb.position); halo.material.opacity = 0.4; }
+      g.add(halo);
     } else if (kind === "penguin") {
       var dk = stdMat(0x1f2d3d, 0.7), wh = stdMat(0xffffff, 0.85);
       var b = new THREE.Mesh(new THREE.SphereGeometry(0.42, 12, 10), dk); b.scale.set(0.95, 1.35, 0.9); b.position.y = 0.56; g.add(b);
@@ -613,6 +817,10 @@
       var b = new THREE.Mesh(new THREE.SphereGeometry(0.44, 12, 10), sm); b.scale.set(0.95, 0.75, 1.65); b.position.y = 0.35; g.add(b);
       var hd = new THREE.Mesh(new THREE.SphereGeometry(0.3, 10, 8), sm); hd.position.set(0, 0.62, -0.68); g.add(hd);
       var ns = new THREE.Mesh(new THREE.SphereGeometry(0.06, 6, 5), blackEye); ns.position.set(0, 0.6, -0.96); g.add(ns);
+      [-1,1].forEach(function (side) {
+        animalOval(g,sm,side*0.39,0.16,-0.24,0.34,0.07,0.16).rotation.y=side*0.4;
+        animalOval(g,sm,side*0.125,0.20,0.76,0.14,0.063,0.24).rotation.y=side*0.37;
+      });
       addEyes(g, 0.12, 0.68, -0.9, 0.05);
     } else if (kind === "unicorn") {
       var wh = stdMat(0xffffff, 0.5), pn = stdMat(0xff99dd, 0.45, { emissive: 0xff66cc, emissiveIntensity: 0.32 });
@@ -653,13 +861,21 @@
     } else if (kind === "octopus") {
       var mat = stdMat(0x9b59d0, 0.7);
       g.add(new THREE.Mesh(new THREE.SphereGeometry(0.7, 14, 10), mat));
-      for (var k = 0; k < 6; k++) {
-        var tn = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.14, 0.9, 8), mat);
-        var a = k / 6 * Math.PI * 2;
-        tn.position.set(Math.cos(a) * 0.45, -0.6, Math.sin(a) * 0.45);
-        tn.rotation.z = Math.cos(a) * 0.5; tn.rotation.x = -Math.sin(a) * 0.5; g.add(tn);
+      var armCurve = new THREE.CatmullRomCurve3([new THREE.Vector3(0.34, -0.22, 0),
+        new THREE.Vector3(0.52, -0.55, 0), new THREE.Vector3(0.74, -0.71, 0.09), new THREE.Vector3(0.91, -0.65, 0.2)]);
+      var armGeometry = new THREE.TubeGeometry(armCurve, 7, 0.095, 6, false);
+      for (var k = 0; k < 8; k++) {
+        var arm = new THREE.Mesh(armGeometry, mat);
+        arm.rotation.y = k * Math.PI / 4; g.add(arm);
       }
       addEyes(g, 0.22, 0.15, -0.62, 0.08);
+    } else if (kind === "starfish") {
+      var star = MAY.cloneProp("starfish", 0xb272c1, 1.15);
+      if (!star) {
+        star = new THREE.Mesh(MAY.starGeo, stdMat(0xb272c1, 0.82));
+        star.rotation.x = -Math.PI / 2;
+      }
+      g.add(star);
     } else if (kind === "pearl") {
       var sh = new THREE.Mesh(new THREE.SphereGeometry(0.9, 14, 10, 0, Math.PI * 2, 0, Math.PI * 0.5), stdMat(0xe8b7d4, 0.4));
       sh.rotation.x = Math.PI; sh.position.y = 0.4; g.add(sh);
@@ -774,9 +990,62 @@
       return rm;
     };
 
-    ctx.trackLabel = function (sprite, maxDist) {
-      ctx.fadingLabels.push({ sp: sprite, maxDist: maxDist || 19 });
+    ctx.trackLabel = function (sprite, maxDist, priority) {
+      ctx.fadingLabels.push({ sp: sprite, maxDist: maxDist || 19, priority: priority || 0 });
       return sprite;
+    };
+    ctx.untrackLabel = function (sprite) {
+      ctx.fadingLabels = ctx.fadingLabels.filter(function (entry) { return entry.sp !== sprite; });
+    };
+
+    var viewport = new THREE.Vector2(), labelWorld = new THREE.Vector3(), projected = new THREE.Vector3();
+    var candidates = [], occupied = [];
+    // Opacity leaves quest and collectible visibility under their owners' control.
+    ctx.layoutWorldLabels = function (cinematic) {
+      var camera = MAY.camera, player = MAY.player && MAY.player.pos;
+      if (!camera || !player) return;
+      camera.updateMatrixWorld();
+      MAY.renderer.getSize(viewport);
+      candidates.length = occupied.length = 0;
+      var focalLength = camera.projectionMatrix.elements[5] * viewport.y * 0.5;
+      ctx.fadingLabels.forEach(function (entry) {
+        var sp = entry.sp;
+        if (!sp || !sp.material) return;
+        if (cinematic) { sp.material.opacity = 0; return; }
+        var shown = sp.visible, parent = sp.parent;
+        while (parent && shown) { shown = parent.visible; parent = parent.parent; }
+        if (!shown) { sp.material.opacity = 0; return; }
+        sp.getWorldPosition(labelWorld);
+        var distance = labelWorld.distanceTo(player);
+        var alpha = distance < entry.maxDist * 0.55 ? 1 : Math.max(0, 1 - (distance - entry.maxDist * 0.55) / (entry.maxDist * 0.45));
+        if (entry.isCompanion) {
+          var camD = labelWorld.distanceTo(camera.position);
+          var sc = Math.max(0.45, Math.min(1, (camD - 2) / 5.5));
+          sp.scale.set(entry.baseSx * sc, entry.baseSy * sc, 1);
+          sp.updateWorldMatrix(true, false);
+          if (camD < 3.4) alpha *= Math.max(0.12, (camD - 1.8) / 1.6);
+        }
+        var depth = -projected.copy(labelWorld).applyMatrix4(camera.matrixWorldInverse).z;
+        if (alpha <= 0 || depth <= camera.near || depth > camera.far) { sp.material.opacity = 0; return; }
+        projected.applyMatrix4(camera.projectionMatrix);
+        var e = sp.matrixWorld.elements;
+        var sx = Math.hypot(e[0], e[1], e[2]), sy = Math.hypot(e[4], e[5], e[6]);
+        var pixelScale = focalLength / depth;
+        var cx = (projected.x + 1) * viewport.x * 0.5, cy = (1 - projected.y) * viewport.y * 0.5;
+        var halfW = sx * pixelScale * 0.5 + 4, halfH = sy * pixelScale * 0.5 + 4;
+        var box = entry.box || (entry.box = {});
+        box.left = cx-halfW; box.right = cx+halfW; box.top = cy-halfH; box.bottom = cy+halfH;
+        if (box.right < 0 || box.left > viewport.x || box.bottom < 0 || box.top > viewport.y) { sp.material.opacity = 0; return; }
+        entry.alpha = alpha; entry.distance = distance;
+        candidates.push(entry);
+      });
+      candidates.sort(function (a, b) { return (b.priority || 0) - (a.priority || 0) || a.distance - b.distance; });
+      candidates.forEach(function (item) {
+        var b = item.box;
+        var overlap = occupied.some(function (a) { return b.left < a.right && b.right > a.left && b.top < a.bottom && b.bottom > a.top; });
+        item.sp.material.opacity = overlap ? 0 : item.alpha;
+        if (!overlap) occupied.push(b);
+      });
     };
 
     ctx.ensureBeacon = function (color) {
@@ -1687,27 +1956,13 @@
       }
 
       if (MAY.currentCtx !== ctx) return;
-      for (var li = 0; li < ctx.fadingLabels.length; li++) {
-        var fl = ctx.fadingLabels[li];
-        if (!fl.sp || !fl.sp.material) continue;
-        fl.sp.getWorldPosition(_wpTmp);
-        var ld = _wpTmp.distanceTo(pPos);
-        var alpha = ld < fl.maxDist * 0.55 ? 1.0 : Math.max(0, 1 - (ld - fl.maxDist * 0.55) / (fl.maxDist * 0.45));
-        if (fl.isCompanion) {
-          var camD = _wpTmp.distanceTo(MAY.camera.position);
-          var sc = Math.max(0.45, Math.min(1.0, (camD - 2.0) / 5.5));
-          fl.sp.scale.set(fl.baseSx * sc, fl.baseSy * sc, 1);
-          if (camD < 3.4) alpha *= Math.max(0.12, (camD - 1.8) / 1.6);
-        }
-        fl.sp.material.opacity = alpha;
-      }
-
       if (ctx.updateStory) ctx.updateStory(dt, t);
       if (MAY.currentCtx !== ctx) return;
       if (MAY.VFX) MAY.VFX.update(dt);
       if (ctx.onUpdate) ctx.onUpdate(dt, t);
       if (MAY.currentCtx !== ctx) return;
 
+      ctx.layoutWorldLabels(false);
       updateRaycast(dt, ctx);
       compassTimer -= dt;
       if (compassTimer <= 0) { compassTimer = 0.12; updateCompass(ctx); }
@@ -1748,6 +2003,7 @@
         }
       }
       if (ctx.updateStoryCutscene) ctx.updateStoryCutscene(dt, t);
+      ctx.layoutWorldLabels(true);
     };
 
     if (MAY.attachStoryEngine) MAY.attachStoryEngine(ctx);

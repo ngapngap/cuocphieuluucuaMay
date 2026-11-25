@@ -412,6 +412,7 @@
     Object.keys(rigMay.outfits).forEach(function (k) {
       rigMay.outfits[k].visible = (k === targetOutfit);
     });
+    rigMay.goggles.forEach(function (part) { part.visible = !!inWater; });
     if (rigMay.hairBui) rigMay.hairBui.visible = (name !== "haibim");
     if (rigMay.hairHaiBim) rigMay.hairHaiBim.visible = (name === "haibim");
   }
@@ -425,12 +426,23 @@
     root.rotation.y = Math.PI;
     root.scale.setScalar(1.06);
 
-    var outfits = {}, hairBui = null, hairHaiBim = null, faceMesh = null, staffNode = null, staffGemNode = null, staffGemRigMat = null, socketBack = null, socketStaff = null;
+    var goggles = [], outfits = {}, hairBui = null, hairHaiBim = null, faceMesh = null, eyeMesh = null, headBone = null, staffNode = null, staffGemNode = null, staffGemRigMat = null, socketBack = null, socketStaff = null;
     root.traverse(function (o) {
       if (o.name && o.name.indexOf("Outfit_") === 0) outfits[o.name] = o;
+      if (o.name === "May_GogglesFrame" || o.name === "Gear_GogglesLens" || o.name === "May_DiveGear") goggles.push(o);
       if (o.name === "Hair_Bui") hairBui = o;
       if (o.name === "Hair_HaiBim") hairHaiBim = o;
       if (o.name === "Face" && o.isMesh) faceMesh = o;
+      if (o.name === "Head" && o.isBone) headBone = o;
+      if (o.isMesh && o.material && o.material.name === "Mat_FaceEye" && o.parent && o.parent.name === "May_Body") {
+        o.geometry = o.geometry.clone();
+        o.userData.sharedGeo = false;
+        var ep = o.geometry.attributes.position, delta = new Float32Array(ep.count * 3);
+        for (var ei = 0; ei < ep.count; ei++) delta[ei * 3 + 1] = (1.13 - ep.getY(ei)) * 0.94;
+        o.geometry.morphAttributes.position = [new THREE.BufferAttribute(delta, 3)];
+        o.geometry.morphTargetsRelative = true;
+        o.updateMorphTargets(); eyeMesh = o;
+      }
       if (o.name === "Gear_GayPhep") staffNode = o;
       if (o.name === "Socket_Back") socketBack = o;
       if (o.name === "Socket_Staff") socketStaff = o;
@@ -455,6 +467,15 @@
       staffGemNode.userData.halo = sgHalo;
     }
 
+    var happyMouth = null;
+    if (headBone) {
+      happyMouth = new THREE.Group();
+      var mouth = new THREE.Mesh(new THREE.SphereGeometry(1, 12, 8), new THREE.MeshBasicMaterial({ color: 0x793142 }));
+      mouth.scale.set(0.067, 0.025, 0.006); happyMouth.add(mouth);
+      var tongue = new THREE.Mesh(new THREE.SphereGeometry(1, 10, 6), new THREE.MeshBasicMaterial({ color: 0xf58c98 }));
+      tongue.scale.set(0.035, 0.008, 0.004); tongue.position.set(0, -0.011, 0.006); happyMouth.add(tongue);
+      happyMouth.position.set(0, 0.095, 0.246); happyMouth.visible = false; headBone.add(happyMouth);
+    }
     var mixer = new THREE.AnimationMixer(root);
     var actions = {};
     cl.animations.forEach(function (clip) {
@@ -466,8 +487,8 @@
     rigMay = {
       root: root, mixer: mixer, actions: actions,
       curAction: null, curName: null, oneShotName: null, oneShotT: 0,
-      outfits: outfits, hairBui: hairBui, hairHaiBim: hairHaiBim,
-      faceMesh: faceMesh, staffNode: staffNode, staffGemNode: staffGemNode, staffGemMat: staffGemRigMat,
+      outfits: outfits, goggles: goggles, hairBui: hairBui, hairHaiBim: hairHaiBim,
+      faceMesh: faceMesh, eyeMesh: eyeMesh, happyMouth: happyMouth, staffNode: staffNode, staffGemNode: staffGemNode, staffGemMat: staffGemRigMat,
       socketBack: socketBack, forestColor: null,
       blinkT: 2.5, smileT: 0, hurtFaceT: 0
     };
@@ -512,6 +533,7 @@
   /* Camera shake, head-bob & Camera điện ảnh quay về Boss khi Trùm xuất hiện */
   var camShake = 0, landDip = 0, prevGrounded = true, stridePhase = 0, lastStepSign = 1;
   var camFocus = null;
+  var reducedMotionQuery = window.matchMedia ? window.matchMedia("(prefers-reduced-motion: reduce)") : null;
   P.addShake = function (amt) { camShake = Math.min(0.65, Math.max(camShake, amt || 0.2)); };
   P.triggerCamFocus = function (worldPos, dur) {
     if (!worldPos) return;
@@ -1300,6 +1322,8 @@
         rigMay.blinkT -= dt;
         if (rigMay.blinkT <= -0.16) rigMay.blinkT = 2.8 + Math.random() * 2.4;
         var blinkVal = rigMay.blinkT < 0 ? Math.sin((-rigMay.blinkT / 0.16) * Math.PI) : 0;
+        if (rigMay.eyeMesh && rigMay.eyeMesh.morphTargetInfluences) rigMay.eyeMesh.morphTargetInfluences[0] = blinkVal;
+        if (rigMay.happyMouth) rigMay.happyMouth.visible = rigMay.smileT > 0;
         if (md.Blink !== undefined) mi[md.Blink] = blinkVal;
         if (rigMay.smileT > 0) rigMay.smileT = Math.max(0, rigMay.smileT - dt);
         if (rigMay.hurtFaceT > 0) rigMay.hurtFaceT = Math.max(0, rigMay.hurtFaceT - dt);
@@ -1311,13 +1335,16 @@
     /* Camera góc nhìn thứ 3 điện ảnh có nhịp bước chân, độ nhún tiếp đất & rung chấn phép thuật */
     var fwdX = -Math.sin(P.yaw), fwdZ = -Math.cos(P.yaw);
     var rightX = Math.cos(P.yaw), rightZ = -Math.sin(P.yaw);
+    var reducedMotion = reducedMotionQuery && reducedMotionQuery.matches;
+    if (reducedMotion) { headBobX = 0; headBobY = 0; }
     var camH = P.onLand ? 2.35 : 2.15;
-    var shakeX = camShake > 0 ? (Math.random() - 0.5) * camShake * 0.45 : 0;
-    var shakeY = camShake > 0 ? (Math.random() - 0.5) * camShake * 0.45 : 0;
+    var shakeX = !reducedMotion && camShake > 0 ? (Math.random() - 0.5) * camShake * 0.45 : 0;
+    var shakeY = !reducedMotion && camShake > 0 ? (Math.random() - 0.5) * camShake * 0.45 : 0;
+    var shoulder = P.onLand ? 0.38 : 0.22;
     var des = new THREE.Vector3(
-      playerPos.x - fwdX * P.camDist + rightX * headBobX + shakeX,
-      playerPos.y + camH - P.pitch * 1.85 + headBobY - landDip * 0.45 + shakeY,
-      playerPos.z - fwdZ * P.camDist + rightZ * headBobX
+      playerPos.x - fwdX * P.camDist + rightX * (shoulder + headBobX) + shakeX,
+      playerPos.y + camH - P.pitch * 1.85 + headBobY - (reducedMotion ? 0 : landDip * 0.45) + shakeY,
+      playerPos.z - fwdZ * P.camDist + rightZ * (shoulder + headBobX)
     );
     var camGround = ctx.groundH(des.x, des.z);
     if (camGround > -30 && des.y < camGround + 0.8) des.y = camGround + 0.8;
@@ -1328,7 +1355,8 @@
     if (!P.camPosInit) { MAY.camera.position.copy(des); P.camPosInit = true; }
     else MAY.camera.position.lerp(des, Math.min(1, dt * 6.8));
 
-    var lookP = new THREE.Vector3(playerPos.x + fwdX * 2.6, playerPos.y + (P.onLand ? 0.72 : 0.2) + headBobY * 0.4 - landDip * 0.2, playerPos.z + fwdZ * 2.6);
+    var lookAhead = 2.6 + (moving ? Math.min(0.65, speedHoriz * 0.08) : 0);
+    var lookP = new THREE.Vector3(playerPos.x + fwdX * lookAhead, playerPos.y + (P.onLand ? 0.72 : 0.2) + headBobY * 0.4 - (reducedMotion ? 0 : landDip * 0.2), playerPos.z + fwdZ * lookAhead);
     if (camFocus && camFocus.t > 0) {
       camFocus.t -= dt;
       var fk = Math.sin(Math.max(0, Math.min(1, camFocus.t / camFocus.maxT)) * Math.PI);
@@ -1336,7 +1364,7 @@
       if (camFocus.t <= 0) camFocus = null;
     }
     MAY.camera.lookAt(lookP);
-    MAY.camera.rotation.z += -str * 0.014 + headBobX * 0.08;
+    if (!reducedMotion) MAY.camera.rotation.z += -str * 0.014 + headBobX * 0.08;
   };
 
   /* Cập nhật hoạt ảnh xương & khuôn mặt bé Mây trong lúc Cutscene 3D đang quay (không di chuyển vật lý) */
@@ -1374,6 +1402,8 @@
         rigMay.blinkT -= d;
         if (rigMay.blinkT <= -0.16) rigMay.blinkT = 2.8 + Math.random() * 2.4;
         var blinkVal = rigMay.blinkT < 0 ? Math.sin((-rigMay.blinkT / 0.16) * Math.PI) : 0;
+        if (rigMay.eyeMesh && rigMay.eyeMesh.morphTargetInfluences) rigMay.eyeMesh.morphTargetInfluences[0] = blinkVal;
+        if (rigMay.happyMouth) rigMay.happyMouth.visible = rigMay.smileT > 0;
         if (md.Blink !== undefined) mi[md.Blink] = blinkVal;
         if (rigMay.smileT > 0) rigMay.smileT = Math.max(0, rigMay.smileT - d);
         if (rigMay.hurtFaceT > 0) rigMay.hurtFaceT = Math.max(0, rigMay.hurtFaceT - d);

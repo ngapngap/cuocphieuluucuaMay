@@ -410,7 +410,7 @@ window.MAY = window.MAY || {};
     },
     level2: {
       id: "sq_l2", title: "Bữa Tiệc Đèn Lồng Rừng Nấm", icon: "🧺",
-      npcName: "Thỏ Rừng Bông", npcRole: "Đầu Bếp Tiệc Rừng Xanh", npcIcon: "🐇", npcKind: "rabbit",
+      npcName: "Thỏ Rừng Bông", npcRole: "Đầu Bếp Tiệc Rừng Xanh", npcIcon: "🐇", npcKind: "forestrabbit",
       acceptPages: [
         "Mây ơi giúp tớ với! Tớ chuẩn bị bữa tiệc hạt dẻ cho cả khu rừng, nhưng Giỏ Hạt Dẻ Vàng bị gió thổi kẹt bên kia suối và 2 Đèn Nấm Tiệc bị tắt mất rồi!",
         "Mây lấy giùm tớ Giỏ Hạt Dẻ và thắp sáng 2 Đèn Nấm quanh cầu gỗ rồi mang về cho tớ nhé!"

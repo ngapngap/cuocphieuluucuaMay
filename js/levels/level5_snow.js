@@ -241,7 +241,7 @@
 
     /* ---- 5 Bạn Xứ Tuyết + Thỏ Tuyết Nhí (không trùng Trưởng Làng Cánh Cụt Bông!) ---- */
     ctx.addFriends([
-      { name: "Thỏ Tuyết Nhí",   kind: "rabbit",    pos: [-10, 12], isCompanion: true, opts: { color: 0xf8fafc }, greet: "🐇 Thỏ Tuyết trắng tinh nhảy tưng tưng dẫn đường cho Mây nè!" },
+      { name: "Thỏ Tuyết Nhí",   kind: "snowhare",    pos: [-10, 12], isCompanion: true, opts: { color: 0xf8fafc }, greet: "🐇 Thỏ Tuyết trắng tinh nhảy tưng tưng dẫn đường cho Mây nè!" },
       { name: "Gấu Bắc Cực Nhí", kind: "polarbear", pos: [-30, 14], greet: "🐻‍❄️ Gấu Bắc Cực Nhí vẫy bàn chân bông chào Mây!" },
       { name: "Tuần Lộc Mũi Đỏ", kind: "reindeer",  pos: [34, 16],  greet: "🦌 Tuần lộc nháy chiếc mũi đỏ rực chào bé Mây!" },
       { name: "Cáo Tuyết Trắng", kind: "snowfox",   pos: [-26, -24],greet: "🦊 Cáo tuyết trắng tinh chạy vòng quanh chào Mây!" },

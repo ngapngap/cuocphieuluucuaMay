@@ -1,6 +1,6 @@
 /* Shell installation is independent of optional world downloads. */
 importScripts("js/packages.js");
-var CACHE = "may-phieu-luu-v14.0-3";
+var CACHE = "may-phieu-luu-v14.0-4";
 var SHELL = [
   "./", "index.html", "style.css", "three.min.js",
   "game.js", "manifest.json", "favicon.ico", "js/data.js",

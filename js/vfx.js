@@ -83,7 +83,6 @@
   var G_WAVE_RING  = new THREE.RingGeometry(0.6, 1.1, 28);
   var G_PRISM      = (function () { var g = new THREE.OctahedronGeometry(0.48, 0); g.scale(0.6, 1.7, 0.6); return g; })();
   var G_BUBBLE     = new THREE.SphereGeometry(0.18, 8, 6);
-  var G_SHATTER    = new THREE.DodecahedronGeometry(0.38, 0);
   var G_ICE_PILLAR = new THREE.ConeGeometry(1.35, 3.8, 7);
   var G_PIP        = new THREE.OctahedronGeometry(0.22, 0);
   var G_TEL_RING   = new THREE.RingGeometry(0.78, 1.0, 24);
@@ -100,7 +99,7 @@
   })();
 
   if (MAY.protectGeometry) {
-    [G_UNIT_PLANE, G_PETAL, G_STEM, G_HEAD, G_FROST_DISC, G_SHARD, G_FUNNEL, G_PLUME, G_WAVE_RING, G_PRISM, G_BUBBLE, G_SHATTER, G_ICE_PILLAR, G_PIP, G_TEL_RING, G_TEL_FILL, G_RIBBON].forEach(MAY.protectGeometry);
+    [G_UNIT_PLANE, G_PETAL, G_STEM, G_HEAD, G_FROST_DISC, G_SHARD, G_FUNNEL, G_PLUME, G_WAVE_RING, G_PRISM, G_BUBBLE, G_ICE_PILLAR, G_PIP, G_TEL_RING, G_TEL_FILL, G_RIBBON].forEach(MAY.protectGeometry);
   }
 
   /* Điều khiển đèn phép cố định MAY.spellLight (0 thêm/xóa PointLight -> 0 recompile shader!) */
@@ -643,32 +642,58 @@
     return root;
   }
 
-  function spawnShatterBurst(pos, colorHex) {
-    var root = new THREE.Group();
-    root.position.copy(pos);
-    var mat = new THREE.MeshStandardMaterial({ color: colorHex || 0xc084fc, emissive: colorHex || 0x7e22ce, emissiveIntensity: 0.45, roughness: 0.35, flatShading: true });
-    var chunks = [];
-    for (var i = 0; i < 12; i++) {
-      var c = new THREE.Mesh(G_SHATTER, mat);
-      var a = Math.random() * 6.28, sp = 3.2 + Math.random() * 5.2;
-      c.userData = { sharedGeo: true, vx: Math.cos(a) * sp, vy: 4.0 + Math.random() * 5.5, vz: Math.sin(a) * sp };
-      c.scale.setScalar(0.5 + Math.random() * 0.9);
-      root.add(c);
-      chunks.push(c);
+  var shatterGeometry;
+  function getShatterGeometry() {
+    if (shatterGeometry) return shatterGeometry;
+    var crystal = new THREE.OctahedronGeometry(1, 0);
+    var geo = new THREE.InstancedBufferGeometry();
+    geo.setAttribute("position", crystal.attributes.position);
+    geo.setAttribute("normal", crystal.attributes.normal);
+    var seeds = [];
+    for (var i = 0; i < 192; i++) {
+      var angle = i * 2.39996;
+      var speed = 2.4 + Math.random() * 5.2;
+      seeds.push(Math.cos(angle)*speed, 2.1+Math.random()*6.3, Math.sin(angle)*speed,
+        i % 8 === 0 ? 0.31 : 0.045+Math.random()*0.13);
     }
-    addFX(root, 1.8, function (age, d, dt) {
-      var env = 1 - age / d;
-      var sc = Math.max(0.01, env * 0.85);
-      for (var ci = 0; ci < chunks.length; ci++) {
-        var c = chunks[ci];
-        c.userData.vy -= 14 * dt;
-        c.position.x += c.userData.vx * dt;
-        c.position.y += c.userData.vy * dt;
-        c.position.z += c.userData.vz * dt;
-        c.rotation.x += dt * 5; c.rotation.y += dt * 4;
-        c.scale.setScalar(sc);
-      }
+    geo.setAttribute("launch", new THREE.InstancedBufferAttribute(new Float32Array(seeds), 4));
+    shatterGeometry = MAY.protectGeometry(geo);
+    return geo;
+  }
+
+  function spawnShatterBurst(pos, colorHex) {
+    var geo = getShatterGeometry();
+    geo.instanceCount = MAY.quality === "low" ? 32 : MAY.quality === "high" ? 192 : 96;
+    var mat = new THREE.ShaderMaterial({
+      uniforms: { age: {value:0}, tint: {value:new THREE.Color(colorHex || 0xc084fc).convertSRGBToLinear()} },
+      vertexShader: [
+        "attribute vec4 launch; uniform float age; varying float facet;",
+        "void main(){",
+        "  float a = age * (4.0 + launch.y) + launch.x;",
+        "  mat2 spin = mat2(cos(a), sin(a), -sin(a), cos(a));",
+        "  vec3 p = position * vec3(0.65,1.65,0.56) * launch.w * (1.0-smoothstep(0.65,1.8,age));",
+        "  p.xy = spin*p.xy; p += launch.xyz*age; p.y -= 5.6*age*age;",
+        "  vec3 n = normal; n.xy = spin*n.xy;",
+        "  facet = dot(n,normalize(vec3(-0.45,0.8,0.5)))*0.5+0.5;",
+        "  gl_Position = projectionMatrix*modelViewMatrix*vec4(p,1.0);",
+        "}"
+      ].join("\n"),
+      fragmentShader: [
+        "uniform vec3 tint; varying float facet;",
+        "void main(){",
+        "  vec3 color = mix(tint*0.25,tint,facet);",
+        "  gl_FragColor = vec4(mix(color,vec3(0.96,0.94,0.86),0.52*pow(facet,7.0)),1.0);",
+        "  #include <tonemapping_fragment>",
+        "  #include <encodings_fragment>",
+        "}"
+      ].join("\n")
     });
+    var shards = new THREE.Mesh(geo, mat);
+    shards.position.copy(pos);
+    shards.rotation.y = Math.random() * Math.PI * 2;
+    shards.userData.sharedGeo = true;
+    shards.frustumCulled = false;
+    addFX(shards, 1.8, function (age) { mat.uniforms.age.value = age; });
   }
 
   /* ---- Điều khiển chọn & thi triển 6 Phép Thuật của Mây ---- */

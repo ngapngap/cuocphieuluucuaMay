@@ -59,12 +59,16 @@
     }
     ctx.groundH = hubTerrainH;
 
-    /* Kết hợp địa hình cỏ-cát mượt theo độ cao (đáy biển -> cát ẩm -> cát vàng -> cỏ xanh) */
+    // Foot traffic links the landing to the tower door and forks toward the cottage.
+    function pathDistance(x, z) {
+      var approach = Math.abs(x - 1.3 * Math.sin((z - 4) * 0.20)) + Math.max(0, 4 - z, z - 24);
+      var fork = Math.max(0, Math.min(1, (x * 11 - (z - 9) * 13) / 290));
+      return Math.min(approach, Math.hypot(x - 11 * fork, z - 9 + 13 * fork));
+    }
     var islandMat = new THREE.MeshStandardMaterial({
-      map: MAY.PBR.forestGround.map,
+      map: MAY.PBR.coastalGrain,
       normalMap: MAY.PBR.forestGround.normalMap,
-      normalScale: new THREE.Vector2(1.1, 1.1),
-      roughnessMap: MAY.PBR.forestGround.roughnessMap,
+      normalScale: new THREE.Vector2(0.26, 0.26),
       roughness: 0.92,
       vertexColors: true
     });
@@ -72,7 +76,9 @@
     tGeo.rotateX(-Math.PI / 2);
     var pos = tGeo.attributes.position;
     var cols = new Float32Array(pos.count * 3);
-    var cSand = new THREE.Color(0xe6cf9a), cWet = new THREE.Color(0x9a8862), cGrass = new THREE.Color(0x88c96b), tmp = new THREE.Color();
+    var cSand = new THREE.Color(0xdab98a), cWet = new THREE.Color(0x928d73), cGrass = new THREE.Color(0x639271);
+    var cMeadow = new THREE.Color(0x91ad77), cPath = new THREE.Color(0xc4ad84), tmp = new THREE.Color();
+    [cSand, cWet, cGrass, cMeadow, cPath].forEach(function (color) { color.convertSRGBToLinear(); });
     for (var i = 0; i < pos.count; i++) {
       var vx = pos.getX(i), vz = pos.getZ(i);
       var vy = hubTerrainH(vx, vz);
@@ -80,6 +86,11 @@
       if (vy < 0.35) tmp.copy(cWet).lerp(cSand, Math.max(0, (vy + 1.8) / 2.15));
       else if (vy < 2.2) tmp.copy(cSand).lerp(cGrass, (vy - 0.35) / 1.85);
       else tmp.copy(cGrass);
+      if (vy > 1.6) {
+        var swale = (0.5 + 0.5 * Math.sin(vx * 0.36 + Math.sin(vz * 0.26)) * Math.cos(vz * 0.28));
+        tmp.lerp(cMeadow, swale * Math.min(1, (vy - 1.6) / 0.9));
+        tmp.lerp(cPath, 1 - THREE.MathUtils.smoothstep(pathDistance(vx, vz), 0.75, 2.35));
+      }
       cols[i * 3] = tmp.r; cols[i * 3 + 1] = tmp.g; cols[i * 3 + 2] = tmp.b;
     }
     tGeo.setAttribute("color", new THREE.BufferAttribute(cols, 3));
@@ -361,6 +372,7 @@
       var spLb = MAY.makeLabel("🌬️ Làn Gió Mát (Xem lại Lễ Hội 3D!)", { w: 460, sx: 4.5, sy: 0.92, bg: "rgba(38,16,68,0.88)", color: "#ffd93d" });
       spLb.position.set(4.5, ctx.groundH(4.5, 7) + 3.6, 7);
       ctx.add(spLb);
+      ctx.trackLabel(spLb, 19);
       ctx.interactives.push({
         obj: spirit, label: "🎬 Xem lại Lễ Hội Cầu Vồng 3D",
         onInteract: function () { if (MAY.showGrandFinale) MAY.showGrandFinale(); }
@@ -405,6 +417,7 @@
     frPic.position.z = 0.09;
     var frLb = MAY.makeLabel("📷 Nhà của Mây", { sx: 3.2, sy: 0.9, bg: "rgba(10,32,56,0.82)", color: "#ffe8a3" }); frLb.position.y = 2.1;
     frameG.add(frBox, frPic, frLb);
+    ctx.trackLabel(frLb, 14);
     var frY = ctx.groundH(8.5, -2);
     frameG.position.set(8.5, frY + 1.8, -2); frameG.rotation.y = -0.8;
     ctx.add(frameG);
@@ -424,10 +437,10 @@
       ctx.add(tr);
       ctx.addCollider(p[0], p[1], 0.65 * p[2], "tree");
     });
-    MAY.scatterLushMeadow(ctx, 1300, function (x, z) {
+    MAY.scatterLushMeadow(ctx, 900, function (x, z) {
       var d = Math.hypot(x, z);
-      return d > 5.8 && d < 22 && ctx.groundH(x, z) > 1.75;
-    }, { spread: 25, color: 0x9ce376, w: 0.9, h: 0.78, flowers: true });
+      return d > 5.8 && d < 22 && ctx.groundH(x, z) > 1.75 && pathDistance(x, z) > 1.75;
+    }, { spread: 25, color: 0xc0d5a6, w: 0.74, h: 0.55, flowers: true });
 
     /* Sỏi đá nhỏ ven bãi cát, đá vụn ôm quanh Hải Đăng/Nhà gỗ & Quần đảo mờ xa ngoài khơi */
     MAY.scatterDebris(ctx, 140, function (x, z) {
@@ -442,8 +455,10 @@
     ], { size: 0.24, color: 0x7b786f });
     MAY.buildVistaRing(ctx, { count: 16, radius: 145, hMin: 12, hMax: 34, wBase: 28, baseY: -3, color: 0x4b748e });
 
-    var rockMat = new THREE.MeshStandardMaterial({ map: MAY.TEX.rock, roughness: 0.88 });
-    MAY.attachPhotoPBR("rock", MAY.TEX.rock, [rockMat], { rx: 2, ry: 2, normalStrength: 3.5, rMin: 0.45, rMax: 0.95 });
+    var rockMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.84,
+      lightMap: islandMat.lightMap, lightMapIntensity: 0.28 });
+    var wetStone = new THREE.Color(0x525e62).convertSRGBToLinear();
+    var dryStone = new THREE.Color(0xa09981).convertSRGBToLinear();
     for (var ri = 0; ri < 18; ri++) {
       var ra = (ri / 18) * Math.PI * 2 + 0.15, rr = 23 + (ri % 3) * 3.5;
       var rx = Math.cos(ra) * rr, rz = Math.sin(ra) * rr;
@@ -453,6 +468,20 @@
       rm.scale.set(rs * 1.25, rs * 0.75, rs);
       rm.position.set(rx, ctx.groundH(rx, rz) + rs * 0.25, rz);
       rm.rotation.y = ri; rm.castShadow = true; rm.receiveShadow = true;
+      // Sample the same baked ground lighting as the beach in world coordinates.
+      rm.updateMatrixWorld(true);
+      var vertices = rm.geometry.attributes.position, lampUV = [], patina = [];
+      var point = new THREE.Vector3();
+      for (var k = 0; k < vertices.count; k++) {
+        point.fromBufferAttribute(vertices,k).applyMatrix4(rm.matrixWorld);
+        lampUV.push(0.5 + point.x / 170, 0.5 - point.z / 170);
+        var seam = 0.16 * Math.sin(point.x*2 + point.z*0.8);
+        tmp.copy(wetStone).lerp(dryStone, THREE.MathUtils.smoothstep(point.y+seam,-0.3,1.5));
+        tmp.multiplyScalar(0.88 + 0.09*Math.cos(point.x*1.2+point.y*6+ri));
+        patina.push(tmp.r,tmp.g,tmp.b);
+      }
+      rm.geometry.setAttribute("uv2", new THREE.Float32BufferAttribute(lampUV,2));
+      rm.geometry.setAttribute("color", new THREE.Float32BufferAttribute(patina,3));
       ctx.add(rm);
       ctx.addSphereCollider(rx, ctx.groundH(rx, rz) + rs * 0.25, rz, rs * 0.92, "rock", { maxY: ctx.groundH(rx, rz) + rs * 0.95 });
     }

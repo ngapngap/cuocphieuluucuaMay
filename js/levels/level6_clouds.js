@@ -146,47 +146,49 @@
       ctx.add(g);
     });
 
-    /* Dựng 8 Cầu Vồng phát sáng nối các đảo + Lan can cầu vồng uốn cong TubeGeometry mượt mà */
-    var rbStripeCols = [0xff595e, 0xffca3a, 0x8ac926, 0x38bdf8, 0xc084fc];
-    var railGoldMat = new THREE.MeshPhysicalMaterial({ color: 0xffe49e, emissive: 0xffb703, emissiveIntensity: 0.45, metalness: 0.65, roughness: 0.2, clearcoat: 0.9 });
+    // A continuous arched deck follows the same height function as the walkable surface.
+    var rbStripeCols = [0xff7180, 0xf4c763, 0x9dcc93, 0x77c8df, 0xb69cdc];
+    var deckMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.78, side: THREE.DoubleSide });
+    var railGoldMat = new THREE.MeshStandardMaterial({ color: 0xa87c50, metalness: 0.35, roughness: 0.62 });
+    var pierMat = new THREE.MeshStandardMaterial({ color: 0x897b8b, roughness: 0.9 });
+    var posts = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.11, 0.16, 1.05, 6), railGoldMat, BRIDGES.length * 14);
+    var piers = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.52, 0.7, 1.2, 8), pierMat, BRIDGES.length * 4);
+    var dummy = new THREE.Object3D(), postIndex = 0, pierIndex = 0;
     BRIDGES.forEach(function (pair) {
-      var a = pair[0], b = pair[1];
-      var steps = 16;
-      var angY = Math.atan2(b.x - a.x, b.z - a.z);
-      var perpX = Math.cos(angY), perpZ = -Math.sin(angY);
-      for (var s = 0; s < steps; s++) {
-        var t0 = (s + 0.5) / steps;
-        var x = a.x + (b.x - a.x) * t0, z = a.z + (b.z - a.z) * t0;
-        var y = a.y + 0.82 + (b.y - a.y) * t0 + Math.sin(t0 * Math.PI) * 2.4;
-        var segLen = Math.hypot(b.x - a.x, b.z - a.z) / steps + 0.35;
-        var plank = new THREE.Mesh(
-          new THREE.BoxGeometry(5.6, 0.32, segLen),
-          new THREE.MeshPhysicalMaterial({
-            color: rbStripeCols[s % rbStripeCols.length],
-            emissive: rbStripeCols[s % rbStripeCols.length],
-            emissiveIntensity: 0.48, roughness: 0.2, clearcoat: 0.8, transparent: true, opacity: 0.88
-          })
-        );
-        plank.position.set(x, y - 0.16, z);
-        plank.rotation.y = angY;
-        plank.receiveShadow = true;
-        ctx.add(plank);
+      var a = pair[0], b = pair[1], steps = 20;
+      var ang = Math.atan2(b.x - a.x, b.z - a.z), px = Math.cos(ang), pz = -Math.sin(ang);
+      function point(t, side, dy) { return [a.x + (b.x - a.x) * t + px * side,
+        a.y + 0.82 + (b.y - a.y) * t + Math.sin(t * Math.PI) * 2.4 + dy,
+        a.z + (b.z - a.z) * t + pz * side]; }
+      var positions = [], colors = [];
+      function tri(p, q, r, col, shade) {
+        var c = new THREE.Color(col).multiplyScalar(shade);
+        [p, q, r].forEach(function (v) { positions.push(v[0], v[1], v[2]); colors.push(c.r, c.g, c.b); });
       }
-      /* Hai đường viền lan can vàng cong ôm theo vòm cầu vồng */
-      [-2.85, 2.85].forEach(function (side) {
-        var pts = [];
-        for (var k = 0; k <= 12; k++) {
-          var kt = k / 12;
-          pts.push(new THREE.Vector3(
-            a.x + (b.x - a.x) * kt + perpX * side,
-            a.y + 1.02 + (b.y - a.y) * kt + Math.sin(kt * Math.PI) * 2.4,
-            a.z + (b.z - a.z) * kt + perpZ * side
-          ));
+      for (var s = 0; s < steps; s++) {
+        var t0 = s / steps, t1 = (s + 1) / steps;
+        for (var band = 0; band < 5; band++) {
+          var l = -2.8 + band * 1.12, r = l + 1.12;
+          var p0 = point(t0, l, 0), p1 = point(t0, r, 0), p2 = point(t1, l, 0), p3 = point(t1, r, 0);
+          tri(p0, p2, p1, rbStripeCols[band], 1); tri(p1, p2, p3, rbStripeCols[band], 1);
         }
-        var rail = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 16, 0.12, 6, false), railGoldMat);
-        ctx.add(rail);
+        [-2.8, 2.8].forEach(function (side) {
+          var p0 = point(t0, side, 0), p1 = point(t1, side, 0), p2 = point(t0, side, -0.4), p3 = point(t1, side, -0.4);
+          tri(p0, p1, p2, 0x65546d, 0.72); tri(p2, p1, p3, 0x65546d, 0.72);
+        });
+      }
+      var geo = new THREE.BufferGeometry();
+      geo.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3)); geo.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3)); geo.computeVertexNormals();
+      var deck = new THREE.Mesh(geo, deckMat); deck.receiveShadow = true; ctx.add(deck);
+      [-2.8, 2.8].forEach(function (side) {
+        var pts = [];
+        for (var k = 0; k <= 20; k++) { var v = point(k / 20, side, 1.05); pts.push(new THREE.Vector3(v[0], v[1], v[2])); }
+        ctx.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 24, 0.09, 5, false), railGoldMat));
+        for (var j = 1; j <= 7; j++) { var pp = point(j / 8, side, 0.52); dummy.position.set(pp[0], pp[1], pp[2]); dummy.updateMatrix(); posts.setMatrixAt(postIndex++, dummy.matrix); }
+        [0.15, 0.85].forEach(function (t) { var pp = point(t, side, -0.55); dummy.position.set(pp[0], pp[1], pp[2]); dummy.updateMatrix(); piers.setMatrixAt(pierIndex++, dummy.matrix); });
       });
     });
+    ctx.add(posts); ctx.add(piers);
 
     /* Biển mây mềm mại bồng bềnh bên dưới */
     var seaCloud = new THREE.Mesh(
@@ -296,6 +298,16 @@
     ctx.addCollider(42, 14, 2.35, "windmill", { minY: 13.0, maxY: 22.8 });
 
     /* Sứa Mây (tái sử dụng jelly.glb màu pastel) bay lơ lửng trên bầu trời + Bụi sao cầu vồng */
+    // Three slow wind ribbons mark the mill island without a full-screen effect.
+    var windRibbons = new THREE.Group();
+    var ribbonGeo = new THREE.TorusGeometry(3.6, 0.045, 5, 36, Math.PI * 1.35);
+    var ribbonMat = new THREE.MeshBasicMaterial({ color: 0xffe7bf, transparent: true, opacity: 0.55, depthWrite: false });
+    for (var wr = 0; wr < 3; wr++) {
+      var ribbon = new THREE.Mesh(ribbonGeo, ribbonMat); ribbon.rotation.x = Math.PI / 2 + wr * 0.13;
+      ribbon.rotation.z = wr * 2.05; ribbon.position.y = wr * 0.55; windRibbons.add(ribbon);
+    }
+    windRibbons.position.set(42, 20, 14); ctx.add(windRibbons);
+
     var skyJellies = [];
     [[-18, 22, -16], [22, 24, -14], [-16, 19, 24], [24, 21, 28]].forEach(function (jp, idx) {
       var g = new THREE.Group();
@@ -633,6 +645,7 @@
     });
 
     ctx.onUpdate = function (dt, t) {
+      windRibbons.rotation.y += dt * 0.16;
       if (blades) blades.rotation.z -= dt * 0.9;
       sRune.rotation.z += dt * 1.4;
       sOrb.rotation.y += dt * 2.0;
