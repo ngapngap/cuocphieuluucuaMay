@@ -1,6 +1,12 @@
 """Compare HEAD and working tree in Chrome with fixed crystal-pillar cameras."""
 
-import functools, http.server, io, json, pathlib, sys, threading, time
+import functools
+import http.server
+import io
+import json
+import pathlib
+import sys
+import threading
 from PIL import Image
 from playwright.sync_api import sync_playwright
 

@@ -413,10 +413,11 @@
         if (bs.atkT <= 0 && bs.pos.distanceTo(MAY.player.pos) < 28) {
           bs.atkT = 3.6;
           if (bs.mesh.userData.playClip) bs.mesh.userData.playClip("attack", false);
+          bs.telegraphAttack(1.0);
           MAY.VFX.spawnTelegraph(bs.pos.clone(), 8.5, 1.0, 0xff3b5c);
           MAY.toast("🍄 Vua Nấm chuẩn bị dậm sóng đất! Nhấn Space nhảy lên né nhé!");
           ctx.scheduleEvent(1.0, function () {
-            if (!bs.active || bs.defeated) return;
+            if (!bs.active || bs.defeated || bs.state === "stunned") return;
             MAY.burstAt(bs.pos.clone().add(new THREE.Vector3(0, 0.8, 0)), 0x9333ea, 18);
             if (MAY.player.pos.distanceTo(bs.pos) < 8.5 && MAY.player.grounded) {
               MAY.damagePlayer(1, bs.pos, "Sóng đất của Vua Nấm! Nhớ nhấn Space nhảy né vòng đỏ!");

@@ -1138,11 +1138,15 @@
         hp: cfg.maxHp || 3, maxHp: cfg.maxHp || 3,
         active: !!cfg.startActive, defeated: !!st.bossDown,
         state: "idle", /* idle | vulnerable | stunned | charging | launched | defeated */
-        stateT: 0, atkT: 2.2, subState: {},
+        stateT: 0, atkT: 2.2, subState: {}, windupT: 0, windupDuration: 0,
         tipFn: cfg.tipFn,
         onSpellHit: cfg.onSpellHit,
         onTick: cfg.onTick,
         onDefeat: cfg.onDefeat,
+        telegraphAttack: function (duration) {
+          boss.windupDuration = duration;
+          boss.windupT = duration;
+        },
         syncHUD: function () {
           var hud = document.getElementById("boss-hud");
           if (!hud) return;
@@ -1170,7 +1174,14 @@
           if (MAY.player.addShake) MAY.player.addShake(0.38);
           MAY.burstAt(boss.pos.clone().add(new THREE.Vector3(0, 2, 0)), 0xff3b5c, 22);
           if (MAY.Cutscene && MAY.Cutscene.playBossIntro && MAY.started) {
-            MAY.Cutscene.playBossIntro(ctx, boss, afterIntroFn || null);
+            boss.introPlaying = true;
+            if (boss.mesh.userData.playClip) boss.mesh.userData.playClip("intro", false);
+            MAY.Cutscene.playBossIntro(ctx, boss, function (skipped) {
+              boss.introPlaying = false;
+              boss.mesh.rotation.x = 0;
+              if (boss.mesh.userData.playClip) boss.mesh.userData.playClip("idle");
+              if (afterIntroFn) afterIntroFn(skipped);
+            });
           } else {
             if (MAY.player.triggerCamFocus) MAY.player.triggerCamFocus(boss.pos.clone().add(new THREE.Vector3(0, 2.2, 0)), 1.8);
             if (afterIntroFn) afterIntroFn();
@@ -1447,6 +1458,11 @@
       /* Cập nhật Boss Arena */
       if (ctx.boss) {
         var bs = ctx.boss;
+        if (bs.introPlaying && (!MAY.Cutscene || !MAY.Cutscene.isPlaying())) {
+          bs.introPlaying = false;
+          bs.mesh.rotation.x = 0;
+          if (bs.mesh.userData.playClip) bs.mesh.userData.playClip("idle");
+        }
         if (bs.mesh && bs.mesh.userData && bs.mesh.userData.mixer) {
           bs.mesh.userData.mixer.update(dt);
         }
@@ -1474,11 +1490,17 @@
           }
         } else if (bs.active && !bs.defeated && !MAY.modalOpen) {
           if (bs.state === "stunned") {
+            bs.windupT = 0;
+            bs.mesh.rotation.x = 0;
             bs.stateT -= dt;
             bs.mesh.rotation.y += dt * 4;
             if (bs.stateT <= 0) { bs.state = "idle"; bs.syncHUD(); }
           } else if (bs.onTick) {
             bs.onTick(dt, t, bs);
+          }
+          if (bs.windupT > 0) {
+            bs.windupT = Math.max(0, bs.windupT - dt);
+            bs.mesh.rotation.x = -0.25 * Math.sin(Math.PI * (1 - bs.windupT / bs.windupDuration));
           }
         }
       }
@@ -1533,6 +1555,9 @@
         var bs = ctx.boss;
         if (bs.mesh && bs.mesh.userData && bs.mesh.userData.mixer) {
           bs.mesh.userData.mixer.update(dt);
+        }
+        if (bs.introPlaying && !bs.mesh.userData.mixer) {
+          bs.mesh.rotation.x = Math.sin(t * 4) * 0.12;
         }
         if (bs.state === "launched") {
           bs.stateT += dt;

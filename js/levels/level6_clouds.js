@@ -451,12 +451,13 @@
         if (bs.atkT <= 0 && bs.pos.distanceTo(MAY.player.pos) < 38) {
           bs.atkT = 3.2;
           if (bs.mesh.userData.playClip) bs.mesh.userData.playClip("attack", false);
+          bs.telegraphAttack(1.0);
           var strikePos = MAY.player.pos.clone();
           strikePos.y = Math.max(18.9, ctx.groundH(strikePos.x, strikePos.z));
           MAY.VFX.spawnTelegraph(strikePos, 4.2, 1.0, 0xfef08a);
           MAY.toast("⚡ Vua Mây Bão gọi sét đánh! Chạy né khỏi vòng vàng!");
           ctx.scheduleEvent(1.0, function () {
-            if (!bs.active || bs.defeated) return;
+            if (!bs.active || bs.defeated || bs.state === "stunned") return;
             MAY.VFX.spawnLaserBeam(strikePos.clone().add(new THREE.Vector3(0, 18, 0)), strikePos.clone(), 0xfef08a, false);
             MAY.sndLaser(strikePos);
             if (MAY.player.pos.distanceTo(strikePos) < 4.2) {

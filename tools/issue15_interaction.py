@@ -1,6 +1,9 @@
 """Exercise crystal note animation across a level transition and offline reload."""
 
-import functools, http.server, pathlib, threading
+import functools
+import http.server
+import pathlib
+import threading
 from playwright.sync_api import sync_playwright
 
 root = pathlib.Path(__file__).resolve().parent.parent

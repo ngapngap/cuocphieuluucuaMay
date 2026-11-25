@@ -719,7 +719,8 @@
     (cloned.animations || []).forEach(function (clip) {
       var nm = (clip.name || "").toLowerCase();
       var act = mixer.clipAction(clip);
-      if (nm.indexOf("attack") !== -1) actions.attack = act;
+      if (nm.indexOf("intro") !== -1) actions.intro = act;
+      else if (nm.indexOf("attack") !== -1) actions.attack = act;
       else if (nm.indexOf("hit") !== -1) actions.hit = act;
       else if (nm.indexOf("defeat") !== -1) actions.defeat = act;
       else if (nm.indexOf("idle") !== -1 && !actions.idle) actions.idle = act;
@@ -734,7 +735,7 @@
       curAct = actions.idle;
     }
     mixer.addEventListener("finished", function (e) {
-      if (e.action !== actions.defeat && actions.idle && curAct !== actions.idle) {
+      if (e.action === curAct && e.action !== actions.defeat && actions.idle && curAct !== actions.idle) {
         actions.idle.reset().fadeIn(0.22).play();
         curAct = actions.idle;
       }

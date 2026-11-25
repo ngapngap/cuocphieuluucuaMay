@@ -1,0 +1,140 @@
+[
+  {
+    "fallback": false,
+    "level": "level2",
+    "normal": {
+      "done": 1,
+      "playing": false,
+      "calls": [
+        "intro",
+        "idle"
+      ]
+    },
+    "skip": {
+      "done": 2,
+      "playing": false,
+      "calls": [
+        "intro",
+        "idle",
+        "intro",
+        "idle"
+      ]
+    },
+    "reload": {
+      "active": true,
+      "intro": false,
+      "cutscene": false
+    }
+  },
+  {
+    "fallback": false,
+    "level": "level4",
+    "normal": {
+      "done": 1,
+      "playing": false,
+      "calls": [
+        "intro",
+        "idle"
+      ]
+    },
+    "skip": {
+      "done": 2,
+      "playing": false,
+      "calls": [
+        "intro",
+        "idle",
+        "intro",
+        "idle"
+      ]
+    },
+    "reload": {
+      "active": true,
+      "intro": false,
+      "cutscene": false
+    }
+  },
+  {
+    "fallback": false,
+    "level": "level6",
+    "normal": {
+      "done": 1,
+      "playing": false,
+      "calls": [
+        "intro",
+        "idle"
+      ]
+    },
+    "skip": {
+      "done": 2,
+      "playing": false,
+      "calls": [
+        "intro",
+        "idle",
+        "intro",
+        "idle"
+      ]
+    },
+    "reload": {
+      "active": true,
+      "intro": false,
+      "cutscene": false
+    }
+  },
+  {
+    "fallback": true,
+    "level": "level2",
+    "normal": {
+      "done": 1,
+      "playing": false,
+      "calls": []
+    },
+    "skip": {
+      "done": 2,
+      "playing": false,
+      "calls": []
+    },
+    "reload": {
+      "active": true,
+      "intro": false,
+      "cutscene": false
+    }
+  },
+  {
+    "fallback": true,
+    "level": "level4",
+    "normal": {
+      "done": 1,
+      "playing": false,
+      "calls": []
+    },
+    "skip": {
+      "done": 2,
+      "playing": false,
+      "calls": []
+    },
+    "reload": {
+      "active": true,
+      "intro": false,
+      "cutscene": false
+    }
+  },
+  {
+    "fallback": true,
+    "level": "level6",
+    "normal": {
+      "done": 1,
+      "playing": false,
+      "calls": []
+    },
+    "skip": {
+      "done": 2,
+      "playing": false,
+      "calls": []
+    },
+    "reload": {
+      "active": true,
+      "intro": false,
+      "cutscene": false
+    }
+  }
+]

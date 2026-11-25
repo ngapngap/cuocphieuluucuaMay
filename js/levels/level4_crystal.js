@@ -411,6 +411,20 @@
 
     /* TRÙM CHƯƠNG 4: 🗿 Golem Pha Lê Khổng Lồ (Rigged Blender GLB — Dùng 💎 phá Giáp Đá -> ☀️ thanh tẩy lõi!) */
     var titanMesh = MAY.makeRiggedBoss("golem", 1.08, "stonegolem", 2.55, { tagMat: { armor: "GolemObsidian" } });
+    // A high-contrast chest marker is visible for both the GLB and procedural model.
+    var coreMarker = new THREE.Group();
+    coreMarker.position.set(0, titanMesh.userData.mixer ? 3.0 : 1.32, titanMesh.userData.mixer ? -1.75 : -1.05);
+    var coreStone = new THREE.Mesh(new THREE.OctahedronGeometry(0.48, 0), new THREE.MeshBasicMaterial({ color: 0x403a50 }));
+    var coreExposed = new THREE.Mesh(new THREE.OctahedronGeometry(0.52, 0), new THREE.MeshBasicMaterial({ color: 0xf0abfc }));
+    var coreHalo = new THREE.Mesh(new THREE.TorusGeometry(0.72, 0.08, 6, 20), new THREE.MeshBasicMaterial({ color: 0xfde047 }));
+    coreMarker.add(coreStone, coreExposed, coreHalo);
+    titanMesh.add(coreMarker);
+    function syncArmorVisual(broken) {
+      coreStone.visible = !broken;
+      coreExposed.visible = coreHalo.visible = !!broken;
+      if (!titanMesh.userData.mixer && titanMesh.userData.core) titanMesh.userData.core.visible = !!broken;
+    }
+    syncArmorVisual(false);
     var ch4Npc;
     var ch4Boss = ctx.setBoss({
       name: "Golem Pha Lê Khổng Lồ", icon: "🗿",
@@ -422,6 +436,7 @@
           : "💡 Titan đang bọc Giáp Đá Đen! Dùng 💎 Cộng Hưởng (Phím 4 + R) đập vỡ giáp trước!";
       },
       onTick: function (dt, t, bs) {
+        syncArmorVisual(bs.subState.armorBroken);
         var ang = Math.atan2(MAY.player.pos.x - bs.pos.x, MAY.player.pos.z - bs.pos.z);
         bs.mesh.rotation.y = ang + Math.PI;
         bs.mesh.position.y = bs.mesh.userData.mixer ? 2.45 : (2.48 + Math.sin(t * 2.0) * 0.32);
@@ -429,24 +444,32 @@
         if (bs.atkT <= 0 && bs.pos.distanceTo(MAY.player.pos) < 34) {
           bs.atkT = 3.5;
           if (bs.mesh.userData.playClip) bs.mesh.userData.playClip("attack", false);
+          bs.telegraphAttack(1.0);
+          MAY.VFX.spawnTelegraph(bs.pos.clone(), 4.0, 1.0, 0xc084fc);
           var dir = new THREE.Vector3().subVectors(MAY.player.pos, bs.pos).normalize();
-          ctx.spawnBossOrb(bs.pos.clone().add(new THREE.Vector3(0, 2.6, 0)), dir, {
-            speed: 10.5, radius: 0.95, reflectable: true, reflectSpell: "crystal", color: 0x3b355c, emissive: 0xc084fc,
-            onReflectHitBoss: function (b) {
-              b.subState.armorBroken = true;
-              if (b.mesh.userData.armor) b.mesh.userData.armor.material.emissive.setHex(0xa855f7);
-              if (b.mesh.userData.playClip) b.mesh.userData.playClip("hit", false);
-              b.syncHUD();
-              MAY.sndShatter(b.pos);
-              MAY.toast("💎 Tảng đá bật ngược đập vỡ Giáp Đá của Titan! Bắn ngay ☀️ Tia Nắng (3 + R)!");
-            }
+          MAY.toast("🗿 Titan đang lấy đà ném đá! Chuẩn bị né hoặc phản đòn!");
+          ctx.scheduleEvent(1.0, function () {
+            if (!bs.active || bs.defeated || bs.state === "stunned") return;
+            ctx.spawnBossOrb(bs.pos.clone().add(new THREE.Vector3(0, 2.6, 0)), dir, {
+              speed: 10.5, radius: 0.95, reflectable: true, reflectSpell: "crystal", color: 0x3b355c, emissive: 0xc084fc,
+              onReflectHitBoss: function (b) {
+                b.subState.armorBroken = true;
+                syncArmorVisual(true);
+                if (b.mesh.userData.armor) b.mesh.userData.armor.material.emissive.setHex(0xa855f7);
+                if (b.mesh.userData.playClip) b.mesh.userData.playClip("hit", false);
+                b.syncHUD();
+                MAY.sndShatter(b.pos);
+                MAY.toast("💎 Tảng đá bật ngược đập vỡ Giáp Đá của Titan! Bắn ngay ☀️ Tia Nắng (3 + R)!");
+              }
+            });
+            MAY.toast("🗿 Titan ném tảng đá! Né hoặc dùng 💎 Cộng Hưởng (4 + R) phản đòn vỡ giáp!");
           });
-          MAY.toast("🗿 Titan ném tảng đá! Né hoặc dùng 💎 Cộng Hưởng (4 + R) phản đòn vỡ giáp!");
         }
       },
       onSpellHit: function (spellId, castPos, bs) {
         if (spellId === "crystal") {
           bs.subState.armorBroken = true;
+          syncArmorVisual(true);
           if (bs.mesh.userData.armor) bs.mesh.userData.armor.material.emissive.setHex(0xc084fc);
           if (bs.mesh.userData.playClip) bs.mesh.userData.playClip("hit", false);
           MAY.sndShatter(bs.pos);
@@ -456,6 +479,7 @@
         } else if (spellId === "solar") {
           if (bs.subState.armorBroken) {
             bs.subState.armorBroken = false;
+            syncArmorVisual(false);
             if (ch4St.steps.echoArmor) { ch4St.steps.echoArmor = false; MAY.persist(); }
             if (bs.mesh.userData.armor) bs.mesh.userData.armor.material.emissive.setHex(0x000000);
             if (bs.mesh.userData.playClip) bs.mesh.userData.playClip("hit", false);
@@ -523,6 +547,7 @@
       }
       if (ch4St.steps.echoArmor) {
         ch4Boss.subState.armorBroken = true;
+        syncArmorVisual(true);
         if (ch4Boss.mesh.userData.armor) ch4Boss.mesh.userData.armor.material.emissive.setHex(0xc084fc);
         ch4Boss.syncHUD();
       }
