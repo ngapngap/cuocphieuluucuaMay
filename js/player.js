@@ -423,7 +423,7 @@
     root.rotation.y = Math.PI;
     root.scale.setScalar(1.06);
 
-    var outfits = {}, hairBui = null, hairHaiBim = null, faceMesh = null, staffNode = null, staffGemNode = null, staffGemRigMat = null, socketBack = null;
+    var outfits = {}, hairBui = null, hairHaiBim = null, faceMesh = null, staffNode = null, staffGemNode = null, staffGemRigMat = null, socketBack = null, socketStaff = null;
     root.traverse(function (o) {
       if (o.name && o.name.indexOf("Outfit_") === 0) outfits[o.name] = o;
       if (o.name === "Hair_Bui") hairBui = o;
@@ -431,12 +431,13 @@
       if (o.name === "Face" && o.isMesh) faceMesh = o;
       if (o.name === "Gear_GayPhep") staffNode = o;
       if (o.name === "Socket_Back") socketBack = o;
+      if (o.name === "Socket_Staff") socketStaff = o;
       if (o.name === "StaffGem" && o.isMesh) {
         staffGemNode = o;
         o.material = o.material.clone();
         staffGemRigMat = o.material;
       }
-      if (o.isMesh && o.material && o.material.name === "Mat_Body") {
+      if (o.isMesh && o.material && o.material.name === "Mat_Body" && !o.material.roughnessMap) {
         o.material.roughness = 0.62;
         o.material.metalness = 0.04;
       }
@@ -448,7 +449,7 @@
         blending: THREE.AdditiveBlending, depthWrite: false
       }));
       sgHalo.scale.set(0.45, 0.45, 1);
-      staffGemNode.add(sgHalo);
+      (socketStaff || staffGemNode).add(sgHalo);
       staffGemNode.userData.halo = sgHalo;
     }
 
@@ -520,6 +521,12 @@
     P.sprintHeld = false;
     P.joy.active = false; P.joy.x = 0; P.joy.y = 0;
     P.vert.up = false; P.vert.down = false;
+    if (typeof dragging !== "undefined") dragging = false;
+    if (typeof canvas !== "undefined" && canvas) canvas.style.cursor = "";
+    if (typeof joyId !== "undefined") joyId = null;
+    if (typeof lookId !== "undefined") lookId = null;
+    if (typeof tapId !== "undefined") tapId = null;
+    if (typeof stickEl !== "undefined" && stickEl) stickEl.style.transform = "";
   };
 
   diver.traverse(function (o) { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
@@ -590,8 +597,12 @@
 
     if (rigMay) {
       syncRiggedOutfit(MAY.save.outfit || "vayhong", inWater);
-      if (rigMay.staffNode) rigMay.staffNode.visible = P.onLand || castAnim > 0.01;
-      if (rigMay.staffGemNode) rigMay.staffGemNode.visible = P.onLand || castAnim > 0.01;
+      var showStaff = P.onLand || castAnim > 0.01;
+      if (rigMay.staffNode) rigMay.staffNode.visible = showStaff;
+      if (rigMay.staffGemNode) {
+        rigMay.staffGemNode.visible = showStaff;
+        if (rigMay.staffGemNode.userData.halo) rigMay.staffGemNode.userData.halo.visible = showStaff;
+      }
       wingsGroup.visible = hasWings && !inWater;
       wingsGroup.position.set(0, 0.02, 0.04);
       return;
@@ -629,13 +640,16 @@
     window.removeEventListener("touchstart", onFirstTouch);
   }, { passive: true });
 
-  var KEY_ALIAS = { w: "KeyW", "ư": "KeyW", s: "KeyS", a: "KeyA", d: "KeyD", c: "KeyC", q: "KeyQ", e: "KeyE", r: "KeyR", " ": "Space" };
+  /* Dùng mã phím vật lý (e.code) để tương thích 100% với bộ gõ tiếng Việt (UniKey/Telex)
+     — KHÔNG gán P.keys từ e.key ("ư", "đ", "á", "Process"...) vì bộ gõ chèn ký tự tổng hợp
+     không có sự kiện keyup tương ứng, gây lỗi kẹt phím tự di chuyển! */
+  var KEY_UP_FALLBACK = { w: "KeyW", "ư": "KeyW", s: "KeyS", a: "KeyA", "ă": "KeyA", "â": "KeyA", d: "KeyD", "đ": "KeyD", c: "KeyC", q: "KeyQ", e: "KeyE", "ê": "KeyE", r: "KeyR", " ": "Space" };
+  var DIGIT_CODES = { Digit1: 0, Digit2: 1, Digit3: 2, Digit4: 3, Digit5: 4, Digit6: 5 };
+
   window.addEventListener("keydown", function (e) {
-    P.keys[e.code] = true;
-    var kLow = (e.key || "").toLowerCase();
-    if (KEY_ALIAS[kLow]) P.keys[KEY_ALIAS[kLow]] = true;
     if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space"].indexOf(e.code) !== -1) e.preventDefault();
     if (e.code === "Escape") {
+      P.clearKeys();
       if (MAY.Cutscene && MAY.Cutscene.isPlaying && MAY.Cutscene.isPlaying()) {
         MAY.Cutscene.skip();
         return;
@@ -651,18 +665,46 @@
         return;
       }
     }
-    if (!MAY.started || MAY.modalOpen) return;
+    /* Khi bấm phím tổ hợp hệ thống (Alt+Tab, Ctrl+..., Win) -> xả sạch phím đang giữ để chống kẹt */
+    if (e.altKey || e.metaKey || e.ctrlKey) {
+      P.clearKeys();
+      return;
+    }
+    /* Không bao giờ giữ phím di chuyển khi chưa vào game, đang mở modal/thoại hoặc đang Cutscene */
+    if (!MAY.started || MAY.modalOpen || MAY.dialogueOpen || (MAY.Cutscene && MAY.Cutscene.isPlaying && MAY.Cutscene.isPlaying())) {
+      return;
+    }
+    /* Bỏ qua ký tự IME tổng hợp (UniKey/Telex chèn 'ư', 'đ', 'á' với e.code rỗng hoặc keyCode 229) */
+    if (e.isComposing || e.key === "Process" || e.keyCode === 229) return;
+    if (e.code && e.code !== "Unidentified") {
+      P.keys[e.code] = true;
+    }
+    if (e.repeat) return;
+    var kLow = (e.key || "").toLowerCase();
     if (e.code === "KeyF" || kLow === "f") MAY.cycleCam();
-    if (e.code === "KeyM" || kLow === "m") MAY.toggleMap();
-    if (e.code === "KeyJ" || kLow === "j") MAY.toggleAlbum();
-    if (e.code === "KeyR" || kLow === "r") { if (MAY.castActiveSpell) MAY.castActiveSpell(); }
-    if (e.code === "KeyT" || kLow === "t" || e.code === "Enter") { if (MAY.doInteract) MAY.doInteract(); }
-    if (e.key >= "1" && e.key <= "6" && MAY.selectSpell) MAY.selectSpell(parseInt(e.key, 10) - 1);
+    else if (e.code === "KeyM" || kLow === "m") MAY.toggleMap();
+    else if (e.code === "KeyJ" || kLow === "j") MAY.toggleAlbum();
+    else if (e.code === "KeyR" || kLow === "r") { if (MAY.castActiveSpell) MAY.castActiveSpell(); }
+    else if (e.code === "KeyT" || kLow === "t" || e.code === "Enter") { if (MAY.doInteract) MAY.doInteract(); }
+    else if (DIGIT_CODES[e.code] !== undefined && MAY.selectSpell) MAY.selectSpell(DIGIT_CODES[e.code]);
+    else if (e.key >= "1" && e.key <= "6" && MAY.selectSpell) MAY.selectSpell(parseInt(e.key, 10) - 1);
   });
   window.addEventListener("keyup", function (e) {
-    P.keys[e.code] = false;
+    if (e.code) P.keys[e.code] = false;
     var kLow = (e.key || "").toLowerCase();
-    if (KEY_ALIAS[kLow]) P.keys[KEY_ALIAS[kLow]] = false;
+    if (KEY_UP_FALLBACK[kLow]) P.keys[KEY_UP_FALLBACK[kLow]] = false;
+    if (e.code === "AltLeft" || e.code === "AltRight" || e.code === "MetaLeft" || e.code === "MetaRight") {
+      P.clearKeys();
+    }
+  });
+  document.addEventListener("visibilitychange", function () {
+    if (document.hidden) P.clearKeys();
+  });
+  document.addEventListener("click", function (e) {
+    var t = e && e.target;
+    if (t && t.closest && t.closest(".hbtn, .spell-slot, .spell-cast, #interact")) {
+      try { if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); } catch (err) {}
+    }
   });
 
   var canvas = MAY.canvas;
@@ -670,7 +712,9 @@
   var pointerLockBlocked = false;
 
   document.addEventListener("pointerlockchange", function () {
+    var wasLocked = P.locked;
     P.locked = (document.pointerLockElement === canvas);
+    if (wasLocked && !P.locked) P.clearKeys();
   });
   document.addEventListener("pointerlockerror", function () {
     pointerLockBlocked = true;
@@ -679,9 +723,14 @@
 
   /* Hỗ trợ xoay camera bằng CẢ kéo chuột trái/phải lẫn Pointer Lock (không bị chặn bởi isTouch!) */
   canvas.addEventListener("contextmenu", function (e) { e.preventDefault(); });
+  window.addEventListener("contextmenu", function (e) { if (e.target !== canvas) P.clearKeys(); });
+
+  function isInCutscene() {
+    return !!(MAY.Cutscene && MAY.Cutscene.isPlaying && MAY.Cutscene.isPlaying());
+  }
 
   canvas.addEventListener("mousedown", function (e) {
-    if (!MAY.started || MAY.modalOpen) return;
+    if (!MAY.started || MAY.modalOpen || isInCutscene()) return;
     if (e.button !== 0 && e.button !== 2) return;
     e.preventDefault();
     downX = e.clientX; downY = e.clientY; downT = Date.now();
@@ -695,7 +744,7 @@
   });
 
   window.addEventListener("mousemove", function (e) {
-    if (!MAY.started || MAY.modalOpen) return;
+    if (!MAY.started || MAY.modalOpen || isInCutscene()) return;
     if (P.locked) {
       P.yaw -= (e.movementX || 0) * 0.0024;
       P.pitch -= (e.movementY || 0) * 0.0024;
@@ -716,7 +765,7 @@
   window.addEventListener("mouseup", function (e) {
     dragging = false;
     canvas.style.cursor = "";
-    if (!MAY.started || MAY.modalOpen) return;
+    if (!MAY.started || MAY.modalOpen || isInCutscene()) return;
     if (e.target !== canvas) return;
     var isShortClick = !dragMoved && Math.hypot(e.clientX - downX, e.clientY - downY) < 7 && (Date.now() - downT < 380);
     if (isShortClick && e.button === 0) {
@@ -732,7 +781,7 @@
 
   /* Cuộn con lăn chuột để phóng to / thu nhỏ góc nhìn mượt mà */
   canvas.addEventListener("wheel", function (e) {
-    if (!MAY.started || MAY.modalOpen) return;
+    if (!MAY.started || MAY.modalOpen || isInCutscene()) return;
     e.preventDefault();
     P.camDist = Math.max(3.0, Math.min(10.5, P.camDist + (e.deltaY > 0 ? 0.55 : -0.55)));
   }, { passive: false });
@@ -740,6 +789,18 @@
   var joyEl = document.getElementById("joy"), stickEl = document.getElementById("stick");
   var joyId = null, lookId = null, lookX = 0, lookY = 0;
   var tapId = null, tapX = 0, tapY = 0, tapT = 0;
+
+  function resetTouchState(touches) {
+    for (var i = 0; i < touches.length; i++) {
+      var t = touches[i];
+      if (t.identifier === joyId) {
+        joyId = null; P.joy.active = false; P.joy.x = 0; P.joy.y = 0;
+        if (stickEl) stickEl.style.transform = "";
+      }
+      if (t.identifier === lookId) lookId = null;
+      if (t.identifier === tapId) tapId = null;
+    }
+  }
 
   function joyPos(t) {
     var r = joyEl.getBoundingClientRect();
@@ -752,6 +813,7 @@
   }
   if (joyEl) {
     joyEl.addEventListener("touchstart", function (e) {
+      if (!MAY.started || MAY.modalOpen || isInCutscene()) return;
       e.preventDefault(); P.joy.active = true; joyId = e.changedTouches[0].identifier; joyPos(e.changedTouches[0]);
     }, { passive: false });
   }
@@ -759,29 +821,33 @@
     for (var i = 0; i < e.changedTouches.length; i++) {
       var t = e.changedTouches[i];
       if (t.identifier === joyId) joyPos(t);
-      else if (t.identifier === lookId && !MAY.modalOpen) {
+      else if (t.identifier === lookId && !MAY.modalOpen && !isInCutscene()) {
         P.yaw -= (t.clientX - lookX) * 0.005;
         P.pitch -= (t.clientY - lookY) * 0.005;
         P.pitch = Math.max(-1.35, Math.min(1.25, P.pitch));
         lookX = t.clientX; lookY = t.clientY;
       }
     }
-    if (MAY.started && !MAY.modalOpen) e.preventDefault();
+    if (MAY.started && !MAY.modalOpen && !isInCutscene()) e.preventDefault();
   }, { passive: false });
   window.addEventListener("touchend", function (e) {
     for (var i = 0; i < e.changedTouches.length; i++) {
       var t = e.changedTouches[i];
-      if (t.identifier === joyId) { P.joy.active = false; P.joy.x = 0; P.joy.y = 0; if (stickEl) stickEl.style.transform = ""; }
+      if (t.identifier === joyId) { joyId = null; P.joy.active = false; P.joy.x = 0; P.joy.y = 0; if (stickEl) stickEl.style.transform = ""; }
       if (t.identifier === lookId) lookId = null;
       if (t.identifier === tapId) {
-        if (MAY.started && !MAY.modalOpen && Date.now() - tapT < 260 && Math.hypot(t.clientX - tapX, t.clientY - tapY) < 16) {
-          if (MAY.doInteract) MAY.doInteract();
+        if (MAY.started && !MAY.modalOpen && !isInCutscene() && Date.now() - tapT < 260 && Math.hypot(t.clientX - tapX, t.clientY - tapY) < 16) {
+          if (MAY.doInteract) MAY.doInteract(t.clientX, t.clientY);
         }
         tapId = null;
       }
     }
   });
+  window.addEventListener("touchcancel", function (e) {
+    resetTouchState(e.changedTouches);
+  });
   canvas.addEventListener("touchstart", function (e) {
+    if (!MAY.started || MAY.modalOpen || isInCutscene()) return;
     for (var i = 0; i < e.changedTouches.length; i++) {
       var t = e.changedTouches[i];
       if (t.clientX > window.innerWidth * 0.38 && lookId === null) {
@@ -796,6 +862,7 @@
     if (!el) return;
     el.addEventListener("touchstart", function (e) { e.preventDefault(); on(); }, { passive: false });
     el.addEventListener("touchend", off);
+    el.addEventListener("touchcancel", off);
     el.addEventListener("mousedown", on);
     el.addEventListener("mouseup", off);
     el.addEventListener("mouseleave", off);
@@ -807,7 +874,9 @@
   if (btnJump) {
     btnJump.addEventListener("touchstart", function (e) { e.preventDefault(); P.jumpQueued = true; P.vert.up = true; }, { passive: false });
     btnJump.addEventListener("touchend", function () { P.vert.up = false; });
+    btnJump.addEventListener("touchcancel", function () { P.vert.up = false; });
     btnJump.addEventListener("mousedown", function () { P.jumpQueued = true; });
+    btnJump.addEventListener("mouseleave", function () { P.vert.up = false; });
   }
 
   MAY.cycleCam = function () {
@@ -820,6 +889,7 @@
 
   /* ---- Spawn & Cập nhật vật lý / hoạt ảnh khớp chân thực ---- */
   P.spawnAt = function (x, y, z, yaw, isUnderwater) {
+    P.clearKeys();
     playerPos.set(x, y, z);
     vel.set(0, 0, 0);
     P.yaw = yaw || 0;
@@ -834,8 +904,9 @@
   };
 
   P.update = function (dt, t, ctx) {
+    if (document.hasFocus && !document.hasFocus()) P.clearKeys();
     var fwd = 0, str = 0;
-    if (!MAY.modalOpen) {
+    if (!MAY.modalOpen && !MAY.dialogueOpen) {
       if (P.keys.KeyW || P.keys.ArrowUp) fwd += 1;
       if (P.keys.KeyS || P.keys.ArrowDown) fwd -= 1;
       if (P.keys.KeyA || P.keys.ArrowLeft) str -= 1;
@@ -1258,6 +1329,50 @@
     }
     MAY.camera.lookAt(lookP);
     MAY.camera.rotation.z += -str * 0.014 + headBobX * 0.08;
+  };
+
+  /* Cập nhật hoạt ảnh xương & khuôn mặt bé Mây trong lúc Cutscene 3D đang quay (không di chuyển vật lý) */
+  P.updateRigOnly = function (dt, t, ctx) {
+    var d = dt || 0.016;
+    diver.position.set(playerPos.x, playerPos.y - 0.12, playerPos.z);
+    diver.rotation.y = P.yaw;
+    diver.rotation.x = 0;
+    diver.rotation.z = 0;
+    diverPose.rotation.x = P.onLand ? 0 : -1.2;
+    updateGearVisuals(ctx ? ctx.id : (MAY.currentLevelId || "hub"));
+    staffGroup.visible = P.onLand || castAnim > 0.01;
+    staffGem.rotation.y += d * 2.5;
+    if (ctx && ctx.groundH) {
+      var ghC = ctx.groundH(playerPos.x, playerPos.z);
+      if (ghC > -30) {
+        playerContact.visible = true;
+        playerContact.position.set(playerPos.x, ghC + 0.05, playerPos.z);
+      } else {
+        playerContact.visible = false;
+      }
+    }
+    if (rigMay) {
+      if (rigMay.oneShotT > 0) {
+        rigMay.oneShotT -= d;
+        if (rigMay.oneShotT <= 0) rigMay.oneShotName = null;
+      }
+      if (!rigMay.oneShotName) {
+        playMayClip(P.onLand ? "Idle" : "Swim_Idle", 0.16, false);
+      }
+      rigMay.mixer.update(d);
+      if (rigMay.faceMesh && rigMay.faceMesh.morphTargetInfluences && rigMay.faceMesh.morphTargetDictionary) {
+        var md = rigMay.faceMesh.morphTargetDictionary;
+        var mi = rigMay.faceMesh.morphTargetInfluences;
+        rigMay.blinkT -= d;
+        if (rigMay.blinkT <= -0.16) rigMay.blinkT = 2.8 + Math.random() * 2.4;
+        var blinkVal = rigMay.blinkT < 0 ? Math.sin((-rigMay.blinkT / 0.16) * Math.PI) : 0;
+        if (md.Blink !== undefined) mi[md.Blink] = blinkVal;
+        if (rigMay.smileT > 0) rigMay.smileT = Math.max(0, rigMay.smileT - d);
+        if (rigMay.hurtFaceT > 0) rigMay.hurtFaceT = Math.max(0, rigMay.hurtFaceT - d);
+        if (md.Smile !== undefined) mi[md.Smile] = rigMay.smileT > 0 ? Math.min(1, rigMay.smileT) : 0.22;
+        if (md.Surprised !== undefined) mi[md.Surprised] = rigMay.hurtFaceT > 0 ? Math.min(1, rigMay.hurtFaceT) : 0;
+      }
+    }
   };
 
   P.updateIdleOrbit = function (t, dt) {

@@ -223,7 +223,7 @@
       lhDoor.position.set(0, 1.1, 4.15); lh.add(lhDoor);
     }
 
-    var lhLight = new THREE.PointLight(0xffe699, 1.2 + MAY.save.gems.length * 0.35, 38);
+    var lhLight = MAY.makePooledLight ? MAY.makePooledLight(0xffe699, 1.2 + MAY.save.gems.length * 0.35, 38) : new THREE.PointLight(0xffe699, 1.2 + MAY.save.gems.length * 0.35, 38);
     lhLight.position.y = 16.0; lh.add(lhLight);
 
     /* Chùm tia hải đăng xoay */

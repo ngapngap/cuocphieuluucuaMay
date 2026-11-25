@@ -69,6 +69,72 @@
   var worldRoot = new THREE.Group();
   scene.add(worldRoot);
 
+  /* ---- Hệ Thống Đèn Điểm Cố Định (Fixed PointLight Pool = 4 đèn vĩnh viễn) ----
+     Giữ NUM_POINT_LIGHTS luôn cố định (= 4) ở mọi màn & mọi phép thuật để WebGL
+     KHÔNG BAO GIỜ biên dịch lại shader PBR khi tung skill hoặc chuyển màn! */
+  var _spellLight = new THREE.PointLight(0xffffff, 0, 32, 1.4);
+  scene.add(_spellLight);
+  var _levelLightPool = [];
+  for (var _li = 0; _li < 3; _li++) {
+    var _pl = new THREE.PointLight(0xffffff, 0, 26, 1.5);
+    scene.add(_pl);
+    _levelLightPool.push(_pl);
+  }
+  var _lightAnchors = [];
+  var _lightTmpPos = new THREE.Vector3();
+
+  MAY.spellLight = _spellLight;
+  MAY.makePooledLight = function (colorHex, intensity, distance, decay) {
+    var anchor = new THREE.Object3D();
+    anchor.color = new THREE.Color(colorHex !== undefined ? colorHex : 0xffffff);
+    anchor.intensity = intensity !== undefined ? intensity : 1.0;
+    anchor.distance = distance !== undefined ? distance : 24;
+    anchor.decay = decay !== undefined ? decay : 1.5;
+    anchor.isPooledLight = true;
+    _lightAnchors.push(anchor);
+    return anchor;
+  };
+  MAY.resetLevelLights = function () {
+    _lightAnchors.length = 0;
+    _spellLight.intensity = 0;
+    for (var i = 0; i < _levelLightPool.length; i++) _levelLightPool[i].intensity = 0;
+  };
+  MAY.updateLevelLights = function (refPos) {
+    if (!_lightAnchors.length) {
+      for (var k = 0; k < _levelLightPool.length; k++) _levelLightPool[k].intensity = 0;
+      return;
+    }
+    var rx = refPos ? refPos.x : 0, ry = refPos ? refPos.y : 0, rz = refPos ? refPos.z : 0;
+    var best = [];
+    for (var i = 0; i < _lightAnchors.length; i++) {
+      var a = _lightAnchors[i];
+      if (!a.parent || a.intensity <= 0.01) continue;
+      var vis = true, cur = a;
+      while (cur) { if (!cur.visible) { vis = false; break; } cur = cur.parent; }
+      if (!vis) continue;
+      a.getWorldPosition(_lightTmpPos);
+      var dx = _lightTmpPos.x - rx, dy = _lightTmpPos.y - ry, dz = _lightTmpPos.z - rz;
+      var d2 = dx * dx + dy * dy + dz * dz;
+      var maxR = (a.distance || 24) + 22;
+      if (d2 > maxR * maxR) continue;
+      best.push({ a: a, x: _lightTmpPos.x, y: _lightTmpPos.y, z: _lightTmpPos.z, d2: d2 });
+    }
+    if (best.length > 3) best.sort(function (u, v) { return u.d2 - v.d2; });
+    for (var j = 0; j < _levelLightPool.length; j++) {
+      var pl = _levelLightPool[j];
+      if (j < best.length) {
+        var b = best[j];
+        pl.position.set(b.x, b.y, b.z);
+        pl.color.copy(b.a.color);
+        pl.intensity = b.a.intensity;
+        pl.distance = b.a.distance;
+        pl.decay = b.a.decay;
+      } else {
+        pl.intensity = 0;
+      }
+    }
+  };
+
   /* ---- Shared Textures ---- */
   var texLoader = new THREE.TextureLoader();
   function loadRepeatTex(url, rx, ry) {
@@ -409,6 +475,18 @@
   var protectedMats = new Set();
   var protectedTexs = new Set();
   var MAT_TEX_SLOTS = ["map", "normalMap", "roughnessMap", "metalnessMap", "alphaMap", "aoMap", "emissiveMap", "bumpMap", "lightMap", "clearcoatNormalMap"];
+  MAY.protectMaterial = function (mat) {
+    if (mat && mat.uuid) protectedMats.add(mat.uuid);
+    return mat;
+  };
+  MAY.protectTexture = function (tex) {
+    if (tex && tex.uuid) protectedTexs.add(tex.uuid);
+    return tex;
+  };
+  MAY.protectGeometry = function (geo) {
+    if (geo && geo.uuid) protectedGeos.add(geo.uuid);
+    return geo;
+  };
 
   function protectTemplateObj(root) {
     if (!root || !root.traverse) return;
@@ -499,6 +577,10 @@
     function landmarkTemplate(sc) {
       var g = new THREE.Group();
       sc.traverse(function (o) {
+        if (o.name && o.name.indexOf("COL_") === 0) {
+          o.visible = false; o.castShadow = false; o.receiveShadow = false;
+          return;
+        }
         if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; }
       });
       g.add(sc);
@@ -518,6 +600,10 @@
     if (!t || !t.group) return null;
     var c = t.group.clone(true);
     c.traverse(function (o) {
+      if (o.name && o.name.indexOf("COL_") === 0) {
+        o.visible = false; o.castShadow = false; o.receiveShadow = false;
+        return;
+      }
       if (o.isMesh) {
         o.userData.sharedGeo = true;
         o.castShadow = true;
@@ -721,41 +807,73 @@
       });
     }));
     Promise.all([staticProm, riggedProm]).then(function (all) {
-      try { buildTemplates(all[0]); } catch (e) { if (window.console) console.log("buildTemplates err", e); }
+      try { buildTemplates(all[0]); } catch (e) { if (window.console) console.error("buildTemplates err", e); }
       MAY.modelsReady = true;
       if (MAY.player && MAY.player.attachRiggedMay && MAY.RIGGED.may) {
-        try { MAY.player.attachRiggedMay(); } catch (e) {}
+        try { MAY.player.attachRiggedMay(); } catch (e) { if (window.console) console.error("attachRiggedMay err", e); }
       }
       if (onDone) onDone();
     });
   };
 
-  /* ---- Particle Bursts ---- */
-  var bursts = [];
+  /* ---- Particle Bursts (1 Draw Call duy nhất bằng InstancedMesh — không cấp phát Mesh/Material mỗi vụ nổ!) ---- */
+  var MAX_BURSTS = 128;
   var burstGeo = new THREE.SphereGeometry(0.11, 6, 5);
+  var burstMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+  var burstInst = new THREE.InstancedMesh(burstGeo, burstMat, MAX_BURSTS);
+  burstInst.frustumCulled = false;
+  burstInst.count = 0;
+  scene.add(burstInst);
+
+  var _bDummy = new THREE.Object3D();
+  var _bCol = new THREE.Color(0xffffff);
+  burstInst.setColorAt(0, _bCol);
+  if (burstInst.instanceColor) burstInst.instanceColor.needsUpdate = true;
+  var bursts = [];
   MAY.burstAt = function (pos, color, n) {
-    var count = n || 10;
+    var count = Math.min(n || 10, 28);
+    _bCol.setHex(color !== undefined ? color : 0xffd93d);
     for (var i = 0; i < count; i++) {
-      var pp = new THREE.Mesh(burstGeo, new THREE.MeshBasicMaterial({ color: color || 0xffd93d }));
-      pp.position.copy(pos);
-      pp.userData.v = new THREE.Vector3((Math.random() - 0.5) * 4.2, Math.random() * 2.8 + 1.2, (Math.random() - 0.5) * 4.2);
-      pp.userData.life = 0.75 + Math.random() * 0.25;
-      scene.add(pp);
-      bursts.push(pp);
+      if (bursts.length >= MAX_BURSTS) bursts.shift();
+      bursts.push({
+        x: pos.x, y: pos.y, z: pos.z,
+        vx: (Math.random() - 0.5) * 4.2,
+        vy: Math.random() * 2.8 + 1.2,
+        vz: (Math.random() - 0.5) * 4.2,
+        life: 0.75 + Math.random() * 0.25,
+        r: _bCol.r, g: _bCol.g, b: _bCol.b
+      });
     }
   };
   MAY.updateBursts = function (dt) {
-    for (var i = bursts.length - 1; i >= 0; i--) {
+    var n = bursts.length;
+    if (!n) {
+      if (burstInst.count !== 0) burstInst.count = 0;
+      return;
+    }
+    for (var i = n - 1; i >= 0; i--) {
       var bp = bursts[i];
-      bp.position.addScaledVector(bp.userData.v, dt);
-      bp.userData.v.y -= 4.2 * dt;
-      bp.userData.life -= dt;
-      bp.scale.setScalar(Math.max(0.01, bp.userData.life));
-      if (bp.userData.life <= 0) {
-        scene.remove(bp);
-        if (bp.material) bp.material.dispose();
-        bursts.splice(i, 1);
-      }
+      bp.x += bp.vx * dt;
+      bp.y += bp.vy * dt;
+      bp.z += bp.vz * dt;
+      bp.vy -= 4.2 * dt;
+      bp.life -= dt;
+      if (bp.life <= 0) bursts.splice(i, 1);
+    }
+    var cnt = bursts.length;
+    burstInst.count = cnt;
+    for (var j = 0; j < cnt; j++) {
+      var p = bursts[j];
+      _bDummy.position.set(p.x, p.y, p.z);
+      _bDummy.scale.setScalar(Math.max(0.01, p.life));
+      _bDummy.updateMatrix();
+      burstInst.setMatrixAt(j, _bDummy.matrix);
+      _bCol.setRGB(p.r, p.g, p.b);
+      burstInst.setColorAt(j, _bCol);
+    }
+    if (cnt > 0) {
+      burstInst.instanceMatrix.needsUpdate = true;
+      if (burstInst.instanceColor) burstInst.instanceColor.needsUpdate = true;
     }
   };
 
@@ -792,11 +910,9 @@
   }
 
   MAY.clearWorld = function () {
-    for (var i = bursts.length - 1; i >= 0; i--) {
-      scene.remove(bursts[i]);
-      if (bursts[i].material) bursts[i].material.dispose();
-    }
     bursts.length = 0;
+    burstInst.count = 0;
+    if (MAY.resetLevelLights) MAY.resetLevelLights();
     while (worldRoot.children.length > 0) {
       var ch = worldRoot.children[0];
       worldRoot.remove(ch);
@@ -956,6 +1072,7 @@
     errorBoundary.contextLost = false;
     errorBoundary.dismiss();
     try {
+      if (MAY.clearPBRCaches) MAY.clearPBRCaches();
       if (MAY.resizePostFX) MAY.resizePostFX();
       if (MAY.enterLevel) MAY.enterLevel(MAY.currentLevelId || "hub", true);
       if (MAY.toast) MAY.toast("✨ Đồ họa 3D đã tự khôi phục!");

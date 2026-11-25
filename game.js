@@ -1,6 +1,6 @@
 "use strict";
 /* ============================================================================
-   GAME.JS — Khởi chạy Cuộc Phiêu Lưu Của Mây v13.0 (6 Vùng Đất + PBR + 34 GLB Rig/CC0)
+   GAME.JS — Khởi chạy Cuộc Phiêu Lưu Của Mây v13.5 (6 Vùng Đất + PBR + 36 GLB Rig/CC0)
    ============================================================================ */
 (function (MAY) {
 
@@ -23,45 +23,76 @@
     }
   }
 
-  /* ---- Chuyển màn chơi mượt mà & dọn rác tài nguyên màn cũ ---- */
+  /* ---- Chuyển màn chơi mượt mà, chống gọi trùng & dọn sạch trạng thái màn cũ ---- */
+  var _enteringLevel = false;
+  var clock = new THREE.Clock();
+
   MAY.enterLevel = function (levelId, silent) {
-    if (!MAY.LEVELS || !MAY.LEVELS[levelId]) levelId = "hub";
-    if (MAY.Cutscene && MAY.Cutscene.cancelSilent) MAY.Cutscene.cancelSilent();
-    if (MAY.closeDialogue) MAY.closeDialogue(false);
-    if (MAY.currentCtx && MAY.currentCtx.save && !MAY.currentCtx.save.gem && MAY.currentCtx.playSecs > 0) {
-      MAY.currentCtx.save.playSecs = Math.round(MAY.currentCtx.playSecs);
-    }
-    if (MAY.clear3DLoops) MAY.clear3DLoops();
-    if (MAY.VFX) MAY.VFX.clear();
-    if (MAY.PlanarReflector) MAY.PlanarReflector.clear();
-    document.body.classList.remove("boss-active");
-    MAY.clearWorld();
-    MAY.currentLevelId = levelId;
-    MAY.save.currentLevel = levelId;
-    MAY.persist();
+    if (_enteringLevel) return;
+    _enteringLevel = true;
+    try {
+      if (!MAY.LEVELS || !MAY.LEVELS[levelId]) levelId = "hub";
+      if (MAY.Cutscene && MAY.Cutscene.cancelSilent) MAY.Cutscene.cancelSilent();
+      if (MAY.closeAllModals) MAY.closeAllModals();
+      if (MAY.closeDialogue) MAY.closeDialogue(false);
+      if (MAY.stopSpeech) MAY.stopSpeech();
+      if (MAY.resetInteractTarget) MAY.resetInteractTarget();
+      if (MAY.player && MAY.player.clearKeys) MAY.player.clearKeys();
+      var sbEl = document.getElementById("skill-banner");
+      if (sbEl) sbEl.classList.add("hidden");
 
-    MAY.currentCtx = MAY.LEVELS[levelId]();
-    MAY.applyOutfit(MAY.save.outfit);
-    if (MAY.VFX) MAY.VFX.syncSpellUI();
-    MAY.refreshHUD();
-    MAY.updateHintText(MAY.currentCtx);
-
-    var mk = document.getElementById("mask");
-    var gr = document.getElementById("grade");
-    if (mk) mk.style.opacity = 0;
-    if (gr) gr.style.opacity = 0;
-
-    if (!silent) {
-      var m = MAY.getMeta(levelId);
-      if (MAY.started && MAY.Cutscene && MAY.Cutscene.playWorldIntro && MAY.currentCtx && MAY.currentCtx.save && !MAY.currentCtx.save.introSeen) {
-        MAY.currentCtx.save.introSeen = true;
-        MAY.persist();
-        MAY.Cutscene.playWorldIntro(MAY.currentCtx, function () {
-          MAY.toast(m.icon + " " + m.title, m.intro);
-        });
-      } else {
-        MAY.toast(m.icon + " " + m.title, m.intro);
+      if (MAY.currentCtx && MAY.currentCtx.save && !MAY.currentCtx.save.gem && MAY.currentCtx.playSecs > 0) {
+        MAY.currentCtx.save.playSecs = Math.round(MAY.currentCtx.playSecs);
       }
+      MAY.currentCtx = null;
+      if (MAY.clear3DLoops) MAY.clear3DLoops();
+      if (MAY.VFX) MAY.VFX.clear();
+      if (MAY.PlanarReflector) MAY.PlanarReflector.clear();
+      if (MAY.WaterRefractor) MAY.WaterRefractor.hasValidFrame = false;
+      if (MAY.setSunOffset) MAY.setSunOffset(24, 42, 16);
+      if (MAY.diveLight) {
+        MAY.diveLight.color.setHex(0xbfefff);
+        MAY.diveLight.intensity = 0.12;
+        MAY.diveLight.castShadow = false;
+      }
+      if (MAY.camera && MAY.camera.fov !== 70) {
+        MAY.camera.fov = 70;
+        MAY.camera.updateProjectionMatrix();
+      }
+      document.body.classList.remove("boss-active");
+      MAY.clearWorld();
+      MAY.currentLevelId = levelId;
+      MAY.save.currentLevel = levelId;
+      MAY.persist();
+
+      MAY.currentCtx = MAY.LEVELS[levelId]();
+      MAY.applyOutfit(MAY.save.outfit);
+      if (MAY.VFX) MAY.VFX.syncSpellUI();
+      MAY.refreshHUD();
+      MAY.updateHintText(MAY.currentCtx);
+
+      var mk = document.getElementById("mask");
+      var gr = document.getElementById("grade");
+      if (mk) mk.style.opacity = 0;
+      if (gr) gr.style.opacity = 0;
+
+      /* Xả dt tích lũy trong lúc dựng màn để khung hình đầu tiên không bị giật bước */
+      clock.getDelta();
+
+      if (!silent) {
+        var m = MAY.getMeta(levelId);
+        if (MAY.started && MAY.Cutscene && MAY.Cutscene.playWorldIntro && MAY.currentCtx && MAY.currentCtx.save && !MAY.currentCtx.save.introSeen) {
+          MAY.currentCtx.save.introSeen = true;
+          MAY.persist();
+          MAY.Cutscene.playWorldIntro(MAY.currentCtx, function () {
+            MAY.toast(m.icon + " " + m.title, m.intro);
+          });
+        } else {
+          MAY.toast(m.icon + " " + m.title, m.intro);
+        }
+      }
+    } finally {
+      _enteringLevel = false;
     }
   };
 
@@ -254,7 +285,6 @@
   );
 
   /* ---- Vòng lặp chính (được bọc Error Boundary chống treo toàn cục) ---- */
-  var clock = new THREE.Clock();
   var frames = 0;
 
   MAY.renderer.setAnimationLoop(function () {
@@ -271,15 +301,11 @@
         document.body.classList.toggle("boss-active", !!(ctx.boss && ctx.boss.active && !ctx.boss.defeated));
         if (inCutscene) {
           MAY.Cutscene.update(dt, t, ctx);
+          if (MAY.player && MAY.player.updateRigOnly) MAY.player.updateRigOnly(dt, t, ctx);
+          if (ctx.updateCutsceneVisuals) ctx.updateCutsceneVisuals(dt, t);
           if (ctx.onUpdate) ctx.onUpdate(dt, t);
           if (MAY.VFX && MAY.VFX.update) MAY.VFX.update(dt, t, ctx);
           MAY.updateBursts(dt);
-          if (ctx.waterMeshes) {
-            for (var wi = 0; wi < ctx.waterMeshes.length; wi++) {
-              var wu = ctx.waterMeshes[wi].userData.waterUniforms;
-              if (wu && wu.uPlayerPos && MAY.player) wu.uPlayerPos.value.copy(MAY.player.pos);
-            }
-          }
         } else if (MAY.started) {
           MAY.player.update(dt, t, ctx);
           ctx.updateAll(dt, t);
@@ -290,6 +316,8 @@
           MAY.updateSunFollow(MAY.player.pos);
         }
       }
+
+      if (MAY.updateLevelLights) MAY.updateLevelLights(MAY.player ? MAY.player.pos : MAY.camera.position);
 
       if (MAY.updateAudioListener) MAY.updateAudioListener(MAY.camera);
       var camUnderwater = !!(ctx && ctx.waterLevel !== undefined && MAY.camera.position.y < ctx.waterLevel);

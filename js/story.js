@@ -169,7 +169,7 @@
   };
 
   MAY.damagePlayer = function (amt, pushFromPos, msg) {
-    if (invulnT > 0 || MAY.modalOpen || !MAY.started) return;
+    if (invulnT > 0 || MAY.modalOpen || !MAY.started || (MAY.Cutscene && MAY.Cutscene.isPlaying && MAY.Cutscene.isPlaying())) return;
     invulnT = 1.65;
     MAY.hearts = Math.max(0, MAY.hearts - (amt || 1));
     MAY.syncHeartsHUD(true);
@@ -209,6 +209,24 @@
     return new THREE.MeshStandardMaterial(o);
   }
   var glowRedEye = new THREE.MeshBasicMaterial({ color: 0xff3b5c });
+  if (MAY.protectMaterial) MAY.protectMaterial(glowRedEye);
+
+  function disposeRuntimeMesh(root) {
+    if (!root) return;
+    root.traverse(function (o) {
+      if (o.isMesh || o.isPoints || o.isLine) {
+        if (o.geometry && !o.userData.sharedGeo) try { o.geometry.dispose(); } catch (e) {}
+        if (o.material) {
+          var ms = Array.isArray(o.material) ? o.material : [o.material];
+          ms.forEach(function (m) {
+            if (m && m !== glowRedEye && m.dispose) try { m.dispose(); } catch (e) {}
+          });
+        }
+      } else if (o.isSprite && o.material && o.material.dispose) {
+        try { o.material.dispose(); } catch (e) {}
+      }
+    });
+  }
 
   MAY.makeMonsterMesh = function (kind, scale) {
     var g = new THREE.Group();
@@ -754,7 +772,7 @@
         ped.position.y = 0.65; g.add(ped);
         var orb = new THREE.Mesh(new THREE.OctahedronGeometry(0.42, 0), new THREE.MeshPhysicalMaterial({ color: 0x334155, emissive: 0x000000, roughness: 0.2, clearcoat: 1.0 }));
         orb.position.y = 1.65; g.add(orb);
-        var pl = new THREE.PointLight(col, 0, 18); pl.position.y = 1.9; g.add(pl);
+        var pl = MAY.makePooledLight ? MAY.makePooledLight(col, 0, 18) : new THREE.PointLight(col, 0, 18); pl.position.y = 1.9; g.add(pl);
         g.userData.orb = orb; g.userData.pl = pl; g.userData.litColor = col;
       } else if (kind === "bottle" || kind === "basket" || kind === "gnomon" || kind === "wood") {
         var body = new THREE.Mesh(
@@ -770,7 +788,7 @@
         /* conch / chime / sundial */
         var sh = new THREE.Mesh(new THREE.TorusKnotGeometry(0.36, 0.12, 24, 6), mat);
         sh.position.y = 1.05; g.add(sh);
-        var pl2 = new THREE.PointLight(col, 0.6, 14); pl2.position.y = 1.2; g.add(pl2);
+        var pl2 = MAY.makePooledLight ? MAY.makePooledLight(col, 0.6, 14) : new THREE.PointLight(col, 0.6, 14); pl2.position.y = 1.2; g.add(pl2);
         g.userData.orb = sh; g.userData.pl = pl2; g.userData.litColor = col;
       }
       var ring = MAY.VFX.makeRunePlane(1.45, col, 0.48);
@@ -820,14 +838,24 @@
         syncState: function () {
           var total = stations.length;
           var doneN = 0;
-          var nextPos = null;
-          var nextLabel = "";
+          var othersDone = 0;
+          var othersTotal = 0;
           stations.forEach(function (stItem) {
             var isDone = sqSave.done || sqSave.doneIds.indexOf(stItem.id) !== -1;
             stItem.done = isDone;
-            var unlocked = sqSave.stage >= 1 && !sqSave.done && (!stItem.finalOnly || doneN >= total - 1);
             if (isDone) doneN++;
-            else if (unlocked && !nextPos) { nextPos = stItem.pos; nextLabel = stItem.label; }
+            if (!stItem.finalOnly) {
+              othersTotal++;
+              if (isDone) othersDone++;
+            }
+          });
+          var nextPos = null;
+          var nextLabel = "";
+          stations.forEach(function (stItem) {
+            var isDone = stItem.done;
+            var unlocked = sqSave.stage >= 1 && !sqSave.done && (!stItem.finalOnly || othersDone >= othersTotal);
+            stItem.unlocked = unlocked;
+            if (!isDone && unlocked && !nextPos) { nextPos = stItem.pos; nextLabel = stItem.label; }
             if (stItem.group.userData.pickup) {
               stItem.group.visible = (sqSave.stage >= 1 && !isDone);
             } else {
@@ -876,7 +904,7 @@
           if (MAY.sndChime) MAY.sndChime(sqSave.doneIds.length);
           MAY.burstAt(stItem.pos.clone().add(new THREE.Vector3(0, 0.8, 0)), stItem.color || 0x22d3ee, 18);
           sqObj.syncState();
-          var doneN = sqSave.doneIds.length;
+          var doneN = stations.filter(function (s) { return s.done; }).length;
           if (doneN >= stations.length) {
             MAY.toast("📜 " + def.icon + " Xong hết các bước rồi! Quay lại gặp " + def.npcName + " (★) nhận thưởng!", "Xong rồi! Quay lại báo tin cho bạn nhé!");
           } else {
@@ -904,11 +932,14 @@
           pos: new THREE.Vector3(tx, ty + 0.8, tz),
           group: meshG,
           labelSp: lb,
-          done: false
+          done: false,
+          unlocked: false,
+          _warnCd: 0
         };
         stations.push(stItem);
         ctx.interactives.push({
           obj: meshG, label: "📜 " + tk.label, isSideQuestTask: true,
+          isActive: function () { return sqSave.stage >= 1 && !sqSave.done && !stItem.done && !!stItem.unlocked; },
           onInteract: function () { sqObj.completeTask(stItem); }
         });
       });
@@ -1007,7 +1038,7 @@
         id: cfg.id || ("en_" + ctx.enemies.length),
         kind: cfg.kind, name: cfg.name || "Quái Sương Xám",
         weakSpell: cfg.weakSpell, /* string hoặc array */
-        mesh: mesh, label: lb,
+        mesh: mesh, label: lb, baseScale: cfg.scale || 1.0,
         hx: x, hy: y, hz: z,
         flying: !!cfg.flying, underwater: !!cfg.underwater,
         patrolR: cfg.patrolR || 7,
@@ -1073,6 +1104,7 @@
       var boss = {
         name: cfg.name, icon: cfg.icon || "👾",
         mesh: cfg.mesh, home: pos.clone(), pos: cfg.mesh.position,
+        baseScale: (cfg.mesh && cfg.mesh.scale && cfg.mesh.scale.x) ? cfg.mesh.scale.x : 1.0,
         arenaR: cfg.arenaR || 22,
         hp: cfg.maxHp || 3, maxHp: cfg.maxHp || 3,
         active: !!cfg.startActive, defeated: !!st.bossDown,
@@ -1134,8 +1166,12 @@
               boss.state = "launched";
               boss.stateT = 0;
               if (MAY.sndLaunchSky) MAY.sndLaunchSky(boss.pos);
+            } else if (boss.mesh && boss.mesh.userData && boss.mesh.userData.mixer) {
+              boss.state = "defeating";
+              boss.stateT = 0;
             } else {
               boss.mesh.visible = false;
+              boss.state = "defeated";
             }
             MAY.burstAt(boss.pos.clone().add(new THREE.Vector3(0, 2.5, 0)), 0xffd93d, 36);
             var defeatPos = boss.pos.clone();
@@ -1197,10 +1233,12 @@
         ho.mesh.position.y = ho.baseY + Math.sin(t * 4 + hi) * 0.25;
         if (ho.mesh.position.distanceTo(pPos) < 2.6) {
           MAY.worldRoot.remove(ho.mesh);
+          disposeRuntimeMesh(ho.mesh);
           ctx.heartOrbs.splice(hi, 1);
           MAY.healPlayer(1);
         } else if (ho.age > 24) {
           MAY.worldRoot.remove(ho.mesh);
+          disposeRuntimeMesh(ho.mesh);
           ctx.heartOrbs.splice(hi, 1);
         }
       }
@@ -1238,12 +1276,22 @@
         sq.aura.rotation.z -= dt * 1.1;
         sq.marker.position.y = sq.labelY + 1.05 + Math.sin(t * 4.5 + 1.2) * 0.18;
         if (sq.floating) sq.npcGroup.position.y = sq.baseY + Math.sin(t * 2.2) * 0.25;
+        if (sq.npcGroup.userData.wl && sq.npcGroup.userData.wr) {
+          var swFlap = Math.sin(t * 7.5 + 0.8) * 0.45;
+          sq.npcGroup.userData.wl.rotation.z = swFlap;
+          sq.npcGroup.userData.wr.rotation.z = -swFlap;
+        }
         var sqD = sq.npcGroup.position.distanceTo(pPos);
+        if (sq.npcGroup.userData.mixer) {
+          if (sq.npcGroup.userData.playClip) sq.npcGroup.userData.playClip(sqD < 5.5 ? "talk" : "idle");
+          sq.npcGroup.userData.mixer.update(dt);
+        }
         if (sqD < 14) {
           var sAng = Math.atan2(sq.npcGroup.position.x - pPos.x, sq.npcGroup.position.z - pPos.z);
           sq.npcGroup.rotation.y += Math.atan2(Math.sin(sAng - sq.npcGroup.rotation.y), Math.cos(sAng - sq.npcGroup.rotation.y)) * Math.min(1, dt * 4.5);
         }
         sq.stations.forEach(function (stItem, idx) {
+          if (stItem._warnCd > 0) stItem._warnCd = Math.max(0, stItem._warnCd - dt);
           if (stItem.group.userData.ring && stItem.group.userData.ring.visible) {
             stItem.group.userData.ring.rotation.z += dt * 1.4;
           }
@@ -1251,7 +1299,12 @@
             stItem.group.userData.orb.rotation.y += dt * (stItem.done ? 2.4 : 0.9);
           }
           if (!MAY.modalOpen && sq.save.stage >= 1 && !sq.save.done && !stItem.done && stItem.group.visible && stItem.pos.distanceTo(pPos) < 2.65) {
-            sq.completeTask(stItem);
+            if (stItem.unlocked) {
+              sq.completeTask(stItem);
+            } else if (stItem._warnCd <= 0) {
+              stItem._warnCd = 4.5;
+              sq.completeTask(stItem);
+            }
           }
         });
       }
@@ -1273,7 +1326,7 @@
           en.mesh.position.y += en.vy * dt;
           en.mesh.rotation.y += dt * 16;
           en.mesh.rotation.x += dt * 9;
-          en.mesh.scale.setScalar(Math.max(0.2, 1.0 - en.launchT * 0.35));
+          en.mesh.scale.setScalar((en.baseScale || 1.0) * Math.max(0.2, 1.0 - en.launchT * 0.35));
           if (en.launchT > 1.35) {
             en.purify(null, 0xf472b6);
             MAY.burstAt(en.mesh.position.clone(), 0xffd93d, 26);
@@ -1293,9 +1346,9 @@
 
         if (en.state === "windup") {
           en.timer -= dt;
-          en.mesh.scale.setScalar(1.0 + Math.sin(t * 28) * 0.08);
+          en.mesh.scale.setScalar((en.baseScale || 1.0) * (1.0 + Math.sin(t * 28) * 0.08));
           if (en.timer <= 0) {
-            en.mesh.scale.setScalar(1.0);
+            en.mesh.scale.setScalar(en.baseScale || 1.0);
             en.state = "chase";
             en.atkCd = 2.8;
             if (en.mesh.position.distanceTo(pPos) < 3.4) {
@@ -1338,24 +1391,27 @@
       }
 
       /* Đạn Quái / Boss (Ngọc Trai Đen Nổ, Đá Ném, Cầu Sét) */
-      for (var oi = ctx.bossOrbs.length - 1; oi >= 0; oi--) {
-        var orb = ctx.bossOrbs[oi];
-        orb.life -= dt;
-        orb.mesh.position.addScaledVector(orb.dir, orb.speed * dt);
-        orb.mesh.rotation.y += dt * 5;
-        var remove = orb.life <= 0;
-        if (!orb.reflected && !MAY.modalOpen && orb.mesh.position.distanceTo(pPos) < 2.0) {
-          MAY.damagePlayer(1, orb.mesh.position, "Coi chừng quả cầu năng lượng! Nhớ né hoặc đẩy ngược bằng phép!");
-          MAY.burstAt(orb.mesh.position.clone(), 0xff3b5c, 12);
-          remove = true;
-        } else if (orb.reflected && ctx.boss && ctx.boss.active && !ctx.boss.defeated && orb.mesh.position.distanceTo(ctx.boss.pos) < 4.5) {
-          if (orb.onReflectHitBoss) orb.onReflectHitBoss(ctx.boss);
-          else ctx.boss.damage("Quả cầu bật ngược trúng thẳng Trùm!");
-          remove = true;
-        }
-        if (remove) {
-          MAY.worldRoot.remove(orb.mesh);
-          ctx.bossOrbs.splice(oi, 1);
+      if (!MAY.modalOpen) {
+        for (var oi = ctx.bossOrbs.length - 1; oi >= 0; oi--) {
+          var orb = ctx.bossOrbs[oi];
+          orb.life -= dt;
+          orb.mesh.position.addScaledVector(orb.dir, orb.speed * dt);
+          orb.mesh.rotation.y += dt * 5;
+          var remove = orb.life <= 0;
+          if (!orb.reflected && orb.mesh.position.distanceTo(pPos) < 2.0) {
+            MAY.damagePlayer(1, orb.mesh.position, "Coi chừng quả cầu năng lượng! Nhớ né hoặc đẩy ngược bằng phép!");
+            MAY.burstAt(orb.mesh.position.clone(), 0xff3b5c, 12);
+            remove = true;
+          } else if (orb.reflected && ctx.boss && ctx.boss.active && !ctx.boss.defeated && orb.mesh.position.distanceTo(ctx.boss.pos) < 4.5) {
+            if (orb.onReflectHitBoss) orb.onReflectHitBoss(ctx.boss);
+            else ctx.boss.damage("Quả cầu bật ngược trúng thẳng Trùm!");
+            remove = true;
+          }
+          if (remove) {
+            MAY.worldRoot.remove(orb.mesh);
+            disposeRuntimeMesh(orb.mesh);
+            ctx.bossOrbs.splice(oi, 1);
+          }
         }
       }
 
@@ -1370,11 +1426,22 @@
           bs.mesh.position.y += 22 * dt;
           bs.mesh.rotation.y += dt * 14;
           bs.mesh.rotation.z += dt * 7;
-          bs.mesh.scale.setScalar(Math.max(0.05, 1.0 - bs.stateT * 0.55));
+          bs.mesh.scale.setScalar((bs.baseScale || 1.0) * Math.max(0.05, 1.0 - bs.stateT * 0.55));
           if (bs.stateT > 1.7) {
             bs.mesh.visible = false;
             bs.state = "defeated";
             MAY.burstAt(bs.mesh.position.clone(), 0xf472b6, 40);
+          }
+        } else if (bs.state === "defeating") {
+          bs.stateT += dt;
+          if (bs.stateT > 1.55) {
+            var sf = Math.max(0.04, 1.0 - (bs.stateT - 1.55) / 0.65);
+            bs.mesh.scale.setScalar((bs.baseScale || 1.0) * sf);
+          }
+          if (bs.stateT >= 2.2) {
+            bs.mesh.visible = false;
+            bs.state = "defeated";
+            MAY.burstAt(bs.mesh.position.clone().add(new THREE.Vector3(0, 1.8, 0)), 0xffd93d, 36);
           }
         } else if (bs.active && !bs.defeated && !MAY.modalOpen) {
           if (bs.state === "stunned") {
@@ -1393,6 +1460,74 @@
         var tp = ctx.storyObjective.targetPos;
         ctx.beacon.position.set(tp.x, tp.y + 12, tp.z);
         ctx.beacon.material.uniforms.uPulse.value = 0.22 + Math.sin(t * 4) * 0.08;
+      }
+    };
+
+    /* Cập nhật bầu khí quyển, NPC xương & hoạt ảnh Trùm (bao gồm bay lên trời/Defeat) trong lúc Cutscene 3D! */
+    ctx.updateStoryCutscene = function (dt, t) {
+      if (ctx._atmosphere && ctx._atmosphere.t !== ctx._atmosphere.target) {
+        var dir = ctx._atmosphere.target > ctx._atmosphere.t ? 1 : -1;
+        ctx._atmosphere.t = Math.max(0, Math.min(1, ctx._atmosphere.t + dir * dt * 0.45));
+        applyAtmoBlend(ctx._atmosphere, ctx._atmosphere.t);
+      }
+      for (var ni = 0; ni < ctx.questNPCs.length; ni++) {
+        var npc = ctx.questNPCs[ni];
+        npc.aura.rotation.z += dt * 0.9;
+        npc.marker.position.y = npc.labelY + 1.15 + Math.sin(t * 4.2) * 0.20;
+        if (npc.floating) npc.group.position.y = npc.baseY + Math.sin(t * 2.4) * 0.28;
+        if (npc.group.userData.wl && npc.group.userData.wr) {
+          var wFlap = Math.sin(t * 7.5) * 0.45;
+          npc.group.userData.wl.rotation.z = wFlap;
+          npc.group.userData.wr.rotation.z = -wFlap;
+        }
+        if (npc.group.userData.mixer) {
+          if (npc.group.userData.playClip) npc.group.userData.playClip("idle");
+          npc.group.userData.mixer.update(dt);
+        }
+      }
+      if (ctx.sideQuest) {
+        var sq = ctx.sideQuest;
+        sq.aura.rotation.z -= dt * 1.1;
+        sq.marker.position.y = sq.labelY + 1.05 + Math.sin(t * 4.5 + 1.2) * 0.18;
+        if (sq.floating) sq.npcGroup.position.y = sq.baseY + Math.sin(t * 2.2) * 0.25;
+        if (sq.npcGroup.userData.wl && sq.npcGroup.userData.wr) {
+          var swF = Math.sin(t * 7.5 + 0.8) * 0.45;
+          sq.npcGroup.userData.wl.rotation.z = swF;
+          sq.npcGroup.userData.wr.rotation.z = -swF;
+        }
+        if (sq.npcGroup.userData.mixer) {
+          if (sq.npcGroup.userData.playClip) sq.npcGroup.userData.playClip("idle");
+          sq.npcGroup.userData.mixer.update(dt);
+        }
+      }
+      if (ctx.boss) {
+        var bs = ctx.boss;
+        if (bs.mesh && bs.mesh.userData && bs.mesh.userData.mixer) {
+          bs.mesh.userData.mixer.update(dt);
+        }
+        if (bs.state === "launched") {
+          bs.stateT += dt;
+          bs.mesh.position.y += 22 * dt;
+          bs.mesh.rotation.y += dt * 14;
+          bs.mesh.rotation.z += dt * 7;
+          bs.mesh.scale.setScalar((bs.baseScale || 1.0) * Math.max(0.05, 1.0 - bs.stateT * 0.55));
+          if (bs.stateT > 1.7) {
+            bs.mesh.visible = false;
+            bs.state = "defeated";
+            MAY.burstAt(bs.mesh.position.clone(), 0xf472b6, 40);
+          }
+        } else if (bs.state === "defeating") {
+          bs.stateT += dt;
+          if (bs.stateT > 1.55) {
+            var sf2 = Math.max(0.04, 1.0 - (bs.stateT - 1.55) / 0.65);
+            bs.mesh.scale.setScalar((bs.baseScale || 1.0) * sf2);
+          }
+          if (bs.stateT >= 2.2) {
+            bs.mesh.visible = false;
+            bs.state = "defeated";
+            MAY.burstAt(bs.mesh.position.clone().add(new THREE.Vector3(0, 1.8, 0)), 0xffd93d, 36);
+          }
+        }
       }
     };
 

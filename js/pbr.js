@@ -377,8 +377,11 @@
     }
     if (tex.image && tex.image.complete && tex.image.width) build();
     else {
+      var tries = 0;
       var iv = setInterval(function () {
+        tries++;
         if (tex.image && tex.image.complete && tex.image.width) { clearInterval(iv); build(); }
+        else if (tries > 120) { clearInterval(iv); }
       }, 150);
     }
   };
@@ -476,9 +479,10 @@
   );
   var _reflTarget = new THREE.Vector3();
   var _reflLook = new THREE.Vector3();
-  var _clipPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+  var _clipNormal = new THREE.Vector3(0, 1, 0);
+  var _clipPlane = new THREE.Plane(_clipNormal, 0);
 
-  var _reflFrame = 0;
+  var _offscreenFrame = 0;
   MAY.PlanarReflector = {
     rt: null,
     matrix: new THREE.Matrix4(),
@@ -486,8 +490,9 @@
     hideMeshes: [],
     hasValidFrame: false,
     init: function () {
-      var w = Math.max(2, Math.floor(window.innerWidth * 0.45));
-      var h = Math.max(2, Math.floor(window.innerHeight * 0.45));
+      var scale = MAY.quality === "high" ? 0.48 : 0.36;
+      var w = Math.max(2, Math.floor(window.innerWidth * scale));
+      var h = Math.max(2, Math.floor(window.innerHeight * scale));
       if (this.rt) this.rt.dispose();
       this.rt = new THREE.WebGLRenderTarget(w, h, { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBAFormat });
     },
@@ -495,7 +500,6 @@
       this.activePlaneY = planeY;
       this.hideMeshes = hideList || [];
       this.hasValidFrame = false;
-      _reflFrame = 0;
     },
     clear: function () {
       this.activePlaneY = null;
@@ -513,10 +517,9 @@
         this.hasValidFrame = false;
         return;
       }
-      /* Trên chất lượng 'mid', cập nhật Planar Reflection mỗi 2 khung hình giúp tăng mạnh FPS mà mặt nước/sàn vẫn phản chiếu mượt */
-      if (MAY.quality === "mid") {
-        _reflFrame++;
-        if (this.hasValidFrame && (_reflFrame % 2 === 1)) return;
+      /* Trên chất lượng 'mid', xen kẽ khung hình chẵn (Reflection) / lẻ (Refraction) để giữ FPS mượt mà! */
+      if (MAY.quality === "mid" && this.hasValidFrame && (_offscreenFrame % 2 === 1)) {
+        return;
       }
       /* Phản chiếu camera thật qua mặt phẳng y = py */
       cam.getWorldDirection(_reflLook);
@@ -542,7 +545,7 @@
       }
       var r = MAY.renderer;
       var prevClip = r.localClippingEnabled;
-      _clipPlane.set(new THREE.Vector3(0, 1, 0), -py + 0.12);
+      _clipPlane.set(_clipNormal, -py + 0.12);
       r.localClippingEnabled = true;
       r.clippingPlanes = [_clipPlane];
 
@@ -569,11 +572,14 @@
     rtDepthRGBA: null,
     hasValidFrame: false,
     init: function () {
-      var scale = MAY.quality === "high" ? 0.85 : 0.6;
-      var pr = Math.min(MAY.renderer.getPixelRatio(), 1.35);
+      var scale = MAY.quality === "high" ? 0.72 : 0.48;
+      var pr = Math.min(MAY.renderer.getPixelRatio(), 1.25);
       var w = Math.max(2, Math.floor(window.innerWidth * pr * scale));
       var h = Math.max(2, Math.floor(window.innerHeight * pr * scale));
-      if (this.rt) this.rt.dispose();
+      if (this.rt) {
+        if (this.rt.depthTexture) { try { this.rt.depthTexture.dispose(); } catch (e) {} }
+        this.rt.dispose();
+      }
       if (this.rtDepthRGBA) this.rtDepthRGBA.dispose();
       this.rt = new THREE.WebGLRenderTarget(w, h, {
         minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBAFormat
@@ -597,6 +603,10 @@
     render: function (waterMeshes) {
       if (!waterMeshes || !waterMeshes.length || MAY.quality === "low" || !this.rt) {
         this.hasValidFrame = false;
+        return;
+      }
+      /* Trên 'mid', cập nhật Refraction ở khung hình lẻ (xen kẽ Planar Reflection khung chẵn) */
+      if (MAY.quality === "mid" && this.hasValidFrame && (_offscreenFrame % 2 === 0)) {
         return;
       }
       var prevVis = [];
@@ -936,17 +946,27 @@
     return new THREE.Mesh(new THREE.SphereGeometry(cfg.radius || 235, 32, 20), mat);
   };
 
-  var currentEnvRT = null;
-  MAY.bakeBiomeEnv = function (skyMesh) {
+  /* ---- Cache PMREM Môi Trường & Lightmap Địa Hình theo từng màn (chuyển màn lại = 0ms!) ---- */
+  var _sharedPMREM = null;
+  var _envCache = {};
+  MAY.clearPBRCaches = function () {
+    Object.keys(_envCache).forEach(function (k) { try { _envCache[k].dispose(); } catch (e) {} });
+    _envCache = {};
+    if (_sharedPMREM) { try { _sharedPMREM.dispose(); } catch (e) {} _sharedPMREM = null; }
+  };
+  MAY.bakeBiomeEnv = function (skyMesh, cacheKey) {
     try {
+      var key = cacheKey || MAY.currentLevelId || "default";
+      if (_envCache[key]) {
+        MAY.scene.environment = _envCache[key].texture;
+        return;
+      }
+      if (!_sharedPMREM) _sharedPMREM = new THREE.PMREMGenerator(MAY.renderer);
       var ts = new THREE.Scene(); ts.add(new THREE.Mesh(skyMesh.geometry, skyMesh.material));
-      var pmrem = new THREE.PMREMGenerator(MAY.renderer);
-      var rt = pmrem.fromScene(ts, 0.04);
-      if (currentEnvRT) currentEnvRT.dispose();
+      var rt = _sharedPMREM.fromScene(ts, 0.04);
       if (MAY._baseEnvRT) { MAY._baseEnvRT.dispose(); MAY._baseEnvRT = null; }
-      currentEnvRT = rt;
+      _envCache[key] = rt;
       MAY.scene.environment = rt.texture;
-      pmrem.dispose();
     } catch (e) {}
   };
 
@@ -995,7 +1015,8 @@
     return probe;
   };
 
-  /* ---- Nướng Lightmap GI + Horizon Sky AO + Bounce + Đèn Tĩnh (uv2 + mat.lightMap thật!) ---- */
+  /* ---- Nướng Lightmap GI + Horizon Sky AO + Bounce + Đèn Tĩnh (có Cache theo màn -> chuyển màn lại = 0ms!) ---- */
+  var _lmCache = {};
   MAY.bakeTerrainLightmap = function (geo, mat, opts) {
     if (!geo || !mat || !opts || !opts.groundH) return null;
     try {
@@ -1003,9 +1024,15 @@
       if (uvAttr && !geo.attributes.uv2) {
         geo.setAttribute("uv2", new THREE.BufferAttribute(new Float32Array(uvAttr.array), 2));
       }
-      var res = opts.res || 160;
+      var cacheKey = opts.cacheKey || MAY.currentLevelId || null;
+      if (cacheKey && _lmCache[cacheKey]) {
+        mat.lightMap = _lmCache[cacheKey];
+        mat.lightMapIntensity = opts.intensity !== undefined ? opts.intensity : 0.72;
+        mat.needsUpdate = true;
+        return _lmCache[cacheKey];
+      }
+      var res = Math.min(opts.res || 96, 112);
       var size = opts.size || 220;
-      var half = size * 0.5;
       var gh = opts.groundH;
       var skyCol = new THREE.Color(opts.skyColor || 0xaadbf5);
       var bounceCol = new THREE.Color(opts.bounceColor || 0x8ea67c);
@@ -1018,14 +1045,15 @@
       var img = ctx2.createImageData(res, res);
       var data = img.data;
       var dirs = [
-        [1, 0], [-1, 0], [0, 1], [0, -1],
-        [0.707, 0.707], [-0.707, 0.707], [0.707, -0.707], [-0.707, -0.707]
+        [1, 0], [-1, 0], [0.5, 0.866], [-0.5, 0.866], [0.5, -0.866], [-0.5, -0.866]
       ];
-      var dists = [3.5, 9.0, 17.5];
+      var dists = [4.5, 13.5];
       var eps = 1.6;
+      var sHor = Math.hypot(sunD.x, sunD.z) || 1;
+      var sdx = sunD.x / sHor, sdz = sunD.z / sHor;
+      var sunSlope = sunD.y / sHor;
 
       for (var py = 0; py < res; py++) {
-        /* PlaneGeometry xoay -PI/2: v=1 ở -Z, v=0 ở +Z; canvas y=0 tương ứng v=1 (flipY=true) */
         var v = 1.0 - (py + 0.5) / res;
         var wz = (0.5 - v) * size;
         for (var px = 0; px < res; px++) {
@@ -1033,13 +1061,11 @@
           var wx = (u - 0.5) * size;
           var h0 = gh(wx, wz);
 
-          /* Pháp tuyến địa hình cục bộ */
           var hx = (gh(wx + eps, wz) - gh(wx - eps, wz)) / (2 * eps);
           var hz = (gh(wx, wz + eps) - gh(wx, wz - eps)) / (2 * eps);
           var invN = 1 / Math.sqrt(hx * hx + 1 + hz * hz);
           var nx = -hx * invN, ny = invN, nz = -hz * invN;
 
-          /* Horizon-Angle Sky AO (8 hướng x 3 cự ly ray-march trên heightfield!) */
           var occSum = 0;
           for (var di = 0; di < dirs.length; di++) {
             var maxTan = 0;
@@ -1054,26 +1080,20 @@
           }
           var skyVis = Math.max(0.28, 1.0 - (occSum / dirs.length) * 0.85);
 
-          /* Kiểm tra bóng che mặt trời tầm xa (Self-Shadow + Warm Indirect Bounce) */
           var sunVis = 1.0;
-          var sHor = Math.hypot(sunD.x, sunD.z) || 1;
-          var sdx = sunD.x / sHor, sdz = sunD.z / sHor;
-          var sunSlope = sunD.y / sHor;
-          for (var ss = 1; ss <= 3; ss++) {
-            var sd = ss * 6.5;
+          for (var ss = 1; ss <= 2; ss++) {
+            var sd = ss * 8.5;
             if ((gh(wx + sdx * sd, wz + sdz * sd) - h0) / sd > sunSlope) {
-              sunVis -= 0.24;
+              sunVis -= 0.32;
             }
           }
           sunVis = Math.max(0.28, sunVis);
           var nDotS = Math.max(0, nx * sunD.x + ny * sunD.y + nz * sunD.z);
 
-          /* Tổng hợp GI gián tiếp: Sky Fill + Ground Bounce + Sun Indirect */
           var r = skyCol.r * skyVis * 0.42 + bounceCol.r * (0.34 + 0.24 * (1 - skyVis)) + sunCol.r * nDotS * sunVis * 0.28;
           var g = skyCol.g * skyVis * 0.42 + bounceCol.g * (0.34 + 0.24 * (1 - skyVis)) + sunCol.g * nDotS * sunVis * 0.28;
           var b = skyCol.b * skyVis * 0.42 + bounceCol.b * (0.34 + 0.24 * (1 - skyVis)) + sunCol.b * nDotS * sunVis * 0.28;
 
-          /* Nướng các nguồn sáng tĩnh cục bộ (Hải đăng, Đèn lồng, Pha lê, Lửa trại) */
           for (var li = 0; li < lights.length; li++) {
             var L = lights[li];
             var ldx = wx - L.x, ldz = wz - L.z;
@@ -1098,6 +1118,10 @@
       var lmTex = new THREE.CanvasTexture(c);
       lmTex.encoding = THREE.sRGBEncoding;
       lmTex.needsUpdate = true;
+      if (cacheKey) {
+        if (MAY.protectTexture) MAY.protectTexture(lmTex);
+        _lmCache[cacheKey] = lmTex;
+      }
       mat.lightMap = lmTex;
       mat.lightMapIntensity = opts.intensity !== undefined ? opts.intensity : 0.72;
       mat.needsUpdate = true;
@@ -1117,96 +1141,211 @@
     });
   };
 
-  /* ---- Đèn Lồng Sắt Kiến Trúc Có Ánh Sáng Thực (phong cách đèn treo trong The Hall!) ---- */
-  MAY.makeCagedLantern = function (colorHex, intensity, dist, castShadow) {
-    var g = new THREE.Group();
-    var iron = new THREE.MeshStandardMaterial({ color: 0x1e242b, metalness: 0.85, roughness: 0.35 });
-    var cap = new THREE.Mesh(new THREE.ConeGeometry(0.26, 0.16, 10), iron); cap.position.y = 0.22; g.add(cap);
-    var bot = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.12, 0.08, 10), iron); bot.position.y = -0.22; g.add(bot);
-    for (var k = 0; k < 4; k++) {
-      var a = (k / 4) * Math.PI * 2;
-      var rib = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.42, 5), iron);
-      rib.position.set(Math.cos(a) * 0.17, 0, Math.sin(a) * 0.17); g.add(rib);
+  /* ---- Hàm gộp BufferGeometry thuần Three.js (giảm hàng chục draw call thành 1 draw call duy nhất!) ---- */
+  function mergeSimpleGeometries(list) {
+    var nonIdx = [];
+    var totalVerts = 0;
+    for (var i = 0; i < list.length; i++) {
+      var src = list[i];
+      var g = src.index ? src.toNonIndexed() : src.clone();
+      if (!g.attributes.normal) g.computeVertexNormals();
+      nonIdx.push(g);
+      totalVerts += g.attributes.position.count;
     }
-    var bulb = new THREE.Mesh(new THREE.SphereGeometry(0.14, 10, 8), new THREE.MeshBasicMaterial({ color: colorHex || 0xffe29a }));
+    var posArr = new Float32Array(totalVerts * 3);
+    var normArr = new Float32Array(totalVerts * 3);
+    var uvArr = new Float32Array(totalVerts * 2);
+    var offset = 0;
+    for (var j = 0; j < nonIdx.length; j++) {
+      var gg = nonIdx[j];
+      var cnt = gg.attributes.position.count;
+      posArr.set(gg.attributes.position.array, offset * 3);
+      normArr.set(gg.attributes.normal.array, offset * 3);
+      if (gg.attributes.uv) uvArr.set(gg.attributes.uv.array, offset * 2);
+      offset += cnt;
+      gg.dispose();
+    }
+    var merged = new THREE.BufferGeometry();
+    merged.setAttribute("position", new THREE.BufferAttribute(posArr, 3));
+    merged.setAttribute("normal", new THREE.BufferAttribute(normArr, 3));
+    merged.setAttribute("uv", new THREE.BufferAttribute(uvArr, 2));
+    return merged;
+  }
+
+  /* ---- Đèn Lồng Sắt Kiến Trúc Tối Ưu (1 cage mesh dùng chung + Pooled PointLight không CubeShadowMap!) ---- */
+  var _lanternCageGeo = null, _lanternIronMat = null, _lanternBulbGeo = null;
+  MAY.makeCagedLantern = function (colorHex, intensity, dist) {
+    if (!_lanternCageGeo) {
+      var parts = [];
+      var cap = new THREE.ConeGeometry(0.26, 0.16, 10); cap.translate(0, 0.22, 0); parts.push(cap);
+      var bot = new THREE.CylinderGeometry(0.16, 0.12, 0.08, 10); bot.translate(0, -0.22, 0); parts.push(bot);
+      for (var k = 0; k < 4; k++) {
+        var a = (k / 4) * Math.PI * 2;
+        var rib = new THREE.CylinderGeometry(0.015, 0.015, 0.42, 5);
+        rib.translate(Math.cos(a) * 0.17, 0, Math.sin(a) * 0.17);
+        parts.push(rib);
+      }
+      _lanternCageGeo = mergeSimpleGeometries(parts);
+      parts.forEach(function (p) { p.dispose(); });
+      _lanternIronMat = new THREE.MeshStandardMaterial({ color: 0x1e242b, metalness: 0.85, roughness: 0.35 });
+      _lanternBulbGeo = new THREE.SphereGeometry(0.14, 8, 6);
+      if (MAY.protectGeometry) { MAY.protectGeometry(_lanternCageGeo); MAY.protectGeometry(_lanternBulbGeo); }
+      if (MAY.protectMaterial) MAY.protectMaterial(_lanternIronMat);
+    }
+    var g = new THREE.Group();
+    var cage = new THREE.Mesh(_lanternCageGeo, _lanternIronMat);
+    cage.userData.sharedGeo = true;
+    g.add(cage);
+    var bulb = new THREE.Mesh(_lanternBulbGeo, new THREE.MeshBasicMaterial({ color: colorHex || 0xffe29a }));
+    bulb.userData.sharedGeo = true;
     g.add(bulb);
-    var halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: MAY.TEX.glow, color: colorHex || 0xffcc66, transparent: true, opacity: 0.65, blending: THREE.AdditiveBlending, depthWrite: false }));
-    halo.scale.set(1.8, 1.8, 1); g.add(halo);
-    var pl = new THREE.PointLight(colorHex || 0xffcf70, intensity || 2.2, dist || 22, 1.5);
-    if (castShadow && MAY.quality !== "low") { pl.castShadow = true; pl.shadow.mapSize.set(512, 512); pl.shadow.bias = -0.002; }
+    var halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: MAY.TEX.glow, color: colorHex || 0xffcc66, transparent: true, opacity: 0.68, blending: THREE.AdditiveBlending, depthWrite: false }));
+    halo.scale.set(1.85, 1.85, 1); g.add(halo);
+    var pl = MAY.makePooledLight
+      ? MAY.makePooledLight(colorHex || 0xffcf70, intensity || 2.2, dist || 22, 1.5)
+      : new THREE.PointLight(colorHex || 0xffcf70, intensity || 2.2, dist || 22, 1.5);
     g.add(pl);
     return g;
   };
 
-  /* ---- Bóng Tiếp Xúc Dưới Chân (Contact Shadow giúp vật thể dính đất 100%) ---- */
+  /* ---- Bóng Tiếp Xúc Dưới Chân (1 Geometry dùng chung -> 0 cấp phát thừa!) ---- */
+  var _contactShadowGeo = new THREE.PlaneGeometry(2, 2);
+  _contactShadowGeo.rotateX(-Math.PI / 2);
+  if (MAY.protectGeometry) MAY.protectGeometry(_contactShadowGeo);
   MAY.makeContactShadow = function (radius, opacity) {
     var m = new THREE.Mesh(
-      new THREE.PlaneGeometry((radius || 1.2) * 2, (radius || 1.2) * 2),
+      _contactShadowGeo,
       new THREE.MeshBasicMaterial({ map: PBR.contactShadowTex, transparent: true, opacity: opacity || 0.65, depthWrite: false })
     );
-    m.rotation.x = -Math.PI / 2;
+    m.userData.sharedGeo = true;
+    m.scale.setScalar(radius || 1.2);
     m.position.y = 0.04;
     return m;
   };
 
-  /* ---- Dựng Cây Cối Chân Thực (Cây Dừa rủ tự nhiên + Cây Tán Dày nhiều lớp giống Fable 5.2) ---- */
-  MAY.makeRealisticPalm = function (s) {
-    s = s || 1.0;
-    var g = new THREE.Group();
+  /* ---- Dựng Cây Dừa & Cây Rừng Gộp Hình Học Dùng Chung (29 draw calls -> 2 draw calls/cây!) ---- */
+  var _palmCache = null;
+  function getPalmAssets() {
+    if (_palmCache) return _palmCache;
     var curve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(0, 0, 0), new THREE.Vector3(0.35 * s, 1.9 * s, 0.15 * s),
-      new THREE.Vector3(0.75 * s, 3.8 * s, 0.25 * s), new THREE.Vector3(0.95 * s, 5.4 * s, 0.18 * s)
+      new THREE.Vector3(0, 0, 0), new THREE.Vector3(0.35, 1.9, 0.15),
+      new THREE.Vector3(0.75, 3.8, 0.25), new THREE.Vector3(0.95, 5.4, 0.18)
     ]);
+    var trunkGeo = new THREE.TubeGeometry(curve, 12, 0.26, 7, false);
     var trunkMat = new THREE.MeshStandardMaterial({ map: PBR.bark.map, normalMap: PBR.bark.normalMap, roughnessMap: PBR.bark.roughnessMap, color: 0x9b7a58, roughness: 0.95 });
-    var trunk = new THREE.Mesh(new THREE.TubeGeometry(curve, 14, 0.26 * s, 8, false), trunkMat);
-    trunk.castShadow = true; trunk.receiveShadow = true; g.add(trunk);
     var frondMat = new THREE.MeshStandardMaterial({ map: PBR.palmFrondTex, alphaTest: 0.35, side: THREE.DoubleSide, roughness: 0.65 });
-    var top = new THREE.Vector3(0.95 * s, 5.4 * s, 0.18 * s);
+    var nutMat = new THREE.MeshStandardMaterial({ color: 0x5c3e1d, roughness: 0.85 });
+
+    var top = new THREE.Vector3(0.95, 5.4, 0.18);
+    var frondParts = [];
+    var mRot = new THREE.Matrix4();
+    var mTrans = new THREE.Matrix4().makeTranslation(top.x, top.y, top.z);
     for (var i = 0; i < 10; i++) {
       var a = (i / 10) * Math.PI * 2 + (i % 2) * 0.18;
-      var piv = new THREE.Group(); piv.position.copy(top); piv.rotation.y = a;
-      var len = (3.4 + (i % 3) * 0.4) * s;
-      var fGeo = new THREE.PlaneGeometry(1.5 * s, len, 2, 8);
+      var len = 3.4 + (i % 3) * 0.4;
+      var fGeo = new THREE.PlaneGeometry(1.5, len, 2, 7);
       var pos = fGeo.attributes.position;
       for (var k = 0; k < pos.count; k++) {
         var ox = pos.getX(k), oy = pos.getY(k) + len * 0.5, frac = oy / len;
-        pos.setXYZ(k, ox, Math.sin(frac * 2.15) * 0.82 * s - frac * frac * 1.48 * s + (i % 2) * 0.22 * s * frac - Math.abs(ox) * 0.24, oy);
+        pos.setXYZ(k, ox, Math.sin(frac * 2.15) * 0.82 - frac * frac * 1.48 + (i % 2) * 0.22 * frac - Math.abs(ox) * 0.24, oy);
       }
       fGeo.computeVertexNormals();
-      var frond = new THREE.Mesh(fGeo, frondMat); frond.castShadow = true; piv.add(frond); g.add(piv);
+      mRot.makeRotationY(a);
+      fGeo.applyMatrix4(mRot);
+      fGeo.applyMatrix4(mTrans);
+      frondParts.push(fGeo);
     }
-    var nutMat = new THREE.MeshStandardMaterial({ color: 0x5c3e1d, roughness: 0.85 });
+    var frondsGeo = mergeSimpleGeometries(frondParts);
+    frondParts.forEach(function (fg) { fg.dispose(); });
+
+    var nutParts = [];
     for (var c = 0; c < 3; c++) {
-      var nut = new THREE.Mesh(new THREE.SphereGeometry(0.22 * s, 8, 6), nutMat);
-      nut.position.set(top.x + Math.cos(c * 2.1) * 0.32 * s, top.y - 0.28 * s, top.z + Math.sin(c * 2.1) * 0.32 * s); g.add(nut);
+      var ng = new THREE.SphereGeometry(0.22, 7, 5);
+      ng.translate(top.x + Math.cos(c * 2.1) * 0.32, top.y - 0.28, top.z + Math.sin(c * 2.1) * 0.32);
+      nutParts.push(ng);
     }
-    g.add(MAY.makeContactShadow(1.6 * s, 0.52));
+    var nutsGeo = mergeSimpleGeometries(nutParts);
+    nutParts.forEach(function (ng) { ng.dispose(); });
+
+    if (MAY.protectGeometry) { MAY.protectGeometry(trunkGeo); MAY.protectGeometry(frondsGeo); MAY.protectGeometry(nutsGeo); }
+    if (MAY.protectMaterial) { MAY.protectMaterial(trunkMat); MAY.protectMaterial(frondMat); MAY.protectMaterial(nutMat); }
+    _palmCache = { trunkGeo: trunkGeo, frondsGeo: frondsGeo, nutsGeo: nutsGeo, trunkMat: trunkMat, frondMat: frondMat, nutMat: nutMat };
+    return _palmCache;
+  }
+
+  MAY.makeRealisticPalm = function (s) {
+    s = s || 1.0;
+    var pa = getPalmAssets();
+    var g = new THREE.Group();
+    var trunk = new THREE.Mesh(pa.trunkGeo, pa.trunkMat);
+    trunk.userData.sharedGeo = true; trunk.castShadow = true; trunk.receiveShadow = true; g.add(trunk);
+    var fronds = new THREE.Mesh(pa.frondsGeo, pa.frondMat);
+    fronds.userData.sharedGeo = true; fronds.castShadow = true; g.add(fronds);
+    var nuts = new THREE.Mesh(pa.nutsGeo, pa.nutMat);
+    nuts.userData.sharedGeo = true; g.add(nuts);
+    g.add(MAY.makeContactShadow(1.6, 0.52));
+    if (s !== 1.0) g.scale.setScalar(s);
     return g;
   };
 
-  MAY.makeRealisticTree = function (s, leafTint) {
-    s = s || 1.0;
-    var g = new THREE.Group();
-    var trunkMat = new THREE.MeshStandardMaterial({ map: PBR.bark.map, normalMap: PBR.bark.normalMap, roughnessMap: PBR.bark.roughnessMap, roughness: 0.95 });
-    var trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.26 * s, 0.48 * s, 4.4 * s, 10), trunkMat);
-    trunk.position.y = 2.2 * s; trunk.castShadow = true; trunk.receiveShadow = true; g.add(trunk);
-    /* Chạc cành vươn ra nâng đỡ tán */
+  var _treeCache = null;
+  var _treeLeafMats = {};
+  function getTreeAssets() {
+    if (_treeCache) return _treeCache;
+    var trunkParts = [];
+    var mainT = new THREE.CylinderGeometry(0.26, 0.48, 4.4, 8);
+    mainT.translate(0, 2.2, 0);
+    trunkParts.push(mainT);
+    var mTmp = new THREE.Matrix4();
     [[-0.7, 3.6, 0.5, 0.55], [0.8, 3.5, -0.4, -0.6], [0.2, 3.7, 0.7, 0.35]].forEach(function (br) {
-      var limb = new THREE.Mesh(new THREE.CylinderGeometry(0.10 * s, 0.18 * s, 1.8 * s, 6), trunkMat);
-      limb.position.set(br[0] * s, br[1] * s, br[2] * s); limb.rotation.z = br[3]; limb.castShadow = true; g.add(limb);
+      var lg = new THREE.CylinderGeometry(0.10, 0.18, 1.8, 6);
+      mTmp.makeRotationZ(br[3]);
+      lg.applyMatrix4(mTmp);
+      lg.translate(br[0], br[1], br[2]);
+      trunkParts.push(lg);
     });
-    var leafMat = new THREE.MeshStandardMaterial({ map: PBR.leafClusterTex, color: leafTint || 0x8de070, alphaTest: 0.30, side: THREE.DoubleSide, roughness: 0.75 });
+    var trunkGeo = mergeSimpleGeometries(trunkParts);
+    trunkParts.forEach(function (p) { p.dispose(); });
+
     var centers = [[0, 5.0, 0], [1.25, 4.2, 0.7], [-1.15, 4.3, 0.65], [0.6, 4.4, -1.1], [-0.9, 4.0, -0.9], [0, 6.0, 0.2], [1.0, 5.2, -0.5], [-0.9, 5.3, 0.4]];
-    var cardGeo = new THREE.PlaneGeometry(3.0 * s, 3.0 * s);
+    var cardParts = [];
+    var eul = new THREE.Euler(), q = new THREE.Quaternion(), posV = new THREE.Vector3(), scV = new THREE.Vector3(1, 1, 1);
     centers.forEach(function (c, idx) {
       for (var k = 0; k < 3; k++) {
-        var card = new THREE.Mesh(cardGeo, leafMat);
-        card.position.set(c[0] * s, c[1] * s, c[2] * s);
-        card.rotation.y = k * Math.PI / 3 + idx * 0.5; card.rotation.x = (k - 1) * 0.38;
-        card.castShadow = true; g.add(card);
+        var cg = new THREE.PlaneGeometry(3.0, 3.0);
+        eul.set((k - 1) * 0.38, k * Math.PI / 3 + idx * 0.5, 0, "XYZ");
+        q.setFromEuler(eul);
+        posV.set(c[0], c[1], c[2]);
+        mTmp.compose(posV, q, scV);
+        cg.applyMatrix4(mTmp);
+        cardParts.push(cg);
       }
     });
-    g.add(MAY.makeContactShadow(2.2 * s, 0.55));
+    var canopyGeo = mergeSimpleGeometries(cardParts);
+    cardParts.forEach(function (p) { p.dispose(); });
+
+    var trunkMat = new THREE.MeshStandardMaterial({ map: PBR.bark.map, normalMap: PBR.bark.normalMap, roughnessMap: PBR.bark.roughnessMap, roughness: 0.95 });
+    if (MAY.protectGeometry) { MAY.protectGeometry(trunkGeo); MAY.protectGeometry(canopyGeo); }
+    if (MAY.protectMaterial) MAY.protectMaterial(trunkMat);
+    _treeCache = { trunkGeo: trunkGeo, canopyGeo: canopyGeo, trunkMat: trunkMat };
+    return _treeCache;
+  }
+
+  MAY.makeRealisticTree = function (s, leafTint) {
+    s = s || 1.0;
+    var ta = getTreeAssets();
+    var tint = leafTint || 0x8de070;
+    if (!_treeLeafMats[tint]) {
+      _treeLeafMats[tint] = new THREE.MeshStandardMaterial({ map: PBR.leafClusterTex, color: tint, alphaTest: 0.30, side: THREE.DoubleSide, roughness: 0.75 });
+      if (MAY.protectMaterial) MAY.protectMaterial(_treeLeafMats[tint]);
+    }
+    var g = new THREE.Group();
+    var trunk = new THREE.Mesh(ta.trunkGeo, ta.trunkMat);
+    trunk.userData.sharedGeo = true; trunk.castShadow = true; trunk.receiveShadow = true; g.add(trunk);
+    var canopy = new THREE.Mesh(ta.canopyGeo, _treeLeafMats[tint]);
+    canopy.userData.sharedGeo = true; canopy.castShadow = true; g.add(canopy);
+    g.add(MAY.makeContactShadow(2.2, 0.55));
+    if (s !== 1.0) g.scale.setScalar(s);
     return g;
   };
 
@@ -1348,7 +1487,9 @@
     return im;
   };
 
-  /* ---- Vòng Cảnh Quan Đường Chân Trời Tầm Xa (Distant Vista: Núi tuyết, Quần đảo, Cồn cát xa) ---- */
+  /* ---- Vòng Cảnh Quan Đường Chân Trời Tầm Xa (1–2 InstancedMesh thay vì 44 Mesh riêng lẻ!) ---- */
+  var _vistaConeGeo = new THREE.ConeGeometry(1, 1, 7);
+  if (MAY.protectGeometry) MAY.protectGeometry(_vistaConeGeo);
   MAY.buildVistaRing = function (ctx, opts) {
     opts = opts || {};
     var count = opts.count || 22, rMin = opts.radius || 135, hMin = opts.hMin || 18, hMax = opts.hMax || 46;
@@ -1356,23 +1497,33 @@
       map: opts.map || MAY.TEX.rock, color: opts.color || 0x5c7c94,
       roughness: 0.96, flatShading: opts.flat !== false
     });
+    var im = new THREE.InstancedMesh(_vistaConeGeo, mat, count);
+    im.userData.sharedGeo = true;
+    var capIm = opts.snowCap ? new THREE.InstancedMesh(_vistaConeGeo, new THREE.MeshStandardMaterial({ color: 0xecf5ff, roughness: 0.78 }), count) : null;
+    if (capIm) capIm.userData.sharedGeo = true;
+    var dum = new THREE.Object3D();
+    var baseY = opts.baseY !== undefined ? opts.baseY : -2;
     for (var i = 0; i < count; i++) {
       var a = (i / count) * Math.PI * 2 + (i % 2) * 0.11;
       var r = rMin + (i % 3) * 16;
       var w = (opts.wBase || 24) + (i % 4) * 9;
       var h = hMin + ((i * 7) % 10) / 10 * (hMax - hMin);
-      var peak = new THREE.Mesh(new THREE.ConeGeometry(w, h, 7), mat);
-      peak.position.set(Math.cos(a) * r, (opts.baseY !== undefined ? opts.baseY : -2) + h * 0.42, Math.sin(a) * r);
-      peak.rotation.y = i * 1.3;
-      ctx.add(peak);
-      if (opts.snowCap) {
-        var cap = new THREE.Mesh(new THREE.ConeGeometry(w * 0.44, h * 0.42, 7),
-          new THREE.MeshStandardMaterial({ color: 0xecf5ff, roughness: 0.78 }));
-        cap.position.set(peak.position.x, peak.position.y + h * 0.30, peak.position.z);
-        cap.rotation.y = peak.rotation.y;
-        ctx.add(cap);
+      var px = Math.cos(a) * r, py = baseY + h * 0.42, pz = Math.sin(a) * r;
+      dum.position.set(px, py, pz);
+      dum.rotation.set(0, i * 1.3, 0);
+      dum.scale.set(w, h, w);
+      dum.updateMatrix();
+      im.setMatrixAt(i, dum.matrix);
+      if (capIm) {
+        dum.position.set(px, py + h * 0.30, pz);
+        dum.scale.set(w * 0.44, h * 0.42, w * 0.44);
+        dum.updateMatrix();
+        capIm.setMatrixAt(i, dum.matrix);
       }
     }
+    im.instanceMatrix.needsUpdate = true;
+    ctx.add(im);
+    if (capIm) { capIm.instanceMatrix.needsUpdate = true; ctx.add(capIm); }
   };
 
   /* ---- HẬU KỲ ĐIỆN ẢNH DEPTH-BUFFER 32-BIT (WebGL1 RGBA-Packed & WebGL2 Native):
@@ -1399,7 +1550,10 @@
 
   function allocSceneDepthTargets(rw, rh) {
     var rtOpts = { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBAFormat };
-    if (post.rtScene) post.rtScene.dispose();
+    if (post.rtScene) {
+      if (post.rtScene.depthTexture) { try { post.rtScene.depthTexture.dispose(); } catch (e) {} }
+      post.rtScene.dispose();
+    }
     if (post.rtDepthRGBA) post.rtDepthRGBA.dispose();
     post.rtScene = new THREE.WebGLRenderTarget(rw, rh, rtOpts);
     post.rtScene.depthBuffer = true;
@@ -1483,7 +1637,7 @@
         "float ign(vec2 p) { return fract(52.9829189 * fract(dot(p, vec2(0.06711056, 0.00583715)))); }",
         "void main() {",
         "  if (uFacing <= 0.005) { gl_FragColor = vec4(0.0); return; }",
-        "  const int SAMPLES = 32;",
+        "  const int SAMPLES = 20;",
         "  vec2 delta = (vUv - uSunUV) * (uDensity / float(SAMPLES));",
         "  float jitter = ign(gl_FragCoord.xy + fract(uTime) * 19.0);",
         "  vec2 uv = vUv - delta * jitter;",
@@ -1516,7 +1670,7 @@
         uTexel: { value: new THREE.Vector2(1 / rw, 1 / rh) },
         uDepthPacked: { value: _usePackedDepth ? 1.0 : 0.0 },
         uNear: { value: MAY.camera.near }, uFar: { value: MAY.camera.far },
-        uBloomStr: { value: post.bloomStrength }, uSSAO: { value: post.ssaoStrength },
+        uBloomStr: { value: post.bloomStrength }, uSSAO: { value: post.ssaoStrength }, uSSAOTaps: { value: 4.0 },
         uGodRayStr: { value: post.godRayStrength },
         uTint: { value: post.gradeTint }, uVignette: { value: post.vignette },
         uUnderwater: { value: 0.0 }, uWetness: { value: 0.0 },
@@ -1527,7 +1681,7 @@
       fragmentShader: [
         "#include <packing>",
         "uniform sampler2D tScene, tBloom, tDepth, tGodRay;",
-        "uniform vec2 uTexel; uniform float uDepthPacked, uNear, uFar, uBloomStr, uSSAO, uGodRayStr, uVignette, uUnderwater, uWetness, uSpellFlash, uTime;",
+        "uniform vec2 uTexel; uniform float uDepthPacked, uNear, uFar, uBloomStr, uSSAO, uSSAOTaps, uGodRayStr, uVignette, uUnderwater, uWetness, uSpellFlash, uTime;",
         "uniform vec3 uTint, uSpellColor;",
         "varying vec2 vUv;",
         "float linDepth(vec2 u){",
@@ -1559,7 +1713,8 @@
         "    float bias = 0.13 + cd * 0.015;",
         "    float ang0 = hash12(gl_FragCoord.xy) * 3.14159265;",
         "    for (int i = 0; i < 6; i++) {",
-        "      float ang = ang0 + float(i) * 0.52359877;",
+        "      if (float(i) >= uSSAOTaps) break;",
+        "      float ang = ang0 + float(i) * (3.14159265 / max(uSSAOTaps, 1.0));",
         "      float rScale = (i == 1 || i == 3 || i == 5) ? 0.58 : 1.0;",
         "      vec2 duv = vec2(cos(ang), sin(ang)) * uTexel * rad * rScale;",
         "      float d1 = linDepth(clamp(uv + duv, 0.002, 0.998));",
@@ -1570,7 +1725,7 @@
         "        occ += smoothstep(bias, bias + 0.35, conc) * smoothstep(2.4, 0.25, conc);",
         "      }",
         "    }",
-        "    float ao = 1.0 - clamp((occ / 6.0) * uSSAO * 0.96, 0.0, 0.46);",
+        "    float ao = 1.0 - clamp((occ / max(uSSAOTaps, 1.0)) * uSSAO * 0.96, 0.0, 0.46);",
         "    col *= ao;",
         "  }",
         "  /* Volumetric Screen-Space God Rays + Selective Bloom + Spell Flash */",
@@ -1658,6 +1813,12 @@
   MAY.renderFrame = function (dt, isUnderwater) {
     if (post.wetness > 0) post.wetness = Math.max(0, post.wetness - dt * 0.45);
     if (post.spellFlash > 0) post.spellFlash = Math.max(0, post.spellFlash - dt * 1.9);
+    _offscreenFrame++;
+
+    var r = MAY.renderer;
+    /* Chỉ cập nhật bóng đổ Mặt Trời ĐÚNG 1 LẦN/frame cho pass chính (không render lại shadow map trong pass Reflection/Refraction!) */
+    r.shadowMap.autoUpdate = false;
+    r.shadowMap.needsUpdate = false;
 
     var ctx = MAY.currentCtx;
     /* Bước 1: Render Planar Reflection pass (cho mặt nước, hồ băng, vũng đá ướt) */
@@ -1692,15 +1853,17 @@
       }
     }
 
+    r.shadowMap.needsUpdate = !!(MAY.sun && MAY.sun.castShadow);
+
     if (MAY.quality === "low" || !post.enabled) {
-      MAY.renderer.setRenderTarget(null);
-      MAY.renderer.render(MAY.scene, MAY.camera);
+      r.setRenderTarget(null);
+      r.render(MAY.scene, MAY.camera);
       return;
     }
 
-    var r = MAY.renderer;
     r.setRenderTarget(post.rtScene);
     r.render(MAY.scene, MAY.camera);
+    r.shadowMap.needsUpdate = false;
 
     /* Trên WebGL1 (hoặc chế độ packed depth), nướng thêm Depth Pass 32-bit RGBA cho SSAO & Volumetric God Rays! */
     if (_usePackedDepth && post.rtDepthRGBA) {
@@ -1720,7 +1883,7 @@
     }
     var activeDepthTex = _usePackedDepth ? post.rtDepthRGBA.texture : post.rtScene.depthTexture;
 
-    /* Bước 2: Screen-Space Volumetric God Rays (Chiếu vị trí Mặt Trời / Giếng Trời lên màn hình + Radial Blur theo Depth!) */
+    /* Bước 2: Screen-Space Volumetric God Rays (chỉ render pass khi thực sự hướng về Mặt Trời!) */
     var grFacing = 0.0;
     if (post.godRayStrength > 0.01) {
       MAY.camera.getWorldDirection(_grCamFwd);
@@ -1740,16 +1903,18 @@
         grFacing = Math.max(0, Math.min(1, (dotSun + 0.15) / 0.55)) * edgeFade;
         post.matGodRay.uniforms.uSunUV.value.set(su, sv);
       }
-      post.quadMesh.material = post.matGodRay;
-      post.matGodRay.uniforms.tScene.value = post.rtScene.texture;
-      post.matGodRay.uniforms.tDepth.value = activeDepthTex;
-      post.matGodRay.uniforms.uDepthPacked.value = _usePackedDepth ? 1.0 : 0.0;
-      post.matGodRay.uniforms.uFacing.value = grFacing;
-      post.matGodRay.uniforms.uDensity.value = post.godRayDensity;
-      post.matGodRay.uniforms.uDecay.value = post.godRayDecay;
-      post.matGodRay.uniforms.uUnderwater.value = isUnderwater ? 1.0 : 0.0;
-      r.setRenderTarget(post.rtGodRay);
-      r.render(post.quadScene, post.quadCam);
+      if (grFacing > 0.005) {
+        post.quadMesh.material = post.matGodRay;
+        post.matGodRay.uniforms.tScene.value = post.rtScene.texture;
+        post.matGodRay.uniforms.tDepth.value = activeDepthTex;
+        post.matGodRay.uniforms.uDepthPacked.value = _usePackedDepth ? 1.0 : 0.0;
+        post.matGodRay.uniforms.uFacing.value = grFacing;
+        post.matGodRay.uniforms.uDensity.value = post.godRayDensity;
+        post.matGodRay.uniforms.uDecay.value = post.godRayDecay;
+        post.matGodRay.uniforms.uUnderwater.value = isUnderwater ? 1.0 : 0.0;
+        r.setRenderTarget(post.rtGodRay);
+        r.render(post.quadScene, post.quadCam);
+      }
     }
 
     /* Bước 3: Selective Bloom */
@@ -1778,6 +1943,7 @@
     post.matComp.uniforms.uDepthPacked.value = _usePackedDepth ? 1.0 : 0.0;
     post.matComp.uniforms.uBloomStr.value = MAY.quality === "high" ? post.bloomStrength : post.bloomStrength * 0.72;
     post.matComp.uniforms.uSSAO.value = MAY.quality === "high" ? post.ssaoStrength : post.ssaoStrength * 0.68;
+    post.matComp.uniforms.uSSAOTaps.value = MAY.quality === "high" ? 6.0 : 4.0;
     post.matComp.uniforms.uGodRayStr.value = grFacing > 0.005 ? (MAY.quality === "high" ? post.godRayStrength : post.godRayStrength * 0.75) : 0.0;
     post.matComp.uniforms.uVignette.value = post.vignette;
     post.matComp.uniforms.uUnderwater.value = isUnderwater ? 1.0 : 0.0;

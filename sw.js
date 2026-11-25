@@ -1,5 +1,5 @@
-/* Cuộc Phiêu Lưu Của Mây v13.1 — offline cache (PWA). Network-first cho code, cache-first cho model/ảnh/giọng đọc/ambience. */
-var CACHE = 'may-phieu-luu-v13.1';
+/* Cuộc Phiêu Lưu Của Mây v13.5 — offline cache (PWA). Network-first cho code, cache-first cho model/ảnh/giọng đọc/ambience. */
+var CACHE = 'may-phieu-luu-v13.5';
 var CORE = [
   "./", "index.html", "style.css", "three.min.js", "game.js", "manifest.json", "favicon.ico",
   "js/data.js", "js/audio.js", "js/core.js", "js/pbr.js", "js/vfx.js", "js/player.js", "js/systems.js", "js/story.js", "js/cutscene.js",

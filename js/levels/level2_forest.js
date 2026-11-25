@@ -191,7 +191,7 @@
     motherCanopy.scale.setScalar(ctx.story.bossDown ? 1.0 : 0.01);
     motherCanopy.visible = !!ctx.story.bossDown;
     ancient.add(motherCanopy);
-    var treeLight = new THREE.PointLight(0x80ffaa, ctx.story.bossDown ? 2.4 : 0.2, 28); treeLight.position.set(0, 7.5, -4); ancient.add(treeLight);
+    var treeLight = MAY.makePooledLight ? MAY.makePooledLight(0x80ffaa, ctx.story.bossDown ? 2.4 : 0.2, 28) : new THREE.PointLight(0x80ffaa, ctx.story.bossDown ? 2.4 : 0.2, 28); treeLight.position.set(0, 7.5, -4); ancient.add(treeLight);
     ancient.position.set(0, ay, 22);
     ctx.add(ancient);
     ctx.addGemAltar([0, 14.5]);

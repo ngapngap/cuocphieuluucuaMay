@@ -75,6 +75,10 @@
         return;
       }
       if (activeCS) finishCutscene(true);
+      if (MAY.closeAllModals) MAY.closeAllModals();
+      if (MAY.dialogueOpen && MAY.closeDialogue) MAY.closeDialogue(false);
+      var intEl = document.getElementById("interact");
+      if (intEl) intEl.style.display = "none";
       _savedFov = MAY.camera.fov || 70;
       if (MAY.player && MAY.player.clearKeys) MAY.player.clearKeys();
       if (document.pointerLockElement) { try { document.exitPointerLock(); } catch (e) {} }
@@ -152,6 +156,7 @@
       /* Vẫn giữ bé Mây và mặt trời cập nhật tự nhiên trong lúc quay phim */
       if (MAY.diver && MAY.player) {
         MAY.diver.position.set(MAY.player.pos.x, MAY.player.pos.y - 0.12, MAY.player.pos.z);
+        MAY.diver.rotation.y = MAY.player.yaw;
         MAY.updateSunFollow(MAY.player.pos);
       }
 
@@ -279,7 +284,6 @@
       if (MAY.player.triggerVictoryAnim) MAY.player.triggerVictoryAnim();
 
       /* Dựng thêm chùm tia sáng từ 6 Viên Ngọc bắn hội tụ lên đỉnh Hải Đăng + Pháo hoa cầu vồng liên hoàn */
-      var fxGroup = new THREE.Group();
       var gemCols = [0x38bdf8, 0x4ade80, 0xfacc15, 0xc084fc, 0xe0f2fe, 0xf472b6];
       var lhY = ctx.groundH(0, 0);
       var beaconTop = new THREE.Vector3(0, lhY + 15.5, 0);
@@ -290,7 +294,6 @@
         var bMesh = MAY.VFX ? MAY.VFX.spawnLaserBeam(from, beaconTop, gemCols[i], true) : null;
         if (bMesh) beams.push(bMesh);
       }
-      ctx.add(fxGroup);
 
       var fwTimer = 0;
       function tickFireworks(dt) {
@@ -343,8 +346,14 @@
           }
         ],
         cleanup: function () {
-          beams.forEach(function (b) { if (b && b.parent) b.parent.remove(b); });
-          if (fxGroup.parent) fxGroup.parent.remove(fxGroup);
+          beams.forEach(function (b) {
+            if (!b) return;
+            if (b.parent) b.parent.remove(b);
+            b.traverse(function (o) {
+              if (o.geometry) try { o.geometry.dispose(); } catch (e) {}
+              if (o.material && o.material.dispose) try { o.material.dispose(); } catch (e) {}
+            });
+          });
         },
         onDone: function () {
           if (onDone) onDone();

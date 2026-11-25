@@ -1,10 +1,10 @@
 "use strict";
 /* ============================================================================
-   VFX.JS — Hệ Thống Hiệu Ứng Ma Thuật "Juicy" Chuẩn Fable 5.2 (100% Procedural Three.js)
-   - Vòng tròn Rune 512x512 (mặt đất & vòng kép trên trời)
-   - Shader Lốc Xoáy Cầu Vồng / Gió (Twisted Scrolling-UV Vortex Funnel)
-   - Dải năng lượng xoắn ốc (Spiral Ribbons), Mưa cánh hoa/lá bay, Sương băng, Quả cầu nắng,
-     Sóng tinh thể, Đài phun bong bóng, Camera Shake & Đèn chớp động
+   VFX.JS — Hệ Thống Hiệu Ứng Ma Thuật "Juicy" Chuẩn Fable 5.2 (Tối Ưu 0-Lag v13.3!)
+   - KHÔNG tạo/xóa PointLight động (dùng MAY.spellLight cố định -> 0 biên dịch lại shader!)
+   - Geometry & Material dùng chung (sharedGeo / sharedMat) -> 0 cấp phát nặng khi tung phép!
+   - Vòng tròn Rune 512x512, Phễu Lốc Xoáy UV Shader, Dải xoắn ốc, Mưa cánh hoa,
+     Sương băng, Quả cầu nắng, Sóng tinh thể, Đài phun bong bóng & Đèn chớp động
    ============================================================================ */
 (function (MAY) {
 
@@ -18,7 +18,6 @@
     g.clearRect(0, 0, S, S);
     g.strokeStyle = "#ffffff"; g.fillStyle = "#ffffff";
 
-    /* Vòng răng cưa ngoài cùng (giống vòng GROWTH & TORNADO trong video!) */
     g.lineWidth = 6;
     g.beginPath(); g.arc(cx, cy, 232, 0, Math.PI * 2); g.stroke();
     g.lineWidth = 3;
@@ -30,7 +29,6 @@
       g.restore();
     }
 
-    /* Vòng ký tự Rune cổ tích ở giữa */
     g.lineWidth = 4;
     g.beginPath(); g.arc(cx, cy, 162, 0, Math.PI * 2); g.stroke();
     g.lineWidth = 2.5;
@@ -44,7 +42,6 @@
       g.restore();
     }
 
-    /* Ngôi sao 6 cánh lồng nhau ở tâm */
     g.lineWidth = 3.5;
     [0, Math.PI / 3].forEach(function (off) {
       g.beginPath();
@@ -74,21 +71,91 @@
     return new THREE.CanvasTexture(c);
   })();
 
+  /* ---- Kho Geometry VFX Dùng Chung (tạo 1 lần duy nhất lúc boot -> 0 cấp phát GPU mỗi lần tung phép!) ---- */
+  var G_UNIT_PLANE = new THREE.PlaneGeometry(2, 2);
+  var G_PETAL      = new THREE.PlaneGeometry(0.32, 0.18);
+  var G_STEM       = new THREE.CylinderGeometry(0.05, 0.07, 1.0, 6);
+  var G_HEAD       = new THREE.SphereGeometry(0.28, 8, 6);
+  var G_FROST_DISC = new THREE.CircleGeometry(5.6, 24);
+  var G_SHARD      = (function () { var g = new THREE.OctahedronGeometry(0.32, 0); g.scale(0.5, 1.8, 0.5); return g; })();
+  var G_FUNNEL     = (function () { var g = new THREE.CylinderGeometry(4.4, 0.75, 14.5, 24, 16, true); g.translate(0, 7.25, 0); return g; })();
+  var G_PLUME      = new THREE.IcosahedronGeometry(1.0, 1);
+  var G_WAVE_RING  = new THREE.RingGeometry(0.6, 1.1, 28);
+  var G_PRISM      = (function () { var g = new THREE.OctahedronGeometry(0.48, 0); g.scale(0.6, 1.7, 0.6); return g; })();
+  var G_BUBBLE     = new THREE.SphereGeometry(0.18, 8, 6);
+  var G_SHATTER    = new THREE.DodecahedronGeometry(0.38, 0);
+  var G_ICE_PILLAR = new THREE.ConeGeometry(1.35, 3.8, 7);
+  var G_PIP        = new THREE.OctahedronGeometry(0.22, 0);
+  var G_TEL_RING   = new THREE.RingGeometry(0.78, 1.0, 24);
+  var G_TEL_FILL   = new THREE.CircleGeometry(0.78, 24);
+  var G_RIBBON     = (function () {
+    var pts = [];
+    for (var i = 0; i <= 20; i++) {
+      var f = i / 20;
+      var a = f * Math.PI * 3.0;
+      var r = 1.0 - f * 0.35;
+      pts.push(new THREE.Vector3(Math.cos(a) * r, f, Math.sin(a) * r));
+    }
+    return new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 22, 0.042, 5, false);
+  })();
+
+  if (MAY.protectGeometry) {
+    [G_UNIT_PLANE, G_PETAL, G_STEM, G_HEAD, G_FROST_DISC, G_SHARD, G_FUNNEL, G_PLUME, G_WAVE_RING, G_PRISM, G_BUBBLE, G_SHATTER, G_ICE_PILLAR, G_PIP, G_TEL_RING, G_TEL_FILL, G_RIBBON].forEach(MAY.protectGeometry);
+  }
+
+  /* Điều khiển đèn phép cố định MAY.spellLight (0 thêm/xóa PointLight -> 0 recompile shader!) */
+  var _spellLightReq = null;
+  function requestSpellLight(x, y, z, colorHex, intensity, distance) {
+    if (!MAY.spellLight || intensity <= 0.02) return;
+    if (!_spellLightReq || intensity > _spellLightReq.intensity) {
+      _spellLightReq = { x: x, y: y, z: z, colorHex: colorHex, intensity: intensity, distance: distance || 28 };
+    }
+  }
+
+  function disposeFXRoot(root) {
+    if (!root) return;
+    var disposedMats = new Set();
+    root.traverse(function (o) {
+      if (o.isMesh || o.isPoints || o.isLine) {
+        if (o.geometry && !o.userData.sharedGeo) try { o.geometry.dispose(); } catch (e) {}
+        if (o.material && o.material.dispose && !disposedMats.has(o.material.uuid)) {
+          disposedMats.add(o.material.uuid);
+          if (!o.material.userData || !o.material.userData.sharedMat) {
+            try { o.material.dispose(); } catch (e) {}
+          }
+        }
+      } else if (o.isSprite && o.material && !disposedMats.has(o.material.uuid)) {
+        disposedMats.add(o.material.uuid);
+        if (!o.material.userData || !o.material.userData.sharedMat) {
+          try { o.material.dispose(); } catch (e) {}
+        }
+      }
+    });
+  }
+
   function addFX(root, dur, updateFn) {
+    /* Giới hạn tối đa 10 hiệu ứng đồng thời để tránh tụt FPS khi spam phép */
+    if (activeFX.length >= 10) {
+      var oldest = activeFX.shift();
+      MAY.worldRoot.remove(oldest.root);
+      disposeFXRoot(oldest.root);
+    }
     MAY.worldRoot.add(root);
     activeFX.push({ root: root, age: 0, dur: dur, update: updateFn });
   }
 
   function makeRunePlane(radius, colorHex, opacity, worldPos) {
     var m = new THREE.Mesh(
-      new THREE.PlaneGeometry(radius * 2, radius * 2),
+      G_UNIT_PLANE,
       new THREE.MeshBasicMaterial({
         map: runicTex, color: colorHex, transparent: true, opacity: opacity || 0.92,
         blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide
       })
     );
+    m.userData.sharedGeo = true;
+    m.userData.baseScale = radius || 1;
+    m.scale.setScalar(radius || 1);
     m.rotation.x = -Math.PI / 2;
-    /* Căn góc nghiêng vòng Runic ôm sát sườn địa hình nếu có worldPos */
     if (worldPos && MAY.currentCtx && MAY.currentCtx.groundH) {
       var gh = MAY.currentCtx.groundH;
       var hL = gh(worldPos.x - 1.2, worldPos.z), hR = gh(worldPos.x + 1.2, worldPos.z);
@@ -103,51 +170,56 @@
     return m;
   }
 
-  function makeSpiralRibbon(radius, height, turns, colorHex) {
-    var pts = [];
-    for (var i = 0; i <= 24; i++) {
-      var f = i / 24;
-      var a = f * Math.PI * 2 * turns;
-      var r = radius * (1.0 - f * 0.35);
-      pts.push(new THREE.Vector3(Math.cos(a) * r, f * height, Math.sin(a) * r));
-    }
-    var curve = new THREE.CatmullRomCurve3(pts);
-    return new THREE.Mesh(
-      new THREE.TubeGeometry(curve, 28, 0.085, 5, false),
-      new THREE.MeshBasicMaterial({ color: colorHex, transparent: true, opacity: 0.78, blending: THREE.AdditiveBlending, depthWrite: false })
+  function makeSpiralRibbon(radius, height, turns, colorHex, sharedMat) {
+    var m = new THREE.Mesh(
+      G_RIBBON,
+      sharedMat || new THREE.MeshBasicMaterial({ color: colorHex, transparent: true, opacity: 0.78, blending: THREE.AdditiveBlending, depthWrite: false })
     );
+    m.userData.sharedGeo = true;
+    m.scale.set(radius, height, radius);
+    return m;
   }
 
-  /* ---- 1. PHÉP NỞ HOA (GROWTH — chuẩn Fable 5.2: Vòng Rune + Dải xoắn + Mưa lá hoa + Hoa nở!) ---- */
+  /* ---- 1. PHÉP NỞ HOA (GROWTH) ---- */
   function spawnGrowth(pos) {
     var root = new THREE.Group();
     root.position.copy(pos);
     var rune = makeRunePlane(5.2, 0x86efac, 0.95, pos); rune.position.y = 0.16; root.add(rune);
     var runeInner = makeRunePlane(3.2, 0xfef08a, 0.85, pos); runeInner.position.y = 0.20; root.add(runeInner);
-    var pl = new THREE.PointLight(0x4ade80, 4.5, 24); pl.position.y = 2.4; root.add(pl);
 
+    var ribMatA = new THREE.MeshBasicMaterial({ color: 0x4ade80, transparent: true, opacity: 0.78, blending: THREE.AdditiveBlending, depthWrite: false });
+    var ribMatB = new THREE.MeshBasicMaterial({ color: 0xfde047, transparent: true, opacity: 0.78, blending: THREE.AdditiveBlending, depthWrite: false });
     var ribbons = [];
-    for (var r = 0; r < 5; r++) {
-      var rb = makeSpiralRibbon(2.4 + (r % 2) * 1.1, 6.2, 1.5, r % 2 === 0 ? 0x4ade80 : 0xfde047);
-      rb.rotation.y = (r / 5) * Math.PI * 2;
+    for (var r = 0; r < 4; r++) {
+      var rb = makeSpiralRibbon(2.4 + (r % 2) * 1.1, 6.2, 1.5, 0x4ade80, r % 2 === 0 ? ribMatA : ribMatB);
+      rb.rotation.y = (r / 4) * Math.PI * 2;
       root.add(rb); ribbons.push(rb);
     }
-    var petals = [], pCols = [0x4ade80, 0xfde047, 0xff7fa5, 0x86efac, 0xffffff];
-    var pGeo = new THREE.PlaneGeometry(0.32, 0.18);
-    for (var i = 0; i < 36; i++) {
-      var pm = new THREE.Mesh(pGeo, new THREE.MeshBasicMaterial({ color: pCols[i % pCols.length], side: THREE.DoubleSide, transparent: true, opacity: 0.92 }));
+
+    var pCols = [0x4ade80, 0xfde047, 0xff7fa5, 0x86efac, 0xffffff];
+    var pMats = pCols.map(function (c) {
+      return new THREE.MeshBasicMaterial({ color: c, side: THREE.DoubleSide, transparent: true, opacity: 0.92 });
+    });
+    var petals = [];
+    for (var i = 0; i < 20; i++) {
+      var pm = new THREE.Mesh(G_PETAL, pMats[i % pMats.length]);
       var a = Math.random() * 6.28, rad = 0.6 + Math.random() * 4.4;
       pm.position.set(Math.cos(a) * rad, 0.2 + Math.random() * 1.2, Math.sin(a) * rad);
-      pm.userData = { a: a, rad: rad, vy: 1.5 + Math.random() * 2.2, spin: 3 + Math.random() * 4 };
+      pm.userData = { sharedGeo: true, a: a, rad: rad, vy: 1.5 + Math.random() * 2.2, spin: 3 + Math.random() * 4 };
       root.add(pm); petals.push(pm);
     }
+
+    var stemMat = new THREE.MeshStandardMaterial({ color: 0x22c55e, roughness: 0.7 });
+    var headMats = pCols.map(function (c) {
+      return new THREE.MeshStandardMaterial({ color: c, emissive: c, emissiveIntensity: 0.65, roughness: 0.45 });
+    });
     var blooms = [];
-    for (var b = 0; b < 9; b++) {
-      var ba = (b / 9) * Math.PI * 2 + 0.3, br = 1.6 + (b % 3) * 1.15;
+    for (var b = 0; b < 7; b++) {
+      var ba = (b / 7) * Math.PI * 2 + 0.3, br = 1.6 + (b % 3) * 1.15;
       var fl = new THREE.Group();
-      var stem = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.07, 1.0, 6), new THREE.MeshStandardMaterial({ color: 0x22c55e }));
+      var stem = new THREE.Mesh(G_STEM, stemMat); stem.userData.sharedGeo = true;
       stem.position.y = 0.5; fl.add(stem);
-      var head = new THREE.Mesh(new THREE.SphereGeometry(0.28, 10, 8), new THREE.MeshStandardMaterial({ color: pCols[b % pCols.length], emissive: pCols[b % pCols.length], emissiveIntensity: 0.65 }));
+      var head = new THREE.Mesh(G_HEAD, headMats[b % headMats.length]); head.userData.sharedGeo = true;
       head.scale.set(1.3, 0.65, 1.3); head.position.y = 1.05; fl.add(head);
       fl.position.set(Math.cos(ba) * br, 0, Math.sin(ba) * br);
       fl.scale.setScalar(0.01);
@@ -156,56 +228,63 @@
 
     MAY.triggerSpellFlash(0x4ade80, 0.42);
     MAY.player.addShake(0.16);
-    addFX(root, 4.6, function (age, dur, dt) {
+    var lx = pos.x, ly = pos.y + 2.4, lz = pos.z;
+    addFX(root, 4.4, function (age, dur, dt) {
       var p = age / dur;
       var env = Math.min(1, age * 4) * (1 - Math.max(0, (p - 0.72) / 0.28));
-      rune.rotation.z += dt * 1.1; rune.scale.setScalar(0.25 + Math.min(1, age * 2.6) * 0.85);
-      runeInner.rotation.z -= dt * 1.9; runeInner.scale.setScalar(0.25 + Math.min(1, age * 3.0) * 0.85);
+      var rSc1 = 0.25 + Math.min(1, age * 2.6) * 0.85;
+      var rSc2 = 0.25 + Math.min(1, age * 3.0) * 0.85;
+      rune.rotation.z += dt * 1.1; rune.scale.setScalar(5.2 * rSc1);
+      runeInner.rotation.z -= dt * 1.9; runeInner.scale.setScalar(3.2 * rSc2);
       rune.material.opacity = env * 0.92; runeInner.material.opacity = env * 0.85;
-      pl.intensity = env * 4.2;
-      ribbons.forEach(function (rb, idx) {
-        rb.rotation.y += dt * (2.6 + idx * 0.2);
-        rb.scale.y = Math.min(1.15, age * 1.8);
-        rb.material.opacity = env * 0.72;
-      });
-      petals.forEach(function (pm) {
+      requestSpellLight(lx, ly, lz, 0x4ade80, env * 4.2, 24);
+      ribMatA.opacity = env * 0.72; ribMatB.opacity = env * 0.72;
+      for (var ri = 0; ri < ribbons.length; ri++) {
+        ribbons[ri].rotation.y += dt * (2.6 + ri * 0.2);
+        ribbons[ri].scale.y = 6.2 * Math.min(1.15, age * 1.8);
+      }
+      for (var mi = 0; mi < pMats.length; mi++) pMats[mi].opacity = env;
+      for (var pi = 0; pi < petals.length; pi++) {
+        var pm = petals[pi];
         pm.userData.a += dt * 1.8;
         pm.position.x = Math.cos(pm.userData.a) * (pm.userData.rad + age * 0.45);
         pm.position.z = Math.sin(pm.userData.a) * (pm.userData.rad + age * 0.45);
         pm.position.y += pm.userData.vy * dt;
         pm.rotation.x += dt * pm.userData.spin; pm.rotation.y += dt * 2.5;
-        pm.material.opacity = env;
-      });
-      blooms.forEach(function (fl, idx) {
-        var pop = Math.max(0, Math.min(1, (age - idx * 0.06) * 3.5));
-        fl.scale.setScalar(pop * (1 - Math.max(0, (p - 0.8) / 0.2)) + 0.001);
-      });
+      }
+      for (var bi = 0; bi < blooms.length; bi++) {
+        var pop = Math.max(0, Math.min(1, (age - bi * 0.06) * 3.5));
+        blooms[bi].scale.setScalar(pop * (1 - Math.max(0, (p - 0.8) / 0.2)) + 0.001);
+      }
     });
   }
 
-  /* ---- 2. PHÉP BĂNG TUYẾT (FROST — chuẩn Fable 5.2: Vòng băng sáng + Sương lạnh dày + Tinh thể băng) ---- */
+  /* ---- 2. PHÉP BĂNG TUYẾT (FROST) ---- */
   function spawnFrost(pos) {
     var root = new THREE.Group(); root.position.copy(pos);
     var rune = makeRunePlane(5.4, 0x7dd3fc, 0.95, pos); rune.position.y = 0.16; root.add(rune);
-    var frostDisc = new THREE.Mesh(new THREE.CircleGeometry(5.6, 32),
+    var frostDisc = new THREE.Mesh(G_FROST_DISC,
       new THREE.MeshBasicMaterial({ map: softPuffTex, color: 0xbaf2ff, transparent: true, opacity: 0.75, blending: THREE.AdditiveBlending, depthWrite: false }));
+    frostDisc.userData.sharedGeo = true;
     frostDisc.rotation.x = -Math.PI / 2; frostDisc.position.y = 0.10; root.add(frostDisc);
-    var pl = new THREE.PointLight(0x38bdf8, 4.5, 24); pl.position.y = 2.0; root.add(pl);
 
+    var mistMat = new THREE.SpriteMaterial({ map: softPuffTex, color: 0xe0f7ff, transparent: true, opacity: 0.55, depthWrite: false });
     var mists = [];
-    for (var m = 0; m < 18; m++) {
-      var sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: softPuffTex, color: 0xe0f7ff, transparent: true, opacity: 0.55, depthWrite: false }));
-      var a = (m / 18) * Math.PI * 2, r = 0.8 + Math.random() * 4.2;
+    for (var m = 0; m < 10; m++) {
+      var sp = new THREE.Sprite(mistMat);
+      var a = (m / 10) * Math.PI * 2, r = 0.8 + Math.random() * 4.2;
       sp.position.set(Math.cos(a) * r, 0.7 + Math.random() * 0.8, Math.sin(a) * r);
-      sp.scale.setScalar(2.4 + Math.random() * 2.2);
+      sp.scale.setScalar(2.6 + Math.random() * 2.0);
       sp.userData = { dx: Math.cos(a) * 0.7, dz: Math.sin(a) * 0.7 };
       root.add(sp); mists.push(sp);
     }
+
+    var shardMat = new THREE.MeshStandardMaterial({ color: 0xbae6fd, emissive: 0x38bdf8, emissiveIntensity: 0.95, roughness: 0.14, metalness: 0.2, transparent: true, opacity: 0.9 });
     var shards = [];
-    var sGeo = new THREE.OctahedronGeometry(0.32, 0); sGeo.scale(0.5, 1.8, 0.5);
-    for (var s = 0; s < 14; s++) {
-      var sh = new THREE.Mesh(sGeo, new THREE.MeshPhysicalMaterial({ color: 0xbae6fd, emissive: 0x38bdf8, emissiveIntensity: 0.9, roughness: 0.1, clearcoat: 1.0, transparent: true, opacity: 0.9 }));
-      var sa = (s / 14) * Math.PI * 2, sr = 1.8 + (s % 3) * 1.1;
+    for (var s = 0; s < 10; s++) {
+      var sh = new THREE.Mesh(G_SHARD, shardMat);
+      sh.userData.sharedGeo = true;
+      var sa = (s / 10) * Math.PI * 2, sr = 1.8 + (s % 3) * 1.1;
       sh.position.set(Math.cos(sa) * sr, 0.5, Math.sin(sa) * sr);
       sh.rotation.z = (s % 2 === 0 ? 1 : -1) * 0.25;
       root.add(sh); shards.push(sh);
@@ -213,35 +292,62 @@
 
     MAY.triggerSpellFlash(0x7dd3fc, 0.44);
     MAY.player.addShake(0.18);
-    addFX(root, 4.5, function (age, dur, dt) {
+    var lx = pos.x, ly = pos.y + 2.0, lz = pos.z;
+    addFX(root, 4.3, function (age, dur, dt) {
       var p = age / dur;
       var env = Math.min(1, age * 4.5) * (1 - Math.max(0, (p - 0.7) / 0.3));
-      rune.rotation.z -= dt * 0.8; rune.scale.setScalar(0.2 + Math.min(1, age * 3.0) * 0.85);
+      rune.rotation.z -= dt * 0.8; rune.scale.setScalar(5.4 * (0.2 + Math.min(1, age * 3.0) * 0.85));
       rune.material.opacity = env * 0.9; frostDisc.material.opacity = env * 0.72;
-      pl.intensity = env * 4.4;
-      mists.forEach(function (sp) {
+      mistMat.opacity = env * 0.48;
+      requestSpellLight(lx, ly, lz, 0x38bdf8, env * 4.4, 24);
+      for (var mi = 0; mi < mists.length; mi++) {
+        var sp = mists[mi];
         sp.position.x += sp.userData.dx * dt; sp.position.z += sp.userData.dz * dt;
         sp.position.y += dt * 0.18;
-        sp.material.opacity = env * 0.48;
-      });
-      shards.forEach(function (sh, idx) {
+      }
+      var sSc = Math.min(1, age * 5) * env + 0.001;
+      for (var si = 0; si < shards.length; si++) {
+        var sh = shards[si];
         sh.rotation.y += dt * 2.5;
-        sh.position.y = 0.6 + Math.sin(age * 3 + idx) * 0.25;
-        sh.scale.setScalar(Math.min(1, age * 5) * env + 0.001);
-      });
+        sh.position.y = 0.6 + Math.sin(age * 3 + si) * 0.25;
+        sh.scale.setScalar(sSc);
+      }
     });
   }
 
-  /* ---- 3. LỐC CẦU VỒNG (TORNADO — chuẩn Fable 5.2: Vòng Rune Kép Trên Trời + Phễu Xoáy UV Shader + Mảnh bay!) ---- */
+  /* ---- 3. LỐC CẦU VỒNG (TORNADO) ---- */
+  var _tornadoVS = [
+    "uniform float uTime;",
+    "varying vec2 vUv;",
+    "void main(){",
+    "  vUv = uv;",
+    "  vec3 p = position;",
+    "  float sway = sin(uv.y * 5.0 - uTime * 4.5) * 0.65 * uv.y;",
+    "  p.x += sway; p.z += cos(uv.y * 4.2 - uTime * 3.8) * 0.55 * uv.y;",
+    "  gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);",
+    "}"
+  ].join("\n");
+  var _tornadoFS = [
+    "uniform float uTime, uAlpha; uniform vec3 uColA, uColB, uColC; varying vec2 vUv;",
+    "void main(){",
+    "  float twist = vUv.x * 6.28318 * 3.0 + vUv.y * 18.0 - uTime * 7.8;",
+    "  float bands = sin(twist) * 0.5 + 0.5;",
+    "  float bands2 = sin(twist * 1.65 - vUv.y * 9.0 + uTime * 4.2) * 0.5 + 0.5;",
+    "  float dens = pow(bands * 0.68 + bands2 * 0.32, 1.45);",
+    "  vec3 col = mix(uColA, uColB, smoothstep(0.15, 0.78, vUv.y));",
+    "  col = mix(col, uColC, smoothstep(0.32, 0.88, bands2) * 0.72);",
+    "  col = mix(col, vec3(0.68, 0.36, 0.98), smoothstep(0.55, 0.95, 1.0 - bands) * 0.45);",
+    "  float edge = smoothstep(0.0, 0.14, vUv.y) * smoothstep(1.0, 0.78, vUv.y);",
+    "  gl_FragColor = vec4(col * (1.12 + bands * 0.35), clamp(dens * edge * uAlpha * 0.92, 0.0, 0.94));",
+    "}"
+  ].join("\n");
+
   function spawnTornado(pos, isRainbow) {
     var root = new THREE.Group(); root.position.copy(pos);
     var skyRune1 = makeRunePlane(6.8, 0x7fe3ff, 0.92); skyRune1.position.y = 14.5; root.add(skyRune1);
     var skyRune2 = makeRunePlane(4.4, 0xffa8e2, 0.90); skyRune2.position.y = 11.8; root.add(skyRune2);
     var groundRune = makeRunePlane(4.6, 0xffd93d, 0.88, pos); groundRune.position.y = 0.18; root.add(groundRune);
 
-    /* Phễu lốc xoáy Scrolling-UV Twisted Noise Shader */
-    var funnelGeo = new THREE.CylinderGeometry(4.4, 0.75, 14.5, 32, 24, true);
-    funnelGeo.translate(0, 7.25, 0);
     var funnelMat = new THREE.ShaderMaterial({
       uniforms: {
         uTime: MAY.shaderUniforms.uTime,
@@ -251,49 +357,26 @@
         uColC: { value: new THREE.Color(isRainbow !== false ? 0x22d3ee : 0xff3b00) }
       },
       transparent: true, blending: THREE.NormalBlending, depthWrite: false, side: THREE.DoubleSide,
-      vertexShader: [
-        "uniform float uTime;",
-        "varying vec2 vUv;",
-        "void main(){",
-        "  vUv = uv;",
-        "  vec3 p = position;",
-        "  float sway = sin(uv.y * 5.0 - uTime * 4.5) * 0.65 * uv.y;",
-        "  p.x += sway; p.z += cos(uv.y * 4.2 - uTime * 3.8) * 0.55 * uv.y;",
-        "  gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);",
-        "}"
-      ].join("\n"),
-      fragmentShader: [
-        "uniform float uTime, uAlpha; uniform vec3 uColA, uColB, uColC; varying vec2 vUv;",
-        "void main(){",
-        "  float twist = vUv.x * 6.28318 * 3.0 + vUv.y * 18.0 - uTime * 7.8;",
-        "  float bands = sin(twist) * 0.5 + 0.5;",
-        "  float bands2 = sin(twist * 1.65 - vUv.y * 9.0 + uTime * 4.2) * 0.5 + 0.5;",
-        "  float dens = pow(bands * 0.68 + bands2 * 0.32, 1.45);",
-        "  vec3 col = mix(uColA, uColB, smoothstep(0.15, 0.78, vUv.y));",
-        "  col = mix(col, uColC, smoothstep(0.32, 0.88, bands2) * 0.72);",
-        "  col = mix(col, vec3(0.68, 0.36, 0.98), smoothstep(0.55, 0.95, 1.0 - bands) * 0.45);",
-        "  float edge = smoothstep(0.0, 0.14, vUv.y) * smoothstep(1.0, 0.78, vUv.y);",
-        "  gl_FragColor = vec4(col * (1.12 + bands * 0.35), clamp(dens * edge * uAlpha * 0.92, 0.0, 0.94));",
-        "}"
-      ].join("\n")
+      vertexShader: _tornadoVS,
+      fragmentShader: _tornadoFS
     });
-    var funnel = new THREE.Mesh(funnelGeo, funnelMat);
+    var funnel = new THREE.Mesh(G_FUNNEL, funnelMat);
+    funnel.userData.sharedGeo = true;
     root.add(funnel);
 
-    var pl = new THREE.PointLight(0xffb3ec, 5.2, 34); pl.position.y = 6.5; root.add(pl);
-
-    /* Sao & mảnh sáng quay vòng quanh phễu lốc ở nhiều độ cao */
-    var orbiters = [], orbCols = [0xff595e, 0xffca3a, 0x8ac926, 0x38bdf8, 0xd980fa];
-    for (var i = 0; i < 26; i++) {
-      var om = new THREE.Mesh(MAY.starGeo, new THREE.MeshBasicMaterial({ color: orbCols[i % orbCols.length] }));
-      om.userData.sharedGeo = true;
+    var orbCols = [0xff595e, 0xffca3a, 0x8ac926, 0x38bdf8, 0xd980fa];
+    var orbMats = orbCols.map(function (c) { return new THREE.MeshBasicMaterial({ color: c }); });
+    var orbiters = [];
+    for (var i = 0; i < 18; i++) {
+      var om = new THREE.Mesh(MAY.starGeo, orbMats[i % orbMats.length]);
       om.scale.setScalar(0.32 + (i % 3) * 0.14);
-      om.userData = { a: (i / 26) * 6.28, y: 0.6 + (i / 26) * 12.5, sp: 3.4 + (i % 4) * 0.7 };
+      om.userData = { sharedGeo: true, a: (i / 18) * 6.28, y: 0.6 + (i / 18) * 12.5, sp: 3.4 + (i % 4) * 0.7 };
       root.add(om); orbiters.push(om);
     }
 
     MAY.triggerSpellFlash(0xf472b6, 0.55);
     MAY.player.addShake(0.32);
+    var lx = pos.x, ly = pos.y + 6.5, lz = pos.z;
     addFX(root, 5.5, function (age, dur, dt) {
       var p = age / dur;
       var env = Math.min(1, age * 3.0) * (1 - Math.max(0, (p - 0.72) / 0.28));
@@ -301,171 +384,187 @@
       skyRune1.material.opacity = env * 0.9; skyRune2.material.opacity = env * 0.88; groundRune.material.opacity = env * 0.85;
       funnelMat.uniforms.uAlpha.value = env;
       funnel.scale.set(0.3 + Math.min(1, age * 2.5) * 0.7, Math.min(1, age * 2.2), 0.3 + Math.min(1, age * 2.5) * 0.7);
-      pl.intensity = env * 5.0;
-      orbiters.forEach(function (om) {
+      requestSpellLight(lx, ly, lz, 0xffb3ec, env * 5.0, 34);
+      var oSc = Math.max(0.01, env * 0.42);
+      for (var oi = 0; oi < orbiters.length; oi++) {
+        var om = orbiters[oi];
         om.userData.a += dt * om.userData.sp;
         var r = 1.4 + (om.userData.y / 14) * 4.4;
         om.position.set(Math.cos(om.userData.a) * r, om.userData.y, Math.sin(om.userData.a) * r);
         om.rotation.y += dt * 4; om.rotation.x += dt * 3;
-        om.scale.setScalar(Math.max(0.01, env * 0.42));
-      });
+        om.scale.setScalar(oSc);
+      }
     });
   }
 
-  /* ---- 4. TIA NẮNG RỰC RỠ (SOLAR — lấy cảm hứng quả cầu rực rỡ Explosion trong Fable 5.2!) ---- */
+  /* ---- 4. TIA NẮNG RỰC RỠ (SOLAR) ---- */
   function spawnSolar(pos) {
     var root = new THREE.Group(); root.position.copy(pos);
     var rune = makeRunePlane(5.2, 0xffb703, 0.95, pos); rune.position.y = 0.18; root.add(rune);
-    var pl = new THREE.PointLight(0xffa726, 6.0, 30); pl.position.y = 3.2; root.add(pl);
 
+    var pMats = [0xfff3b0, 0xffb703, 0xfb8500].map(function (col) {
+      return new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.88, blending: THREE.AdditiveBlending, depthWrite: false });
+    });
     var plumes = [];
-    for (var i = 0; i < 14; i++) {
-      var col = i < 4 ? 0xfff3b0 : (i < 9 ? 0xffb703 : 0xfb8500);
-      var m = new THREE.Mesh(new THREE.IcosahedronGeometry(1.15 + Math.random() * 0.8, 2),
-        new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.88, blending: THREE.AdditiveBlending, depthWrite: false }));
-      var a = (i / 14) * Math.PI * 2, r = i < 4 ? 0.5 : (1.5 + Math.random() * 1.8);
+    for (var i = 0; i < 10; i++) {
+      var mIdx = i < 3 ? 0 : (i < 7 ? 1 : 2);
+      var m = new THREE.Mesh(G_PLUME, pMats[mIdx]);
+      var a = (i / 10) * Math.PI * 2, r = i < 3 ? 0.5 : (1.5 + Math.random() * 1.8);
       m.position.set(Math.cos(a) * r, 1.0 + Math.random() * 1.5, Math.sin(a) * r);
-      m.userData = { vx: Math.cos(a) * 1.1, vy: 1.8 + Math.random() * 1.8, vz: Math.sin(a) * 1.1 };
+      m.userData = { sharedGeo: true, baseR: 1.15 + Math.random() * 0.7, vx: Math.cos(a) * 1.1, vy: 1.8 + Math.random() * 1.8, vz: Math.sin(a) * 1.1 };
       root.add(m); plumes.push(m);
     }
-    MAY.burstAt(pos.clone().add(new THREE.Vector3(0, 1.5, 0)), 0xffd93d, 22);
+    MAY.burstAt(pos.clone().add(new THREE.Vector3(0, 1.5, 0)), 0xffd93d, 18);
     MAY.triggerSpellFlash(0xffa726, 0.62);
     MAY.player.addShake(0.35);
 
+    var lx = pos.x, ly = pos.y + 3.2, lz = pos.z;
     addFX(root, 3.2, function (age, dur, dt) {
       var p = age / dur;
       var env = Math.min(1, age * 6) * (1 - Math.max(0, (p - 0.55) / 0.45));
-      rune.rotation.z += dt * 2.2; rune.scale.setScalar(0.3 + p * 1.25); rune.material.opacity = env * 0.9;
-      pl.intensity = env * 6.0;
-      plumes.forEach(function (m) {
+      rune.rotation.z += dt * 2.2; rune.scale.setScalar(5.2 * (0.3 + p * 1.25)); rune.material.opacity = env * 0.9;
+      requestSpellLight(lx, ly, lz, 0xffa726, env * 5.8, 30);
+      for (var mi = 0; mi < pMats.length; mi++) pMats[mi].opacity = env * 0.75;
+      for (var pi = 0; pi < plumes.length; pi++) {
+        var m = plumes[pi];
         m.position.x += m.userData.vx * dt; m.position.y += m.userData.vy * dt; m.position.z += m.userData.vz * dt;
-        m.scale.setScalar(0.4 + p * 1.7);
-        m.material.opacity = env * 0.75;
-      });
+        m.scale.setScalar(m.userData.baseR * (0.4 + p * 1.65));
+      }
     });
   }
 
-  /* ---- 5. PHA LÊ ÂM VANG (CRYSTAL — Vòng sao pha lê + Sóng âm vang sáng hang) ---- */
+  /* ---- 5. PHA LÊ ÂM VANG (CRYSTAL) ---- */
   function spawnCrystal(pos) {
     var root = new THREE.Group(); root.position.copy(pos);
     var rune = makeRunePlane(5.5, 0xc084fc, 0.95, pos); rune.position.y = 0.18; root.add(rune);
-    var wave = new THREE.Mesh(new THREE.RingGeometry(0.6, 1.1, 36),
+    var wave = new THREE.Mesh(G_WAVE_RING,
       new THREE.MeshBasicMaterial({ color: 0x67e8f9, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, depthWrite: false }));
+    wave.userData.sharedGeo = true;
     wave.rotation.x = -Math.PI / 2; wave.position.y = 0.35; root.add(wave);
-    var pl = new THREE.PointLight(0xc084fc, 6.2, 42); pl.position.y = 3.0; root.add(pl);
 
+    var pMatA = new THREE.MeshStandardMaterial({ color: 0xd8b4fe, emissive: 0xa855f7, emissiveIntensity: 1.15, roughness: 0.16, metalness: 0.25 });
+    var pMatB = new THREE.MeshStandardMaterial({ color: 0x67e8f9, emissive: 0x06b6d4, emissiveIntensity: 1.15, roughness: 0.16, metalness: 0.25 });
     var prisms = [];
-    var geo = new THREE.OctahedronGeometry(0.48, 0); geo.scale(0.6, 1.7, 0.6);
-    for (var i = 0; i < 10; i++) {
-      var a = (i / 10) * Math.PI * 2;
-      var pr = new THREE.Mesh(geo, new THREE.MeshPhysicalMaterial({ color: i % 2 === 0 ? 0xd8b4fe : 0x67e8f9, emissive: i % 2 === 0 ? 0xa855f7 : 0x06b6d4, emissiveIntensity: 1.1, clearcoat: 1.0 }));
+    for (var i = 0; i < 8; i++) {
+      var a = (i / 8) * Math.PI * 2;
+      var pr = new THREE.Mesh(G_PRISM, i % 2 === 0 ? pMatA : pMatB);
+      pr.userData.sharedGeo = true;
       pr.position.set(Math.cos(a) * 2.8, 0.6, Math.sin(a) * 2.8);
       root.add(pr); prisms.push(pr);
     }
     MAY.triggerSpellFlash(0xc084fc, 0.5);
     MAY.player.addShake(0.2);
 
+    var lx = pos.x, ly = pos.y + 3.0, lz = pos.z;
     addFX(root, 4.0, function (age, dur, dt) {
       var p = age / dur;
       var env = Math.min(1, age * 5) * (1 - Math.max(0, (p - 0.7) / 0.3));
       rune.rotation.z -= dt * 1.5; rune.material.opacity = env * 0.92;
       wave.scale.setScalar(1 + p * 10.5); wave.material.opacity = Math.max(0, 1 - p * 1.5);
-      pl.intensity = env * 6.0;
-      prisms.forEach(function (pr, idx) {
+      requestSpellLight(lx, ly, lz, 0xc084fc, env * 5.8, 38);
+      var prSc = Math.max(0.01, env);
+      for (var pi = 0; pi < prisms.length; pi++) {
+        var pr = prisms[pi];
         pr.rotation.y += dt * 3;
-        pr.position.y = 1.0 + Math.sin(age * 3.5 + idx) * 0.45 + p * 1.4;
-        pr.scale.setScalar(Math.max(0.01, env));
-      });
+        pr.position.y = 1.0 + Math.sin(age * 3.5 + pi) * 0.45 + p * 1.4;
+        pr.scale.setScalar(prSc);
+      }
     });
   }
 
-  /* ---- 6. SÓNG BỌT BIỂN (WAVE — Đài phun bong bóng lấp lánh + Vòng xoáy ngọc lam) ---- */
+  /* ---- 6. SÓNG BỌT BIỂN (WAVE) ---- */
   function spawnWave(pos) {
     var root = new THREE.Group(); root.position.copy(pos);
     var rune = makeRunePlane(4.8, 0x38bdf8, 0.95, pos); rune.position.y = 0.18; root.add(rune);
-    var pl = new THREE.PointLight(0x38bdf8, 4.2, 24); pl.position.y = 2.0; root.add(pl);
     var rb1 = makeSpiralRibbon(2.2, 5.2, 1.5, 0x38bdf8); root.add(rb1);
     var rb2 = makeSpiralRibbon(2.8, 5.2, 1.5, 0x99f6e4); rb2.rotation.y = Math.PI; root.add(rb2);
 
-    var bubs = [], bGeo = new THREE.SphereGeometry(0.18, 10, 8);
-    var bMat = new THREE.MeshPhysicalMaterial({ color: 0xe0fbff, roughness: 0.05, clearcoat: 1.0, transparent: true, opacity: 0.75 });
-    for (var i = 0; i < 32; i++) {
-      var b = new THREE.Mesh(bGeo, bMat);
+    var bMat = new THREE.MeshStandardMaterial({ color: 0xe0fbff, emissive: 0x38bdf8, emissiveIntensity: 0.38, roughness: 0.12, metalness: 0.15, transparent: true, opacity: 0.78 });
+    var bubs = [];
+    for (var i = 0; i < 20; i++) {
+      var b = new THREE.Mesh(G_BUBBLE, bMat);
       var a = Math.random() * 6.28, r = Math.random() * 2.8;
       b.position.set(Math.cos(a) * r, 0.3 + Math.random() * 1.2, Math.sin(a) * r);
       b.scale.setScalar(0.5 + Math.random() * 1.1);
-      b.userData = { vy: 1.8 + Math.random() * 2.2, ph: Math.random() * 6 };
+      b.userData = { sharedGeo: true, vy: 1.8 + Math.random() * 2.2, ph: Math.random() * 6 };
       root.add(b); bubs.push(b);
     }
     MAY.triggerSpellFlash(0x38bdf8, 0.38);
     MAY.player.addShake(0.14);
 
+    var lx = pos.x, ly = pos.y + 2.0, lz = pos.z;
     addFX(root, 4.0, function (age, dur, dt) {
       var p = age / dur;
       var env = Math.min(1, age * 4) * (1 - Math.max(0, (p - 0.72) / 0.28));
       rune.rotation.z += dt * 1.4; rune.material.opacity = env * 0.9;
       rb1.rotation.y += dt * 3.0; rb2.rotation.y -= dt * 2.4;
       rb1.material.opacity = env * 0.7; rb2.material.opacity = env * 0.7;
-      pl.intensity = env * 4.0;
-      bubs.forEach(function (b) {
+      bMat.opacity = env * 0.78;
+      requestSpellLight(lx, ly, lz, 0x38bdf8, env * 4.0, 24);
+      for (var bi = 0; bi < bubs.length; bi++) {
+        var b = bubs[bi];
         b.position.y += b.userData.vy * dt;
         b.position.x += Math.sin(age * 4 + b.userData.ph) * 0.4 * dt;
-      });
+      }
     });
   }
 
-  /* ---- Vòng Thử Thách & Cổng Rune Tinh Xảo (thay vòng neon arcade đơn điệu!) ---- */
+  /* ---- Vòng Thử Thách & Cổng Rune Tinh Xảo ---- */
   function makeOrnateRing(radius, colorHex, emissiveHex) {
     var g = new THREE.Group();
     var rimMat = new THREE.MeshStandardMaterial({
       color: colorHex || 0xffd93d, emissive: emissiveHex || 0xaa7700, emissiveIntensity: 0.55,
       metalness: 0.75, roughness: 0.25
     });
-    var main = new THREE.Mesh(new THREE.TorusGeometry(radius, 0.13, 12, 32), rimMat);
+    var main = new THREE.Mesh(new THREE.TorusGeometry(radius, 0.13, 10, 28), rimMat);
     g.add(main);
-    var inner = new THREE.Mesh(new THREE.TorusGeometry(radius * 0.88, 0.045, 8, 32),
+    var inner = new THREE.Mesh(new THREE.TorusGeometry(radius * 0.88, 0.045, 6, 28),
       new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.65 }));
     g.add(inner);
-    /* 6 viên pha lê nhỏ đính quanh vòng */
-    var pipGeo = new THREE.OctahedronGeometry(0.22, 0);
+    var pipMat = new THREE.MeshStandardMaterial({ color: colorHex || 0xffd93d, emissive: colorHex || 0xffd93d, emissiveIntensity: 0.85, roughness: 0.2, metalness: 0.3 });
     for (var i = 0; i < 6; i++) {
       var a = (i / 6) * Math.PI * 2;
-      var pip = new THREE.Mesh(pipGeo, new THREE.MeshPhysicalMaterial({ color: colorHex || 0xffd93d, emissive: colorHex || 0xffd93d, emissiveIntensity: 0.85, clearcoat: 1.0 }));
+      var pip = new THREE.Mesh(G_PIP, pipMat);
+      pip.userData.sharedGeo = true;
       pip.position.set(Math.cos(a) * radius, Math.sin(a) * radius, 0);
       g.add(pip);
     }
     var rune = new THREE.Mesh(
-      new THREE.PlaneGeometry(radius * 2.05, radius * 2.05),
+      G_UNIT_PLANE,
       new THREE.MeshBasicMaterial({ map: runicTex, color: colorHex || 0xffd93d, transparent: true, opacity: 0.34, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide })
     );
+    rune.userData.sharedGeo = true;
+    rune.scale.setScalar(radius * 1.025);
     g.add(rune);
     g.userData.rimMat = rimMat;
     g.userData.rune = rune;
     return g;
   }
 
-  /* Note: makeRunePlane đã xoay mặt phẳng về XZ nên hoạt ảnh xoay mặt đất dùng rotation.y thay vì rotation.z */
-  /* ---- Hiệu ứng Giải Đố & Đấu Trùm (v10.0: Cảnh báo đòn đỏ, Dây leo trói, Tia Laser Gương, Cột Băng, Mảnh Vỡ!) ---- */
+  /* ---- Hiệu ứng Giải Đố & Đấu Trùm ---- */
   function spawnTelegraph(pos, radius, dur, colorHex) {
     var root = new THREE.Group();
     root.position.set(pos.x, pos.y + 0.14, pos.z);
     var col = colorHex || 0xff3b5c;
     var ring = new THREE.Mesh(
-      new THREE.RingGeometry(radius * 0.78, radius, 28),
+      G_TEL_RING,
       new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.85, side: THREE.DoubleSide, depthWrite: false })
     );
+    ring.userData.sharedGeo = true;
+    ring.scale.setScalar(radius);
     ring.rotation.x = -Math.PI / 2;
     root.add(ring);
     var fill = new THREE.Mesh(
-      new THREE.CircleGeometry(radius * 0.78, 28),
+      G_TEL_FILL,
       new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.25, side: THREE.DoubleSide, depthWrite: false })
     );
+    fill.userData.sharedGeo = true;
     fill.rotation.x = -Math.PI / 2;
-    fill.scale.setScalar(0.05);
+    fill.scale.setScalar(radius * 0.05);
     root.add(fill);
     addFX(root, dur || 0.95, function (age, d) {
       var p = Math.min(1, age / d);
-      fill.scale.setScalar(0.08 + p * 0.92);
+      fill.scale.setScalar(radius * (0.08 + p * 0.92));
       fill.material.opacity = 0.18 + p * 0.35;
       ring.material.opacity = 0.65 + Math.sin(age * 24) * 0.25;
     });
@@ -474,17 +573,18 @@
   function spawnVineTrap(pos, dur) {
     var root = new THREE.Group();
     root.position.copy(pos);
-    var vines = [];
+    var vMatA = new THREE.MeshBasicMaterial({ color: 0x22c55e, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending, depthWrite: false });
+    var vMatB = new THREE.MeshBasicMaterial({ color: 0xfef08a, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending, depthWrite: false });
     for (var i = 0; i < 4; i++) {
-      var rb = makeSpiralRibbon(1.25 + (i % 2) * 0.35, 2.8, 1.5, i % 2 === 0 ? 0x22c55e : 0xfef08a);
+      var rb = makeSpiralRibbon(1.25 + (i % 2) * 0.35, 2.8, 1.5, 0x22c55e, i % 2 === 0 ? vMatA : vMatB);
       rb.rotation.y = (i / 4) * Math.PI * 2;
       root.add(rb);
-      vines.push(rb);
     }
-    var flGeo = new THREE.SphereGeometry(0.28, 7, 6);
     var flCols = [0xff5c8a, 0xffd93d, 0xffffff, 0xf472b6];
+    var flMats = flCols.map(function (c) { return new THREE.MeshStandardMaterial({ color: c, emissive: c, emissiveIntensity: 0.45, roughness: 0.5 }); });
     for (var f = 0; f < 8; f++) {
-      var fl = new THREE.Mesh(flGeo, new THREE.MeshStandardMaterial({ color: flCols[f % flCols.length], emissive: flCols[f % flCols.length], emissiveIntensity: 0.45 }));
+      var fl = new THREE.Mesh(G_HEAD, flMats[f % flMats.length]);
+      fl.userData.sharedGeo = true;
       var a = (f / 8) * Math.PI * 2;
       fl.position.set(Math.cos(a) * 1.15, 0.5 + (f % 3) * 0.75, Math.sin(a) * 1.15);
       root.add(fl);
@@ -529,9 +629,10 @@
     var root = new THREE.Group();
     root.position.copy(pos);
     var pil = new THREE.Mesh(
-      new THREE.ConeGeometry(1.35, 3.8, 7),
-      new THREE.MeshPhysicalMaterial({ color: 0xbbe8ff, emissive: 0x38bdf8, emissiveIntensity: 0.55, roughness: 0.08, clearcoat: 1.0, transparent: true, opacity: 0.92 })
+      G_ICE_PILLAR,
+      new THREE.MeshStandardMaterial({ color: 0xbbe8ff, emissive: 0x38bdf8, emissiveIntensity: 0.6, roughness: 0.14, metalness: 0.2, transparent: true, opacity: 0.92 })
     );
+    pil.userData.sharedGeo = true;
     pil.position.y = 1.9;
     pil.castShadow = true;
     root.add(pil);
@@ -545,34 +646,32 @@
   function spawnShatterBurst(pos, colorHex) {
     var root = new THREE.Group();
     root.position.copy(pos);
-    var geo = new THREE.DodecahedronGeometry(0.38, 0);
     var mat = new THREE.MeshStandardMaterial({ color: colorHex || 0xc084fc, emissive: colorHex || 0x7e22ce, emissiveIntensity: 0.45, roughness: 0.35, flatShading: true });
     var chunks = [];
-    for (var i = 0; i < 14; i++) {
-      var c = new THREE.Mesh(geo, mat);
-      c.userData.sharedGeo = true;
+    for (var i = 0; i < 12; i++) {
+      var c = new THREE.Mesh(G_SHATTER, mat);
       var a = Math.random() * 6.28, sp = 3.2 + Math.random() * 5.2;
-      c.userData.vx = Math.cos(a) * sp;
-      c.userData.vy = 4.0 + Math.random() * 5.5;
-      c.userData.vz = Math.sin(a) * sp;
+      c.userData = { sharedGeo: true, vx: Math.cos(a) * sp, vy: 4.0 + Math.random() * 5.5, vz: Math.sin(a) * sp };
       c.scale.setScalar(0.5 + Math.random() * 0.9);
       root.add(c);
       chunks.push(c);
     }
     addFX(root, 1.8, function (age, d, dt) {
       var env = 1 - age / d;
-      chunks.forEach(function (c) {
+      var sc = Math.max(0.01, env * 0.85);
+      for (var ci = 0; ci < chunks.length; ci++) {
+        var c = chunks[ci];
         c.userData.vy -= 14 * dt;
         c.position.x += c.userData.vx * dt;
         c.position.y += c.userData.vy * dt;
         c.position.z += c.userData.vz * dt;
         c.rotation.x += dt * 5; c.rotation.y += dt * 4;
-        c.scale.setScalar(Math.max(0.01, env * 0.85));
-      });
+        c.scale.setScalar(sc);
+      }
     });
   }
 
-  /* ---- Điều khiển chọn & thi triển 6 Phép Thuật của Mây (có mở khóa dần theo Cốt Truyện!) ---- */
+  /* ---- Điều khiển chọn & thi triển 6 Phép Thuật của Mây ---- */
   function firstUnlockedIdx() {
     for (var i = 0; i < MAY.SPELLS.length; i++) {
       if (MAY.isSpellUnlocked(MAY.SPELLS[i].id)) return i;
@@ -602,11 +701,12 @@
         : "🔒 CHƯA THỨC TỈNH PHÉP — GẶP NPC (!)";
     }
     if (MAY.player && MAY.player.setStaffSpell) {
-      MAY.player.setStaffSpell(isCurUnlocked ? sp : { color: 0x8b6f4e });
+      MAY.player.setStaffSpell(isCurUnlocked ? sp : { color: 0x38bdf8 });
     }
   }
 
   MAY.selectSpell = function (idx, silent) {
+    if (!silent && MAY.Cutscene && MAY.Cutscene.isPlaying && MAY.Cutscene.isPlaying()) return;
     if (idx < 0 || idx >= MAY.SPELLS.length) return;
     var sp = MAY.SPELLS[idx];
     if (!MAY.isSpellUnlocked(sp.id)) {
@@ -622,8 +722,10 @@
   };
 
   var castCooldown = 0;
+  var _castTarget = new THREE.Vector3();
+  var _castOrigin = new THREE.Vector3();
   MAY.castActiveSpell = function () {
-    if (!MAY.started || MAY.modalOpen || !MAY.currentCtx || castCooldown > 0) return;
+    if (!MAY.started || MAY.modalOpen || (MAY.Cutscene && MAY.Cutscene.isPlaying && MAY.Cutscene.isPlaying()) || !MAY.currentCtx || castCooldown > 0) return;
     var sp = MAY.SPELLS[activeSpellIdx];
     if (!sp || !MAY.isSpellUnlocked(sp.id)) {
       var fi = firstUnlockedIdx();
@@ -642,35 +744,34 @@
     var tx = p.x + fwdX * 6.5, tz = p.z + fwdZ * 6.5;
     var gh = MAY.currentCtx.groundH(tx, tz);
     var ty = MAY.player.onLand ? (gh > -30 ? gh : p.y - 0.9) : p.y - 0.8;
-    var target = new THREE.Vector3(tx, ty, tz);
+    _castTarget.set(tx, ty, tz);
+    _castOrigin.copy(p);
 
     if (MAY.player.triggerCastAnim) MAY.player.triggerCastAnim();
     if (MAY.sndSpell) MAY.sndSpell(sp.id);
 
-    if (sp.id === "growth") spawnGrowth(target);
-    else if (sp.id === "frost") spawnFrost(target);
+    if (sp.id === "growth") spawnGrowth(_castTarget);
+    else if (sp.id === "frost") spawnFrost(_castTarget);
     else if (sp.id === "tornado") {
-      spawnTornado(target, true);
-      /* Tạo cột khí nâng vật lý thật 5.2s để Mây nhảy vào bay vọt lên đảo cao! */
-      if (MAY.currentCtx.addUpdraft) MAY.currentCtx.addUpdraft(target.x, target.y, target.z, 3.8, 5.2);
+      spawnTornado(_castTarget, true);
+      if (MAY.currentCtx.addUpdraft) MAY.currentCtx.addUpdraft(_castTarget.x, _castTarget.y, _castTarget.z, 3.8, 5.2);
     }
-    else if (sp.id === "solar") spawnSolar(target);
-    else if (sp.id === "crystal") spawnCrystal(target);
-    else spawnWave(target);
+    else if (sp.id === "solar") spawnSolar(_castTarget);
+    else if (sp.id === "crystal") spawnCrystal(_castTarget);
+    else spawnWave(_castTarget);
 
-    /* Tương tác phép thuật thực chiến: Giải đố môi trường, Hồi sinh cây, Quái vật & Boss! */
     if (MAY.dispatchSpellImpact) {
-      MAY.dispatchSpellImpact(sp.id, target, p.clone());
+      MAY.dispatchSpellImpact(sp.id, _castTarget, _castOrigin);
     }
 
-    /* Giữ tương tác vui với hoa/san hô/xương rồng/pha lê gần điểm cast */
     var ctx = MAY.currentCtx;
     if (ctx && ctx.interactives) {
-      ctx.interactives.forEach(function (it) {
-        if (it.isProp && it.obj && it.obj.position.distanceTo(target) < 8.5 && it.onInteract) {
+      for (var ii = 0; ii < ctx.interactives.length; ii++) {
+        var it = ctx.interactives[ii];
+        if (it.isProp && it.obj && it.obj.position.distanceTo(_castTarget) < 8.5 && it.onInteract) {
           it.onInteract(it);
         }
-      });
+      }
     }
   };
 
@@ -693,26 +794,31 @@
     syncSpellUI: syncSpellUI,
     clear: function () {
       activeFX.length = 0;
+      _spellLightReq = null;
+      if (MAY.spellLight) MAY.spellLight.intensity = 0;
     },
     update: function (dt) {
       if (castCooldown > 0) castCooldown -= dt;
+      _spellLightReq = null;
       for (var i = activeFX.length - 1; i >= 0; i--) {
         var fx = activeFX[i];
         fx.age += dt;
         if (fx.age >= fx.dur) {
           MAY.worldRoot.remove(fx.root);
-          fx.root.traverse(function (o) {
-            if (o.isLight && o.shadow && o.shadow.map) {
-              try { o.shadow.map.dispose(); o.shadow.map = null; } catch (e) {}
-            }
-            if (o.isMesh || o.isPoints || o.isLine) {
-              if (o.geometry && !o.userData.sharedGeo) try { o.geometry.dispose(); } catch (e) {}
-              if (o.material && o.material.dispose) try { o.material.dispose(); } catch (e) {}
-            } else if (o.isSprite && o.material) try { o.material.dispose(); } catch (e) {}
-          });
+          disposeFXRoot(fx.root);
           activeFX.splice(i, 1);
         } else {
           fx.update(fx.age, fx.dur, dt);
+        }
+      }
+      if (MAY.spellLight) {
+        if (_spellLightReq) {
+          MAY.spellLight.position.set(_spellLightReq.x, _spellLightReq.y, _spellLightReq.z);
+          MAY.spellLight.color.setHex(_spellLightReq.colorHex);
+          MAY.spellLight.intensity = _spellLightReq.intensity;
+          MAY.spellLight.distance = _spellLightReq.distance;
+        } else if (MAY.spellLight.intensity > 0) {
+          MAY.spellLight.intensity = 0;
         }
       }
     }

@@ -197,7 +197,7 @@
         sp.castShadow = true; g.add(sp);
       }
       if (addLight) {
-        var pl = new THREE.PointLight(color, 2.2, 28);
+        var pl = MAY.makePooledLight ? MAY.makePooledLight(color, 2.2, 28) : new THREE.PointLight(color, 2.2, 28);
         pl.position.y = 2.5 * sc; g.add(pl);
       }
       return g;
@@ -312,7 +312,7 @@
       var base = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.72, 2.2, 8), bridgeMat); base.position.y = 1.1; tg.add(base);
       var orb = new THREE.Mesh(new THREE.OctahedronGeometry(0.7, 0), new THREE.MeshPhysicalMaterial({ color: 0x3b355c, emissive: 0x000000, roughness: 0.15, clearcoat: 1.0 }));
       orb.position.y = 2.6; tg.add(orb);
-      var pl = new THREE.PointLight(0xffcb69, 0, 28); pl.position.y = 3.2; tg.add(pl);
+      var pl = MAY.makePooledLight ? MAY.makePooledLight(0xffcb69, 0, 28) : new THREE.PointLight(0xffcb69, 0, 28); pl.position.y = 3.2; tg.add(pl);
       if (ch4St.steps["torch" + idx]) { orb.material.color.setHex(0xffe066); orb.material.emissive.setHex(0xff9f1c); orb.material.emissiveIntensity = 1.2; pl.intensity = 3.2; }
       ctx.add(tg);
       ctx.addCollider(tp.x, tp.z, 0.72, "torch_ped", { minY: tp.y - 0.5, maxY: tp.y + 2.6 });

@@ -114,11 +114,21 @@
     return null;
   }
 
+  function isInteractiveActive(it) {
+    return !!(it && it.obj && it.obj.visible && (!it.isActive || it.isActive()));
+  }
+
+  MAY.resetInteractTarget = function () {
+    currentTarget = null;
+    rayTimer = 0;
+    if (interactEl) interactEl.style.display = "none";
+  };
+
   function updateRaycast(dt, ctx) {
     rayTimer -= dt;
     if (rayTimer > 0) return;
     rayTimer = 0.12;
-    if (!MAY.started || MAY.modalOpen || !ctx || !ctx.interactives.length) {
+    if (!MAY.started || MAY.modalOpen || (MAY.Cutscene && MAY.Cutscene.isPlaying && MAY.Cutscene.isPlaying()) || !ctx || !ctx.interactives.length) {
       if (interactEl) interactEl.style.display = "none";
       currentTarget = null;
       return;
@@ -127,30 +137,38 @@
     raycaster.far = 14;
     var objs = [];
     for (var i = 0; i < ctx.interactives.length; i++) {
-      if (ctx.interactives[i].obj && ctx.interactives[i].obj.visible) objs.push(ctx.interactives[i].obj);
+      if (isInteractiveActive(ctx.interactives[i])) objs.push(ctx.interactives[i].obj);
     }
     var hits = raycaster.intersectObjects(objs, true);
     var found = null;
     for (var h = 0; h < hits.length; h++) {
       var it = findInteractive(hits[h].object, ctx.interactives);
-      if (it) { found = it; break; }
+      if (it && isInteractiveActive(it)) { found = it; break; }
     }
-    /* Nếu đứng gần NPC Giao Nhiệm Vụ trong 5.5m thì luôn hiện nút trò chuyện tiện lợi! */
-    if (!found && ctx.questNPCs && ctx.questNPCs.length && MAY.player) {
-      var bestNd = 5.6;
-      for (var q = 0; q < ctx.questNPCs.length; q++) {
-        var npc = ctx.questNPCs[q];
-        var nd = npc.group.position.distanceTo(MAY.player.pos);
-        if (nd < bestNd) {
-          bestNd = nd;
-          found = { obj: npc.group, label: "Trò chuyện với " + npc.name + " (Bấm / Enter)", onInteract: function () { if (npc.onTalk) npc.onTalk(npc); } };
+    /* Nếu đứng gần NPC Giao Nhiệm Vụ trong 5.6m thì luôn hiện nút trò chuyện tiện lợi! */
+    if (!found && MAY.player) {
+      if (ctx.questNPCs && ctx.questNPCs.length) {
+        var bestNd = 5.6, bestNpc = null;
+        for (var q = 0; q < ctx.questNPCs.length; q++) {
+          var npc = ctx.questNPCs[q];
+          var nd = npc.group.position.distanceTo(MAY.player.pos);
+          if (nd < bestNd) {
+            bestNd = nd;
+            bestNpc = npc;
+          }
+        }
+        if (bestNpc) {
+          found = { obj: bestNpc.group, label: "Trò chuyện với " + bestNpc.name + " (Bấm / Enter)", onInteract: function () { if (bestNpc.onTalk) bestNpc.onTalk(bestNpc); } };
         }
       }
       if (!found && ctx.sideQuest && ctx.sideQuest.npcGroup) {
         var sqd = ctx.sideQuest.npcGroup.position.distanceTo(MAY.player.pos);
         if (sqd < 5.6) {
           for (var iq = 0; iq < ctx.interactives.length; iq++) {
-            if (ctx.interactives[iq].obj === ctx.sideQuest.npcGroup) { found = ctx.interactives[iq]; break; }
+            if (ctx.interactives[iq].obj === ctx.sideQuest.npcGroup && isInteractiveActive(ctx.interactives[iq])) {
+              found = ctx.interactives[iq];
+              break;
+            }
           }
         }
       }
@@ -167,6 +185,7 @@
   }
 
   MAY.doInteract = function (clientX, clientY) {
+    if (!MAY.started || MAY.modalOpen || (MAY.Cutscene && MAY.Cutscene.isPlaying && MAY.Cutscene.isPlaying())) return;
     var ctx = MAY.currentCtx;
     /* Cho phép click trực tiếp vào BẤT KỲ NPC, Rương, Hoa, Trạm đố nào dưới con trỏ chuột (không bắt buộc căn dấu chấm giữa màn hình!) */
     if (typeof clientX === "number" && typeof clientY === "number" && ctx && ctx.interactives && ctx.interactives.length) {
@@ -175,17 +194,17 @@
       raycaster.far = 26;
       var objs = [];
       for (var i = 0; i < ctx.interactives.length; i++) {
-        if (ctx.interactives[i].obj && ctx.interactives[i].obj.visible) objs.push(ctx.interactives[i].obj);
+        if (isInteractiveActive(ctx.interactives[i])) objs.push(ctx.interactives[i].obj);
       }
       var hits = raycaster.intersectObjects(objs, true);
       var pPos = MAY.player ? MAY.player.pos : MAY.camera.position;
       for (var h = 0; h < hits.length; h++) {
         if (hits[h].point.distanceTo(pPos) > 14) continue;
         var it = findInteractive(hits[h].object, ctx.interactives);
-        if (it && it.onInteract) { it.onInteract(it); return; }
+        if (it && isInteractiveActive(it) && it.onInteract) { it.onInteract(it); return; }
       }
     }
-    if (!currentTarget) return;
+    if (!currentTarget || !isInteractiveActive(currentTarget)) return;
     if (currentTarget.onInteract) currentTarget.onInteract(currentTarget);
   };
 
@@ -196,8 +215,8 @@
     return new THREE.MeshStandardMaterial(o);
   }
   var blackEye = new THREE.MeshBasicMaterial({ color: 0x1a1a2a });
-
   var eyeGlintM = new THREE.MeshBasicMaterial({ color: 0xffffff });
+  if (MAY.protectMaterial) { MAY.protectMaterial(blackEye); MAY.protectMaterial(eyeGlintM); }
   function addEyes(g, xOff, y, z, r) {
     var rad = r || 0.055;
     [-xOff, xOff].forEach(function (ex) {
@@ -924,7 +943,7 @@
         flying: !!opts.flying,
         yOff: opts.yOff || 0,
         glowLight: opts.light ? (function () {
-          var pl = new THREE.PointLight(opts.light, 1.4, 20);
+          var pl = MAY.makePooledLight ? MAY.makePooledLight(opts.light, 1.4, 20) : new THREE.PointLight(opts.light, 1.4, 20);
           g.add(pl);
           return pl;
         })() : null
@@ -1293,39 +1312,32 @@
 
     /* ---- Cập nhật hàng frame cho toàn bộ hệ thống màn chơi ---- */
     var compassTimer = 0, mmTimer = 0;
+    var _fogLerpCol = new THREE.Color();
+    var _wpTmp = new THREE.Vector3();
 
-    ctx.updateAll = function (dt, t) {
-      var pPos = MAY.player.pos;
-      if (MAY.started && !MAY.modalOpen) {
-        ctx.playSecs += dt;
-        if (!ls.gem) ls.playSecs = Math.floor(ctx.playSecs);
-      }
-      if (ctx.portalCooldown > 0) ctx.portalCooldown -= dt;
-
-      /* Đèn mặt trời & bóng đổ sắc nét đi theo Mây */
-      MAY.updateSunFollow(pPos);
-
-      /* Cập nhật vòng sóng quanh Mây trên tất cả mặt nước */
+    function updateWaterAndFog(dt, pPos) {
       for (var wi = 0; wi < ctx.waterMeshes.length; wi++) {
         var wu = ctx.waterMeshes[wi].userData.waterUniforms;
-        if (wu && wu.uPlayerPos) wu.uPlayerPos.value.copy(pPos);
+        if (wu && wu.uPlayerPos && pPos) wu.uPlayerPos.value.copy(pPos);
       }
-
-      /* Chuyển sương mù tự nhiên giữa trên mặt nước (ảnh 3) và dưới lòng biển (ảnh 2) */
       if (ctx.waterLevel !== undefined && ctx.underwaterFog && ctx.landFog) {
         var camUnder = MAY.camera.position.y < ctx.waterLevel;
         if (ctx.skyMesh) ctx.skyMesh.visible = !camUnder;
         var fCfg = camUnder ? ctx.underwaterFog : ctx.landFog;
+        _fogLerpCol.set(fCfg.color);
         if (!MAY.scene.fog || !MAY.scene.fog.isFogExp2) {
           MAY.scene.fog = new THREE.FogExp2(fCfg.color, fCfg.density);
         } else {
-          MAY.scene.fog.color.lerp(new THREE.Color(fCfg.color), Math.min(1, dt * 6));
+          MAY.scene.fog.color.lerp(_fogLerpCol, Math.min(1, dt * 6));
           MAY.scene.fog.density += (fCfg.density - MAY.scene.fog.density) * Math.min(1, dt * 6);
         }
-        MAY.scene.background.lerp(new THREE.Color(fCfg.color), Math.min(1, dt * 6));
+        if (MAY.scene.background && MAY.scene.background.lerp) {
+          MAY.scene.background.lerp(_fogLerpCol, Math.min(1, dt * 6));
+        }
       }
+    }
 
-      /* Hạt môi trường */
+    function updateEnvParticles(dt) {
       ctx.particles.forEach(function (pt) {
         var arr = pt.pts.geometry.attributes.position;
         for (var i = 0; i < pt.count; i++) {
@@ -1340,6 +1352,24 @@
         }
         arr.needsUpdate = true;
       });
+    }
+
+    ctx.updateAll = function (dt, t) {
+      var pPos = MAY.player.pos;
+      if (MAY.started && !MAY.modalOpen) {
+        ctx.playSecs += dt;
+        if (!ls.gem) ls.playSecs = Math.floor(ctx.playSecs);
+      }
+      if (ctx.portalCooldown > 0) ctx.portalCooldown -= dt;
+
+      /* Đèn mặt trời & bóng đổ sắc nét đi theo Mây */
+      MAY.updateSunFollow(pPos);
+
+      /* Cập nhật vòng sóng quanh Mây & chuyển sương mù trên/dưới nước */
+      updateWaterAndFog(dt, pPos);
+
+      /* Hạt môi trường */
+      updateEnvParticles(dt);
 
       /* Vật phẩm chính + Cột sáng dẫn đường */
       var bestItem = null, bestD = 1e9;
@@ -1644,7 +1674,8 @@
       }
 
       /* Cổng dịch chuyển + làm mờ nhãn chữ khi ở xa cho khung hình rộng luôn sạch đẹp */
-      ctx.portals.forEach(function (pt) {
+      for (var pi = 0; pi < ctx.portals.length; pi++) {
+        var pt = ctx.portals[pi];
         var open = !MAY.isLevelUnlocked || MAY.isLevelUnlocked(pt.targetId);
         pt.veil.rotation.z += dt * (open ? 0.7 : 0.15);
         pt.veil.material.opacity = open ? (0.42 + Math.sin(t * 3) * 0.14) : 0.12;
@@ -1658,19 +1689,20 @@
             MAY.toast("🔒 Cổng tới " + (tm ? tm.shortName : pt.label) + " đang khóa! Hoàn thành Chương " + (tm ? tm.num - 1 : 1) + " trước (hoặc bật Tự do ở Bản đồ M).");
           } else {
             MAY.enterLevel(pt.targetId);
+            return;
           }
         }
-      });
+      }
 
-      var wpTmp = new THREE.Vector3();
+      if (MAY.currentCtx !== ctx) return;
       for (var li = 0; li < ctx.fadingLabels.length; li++) {
         var fl = ctx.fadingLabels[li];
         if (!fl.sp || !fl.sp.material) continue;
-        fl.sp.getWorldPosition(wpTmp);
-        var ld = wpTmp.distanceTo(pPos);
+        fl.sp.getWorldPosition(_wpTmp);
+        var ld = _wpTmp.distanceTo(pPos);
         var alpha = ld < fl.maxDist * 0.55 ? 1.0 : Math.max(0, 1 - (ld - fl.maxDist * 0.55) / (fl.maxDist * 0.45));
         if (fl.isCompanion) {
-          var camD = wpTmp.distanceTo(MAY.camera.position);
+          var camD = _wpTmp.distanceTo(MAY.camera.position);
           var sc = Math.max(0.45, Math.min(1.0, (camD - 2.0) / 5.5));
           fl.sp.scale.set(fl.baseSx * sc, fl.baseSy * sc, 1);
           if (camD < 3.4) alpha *= Math.max(0.12, (camD - 1.8) / 1.6);
@@ -1679,8 +1711,10 @@
       }
 
       if (ctx.updateStory) ctx.updateStory(dt, t);
+      if (MAY.currentCtx !== ctx) return;
       if (MAY.VFX) MAY.VFX.update(dt);
       if (ctx.onUpdate) ctx.onUpdate(dt, t);
+      if (MAY.currentCtx !== ctx) return;
 
       updateRaycast(dt, ctx);
       compassTimer -= dt;
@@ -1689,12 +1723,48 @@
       if (mmTimer <= 0) { mmTimer = 0.14; drawMinimap(ctx); }
     };
 
+    /* Cập nhật hoạt ảnh nền sống động trong lúc Cutscene 3D đang quay (không kích hoạt gameplay/damage) */
+    ctx.updateCutsceneVisuals = function (dt, t) {
+      var pPos = MAY.player ? MAY.player.pos : null;
+      updateWaterAndFog(dt, pPos);
+      updateEnvParticles(dt);
+      for (var fi = 0; fi < ctx.friends.length; fi++) {
+        var f = ctx.friends[fi];
+        if (f.group.userData.wl && f.group.userData.wr) {
+          var fl = Math.sin(t * 9 + f.spin) * 0.55;
+          f.group.userData.wl.rotation.z = fl;
+          f.group.userData.wr.rotation.z = -fl;
+        }
+        if (f.group.userData.swirl) f.group.userData.swirl.rotation.z += dt * 3;
+        if (f.group.userData.mixer) {
+          if (f.group.userData.playClip) f.group.userData.playClip(f.behavior === "swim" ? "swim" : "idle");
+          f.group.userData.mixer.update(dt);
+        }
+      }
+      if (ctx.companion) {
+        var cp = ctx.companion;
+        if (cp.group.userData && cp.group.userData.mixer) {
+          if (cp.group.userData.playClip) cp.group.userData.playClip(cp.flying ? "Fly" : "Idle");
+          cp.group.userData.mixer.update(dt);
+        } else {
+          if (cp.group.userData.tail) cp.group.userData.tail.rotation.z = Math.sin(t * 10) * 0.5;
+          if (cp.group.userData.wl && cp.group.userData.wr) {
+            var fl2 = Math.sin(t * 10) * 0.5;
+            cp.group.userData.wl.rotation.z = fl2;
+            cp.group.userData.wr.rotation.z = -fl2;
+          }
+        }
+      }
+      if (ctx.updateStoryCutscene) ctx.updateStoryCutscene(dt, t);
+    };
+
     if (MAY.attachStoryEngine) MAY.attachStoryEngine(ctx);
     return ctx;
   };
 
   /* ---- La bàn & Minimap ---- */
   var compassIn = document.getElementById("compass-in");
+  var _lastCompassHtml = "";
   var CARDINALS = [[0, "Bắc"], [45, "ĐB"], [90, "Đông"], [135, "ĐN"], [180, "Nam"], [225, "TN"], [270, "Tây"], [315, "TB"]];
 
   function updateCompass(ctx) {
@@ -1729,7 +1799,10 @@
         html += '<span class="mark" style="left:' + (50 + rel / 110 * 100) + '%">' + o.icon + "<small>" + Math.round(o.d) + "m</small></span>";
       }
     });
-    compassIn.innerHTML = html;
+    if (html !== _lastCompassHtml) {
+      _lastCompassHtml = html;
+      compassIn.innerHTML = html;
+    }
   }
 
   var minimap = document.getElementById("minimap");
@@ -1795,6 +1868,7 @@
       if (el) el.classList.add("hidden");
     });
     MAY.modalOpen = false;
+    if (MAY.player && MAY.player.clearKeys) MAY.player.clearKeys();
   };
 
   MAY.openQuiz = function (levelId) {
@@ -1838,6 +1912,7 @@
   MAY.closeQuiz = function () {
     document.getElementById("quiz-ov").classList.add("hidden");
     MAY.modalOpen = false;
+    if (MAY.player && MAY.player.clearKeys) MAY.player.clearKeys();
     if (MAY.currentCtx && MAY.currentCtx.quizStation) MAY.currentCtx.quizStation.cd = 4.5;
   };
 

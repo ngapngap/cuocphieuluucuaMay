@@ -107,6 +107,7 @@
   /* Nút âm lượng tổng (Master Mute / Volume) — tắt sạch mọi tiếng beep, SFX, reverb, nền & nguồn 3D! */
   MAY.setMasterMute = function (muted) {
     MAY.voiceOn = !muted;
+    if (muted) stopSpeech();
     if (!AC || !masterGain) return;
     try {
       var now = AC.currentTime;
@@ -631,7 +632,7 @@
       }
       if (padFilter) padFilter.frequency.setTargetAtTime(cfg.padLP, now, 0.4);
       if (reverbSend) reverbSend.gain.setTargetAtTime(fMeta.rev !== undefined ? fMeta.rev : cfg.rev, now, 0.4);
-      if (!ambFileBuffers[biomeId]) {
+      if (!ambFileBuffers[biomeId] && !activeAmbTrack) {
         setSynthBedLevel(1.0);
       }
       loadAndPlayBiomeAmbience(biomeId);

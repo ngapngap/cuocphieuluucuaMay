@@ -54,6 +54,15 @@ BUDGETS = {
         "require_skin": True,
         "ground_check": False,
     },
+    "creature": {
+        "max_tris": 3500,
+        "max_bones": 24,
+        "max_mats": 2,
+        "max_tex_px": 1024,
+        "max_mb": 1.5,
+        "require_skin": True,
+        "ground_check": False,
+    },
     "boss": {
         "max_tris": 7000,
         "max_bones": 28,
@@ -104,7 +113,14 @@ BOSS_WEAKPOINT_HINTS = {
     "scorpion": "Node_TailTip",
     "golem": "Layer_DarkArmor",
     "icewolf": "Mane_Frost",
-    "stormking": "Layer_StormShield",
+    "storm": "Layer_StormShield",
+}
+
+LANDMARK_CC0_FILES = {"cc0_cabin.glb", "cc0_windmill.glb", "cc0_shipwreck.glb"}
+CREATURE_CC0_FILES = {
+    "cc0_alpaca.glb", "cc0_deer.glb", "cc0_fox.glb", "cc0_reindeer.glb",
+    "cc0_unicorn.glb", "cc0_crab.glb", "cc0_dolphin.glb", "cc0_whale.glb",
+    "cc0_clownfish.glb",
 }
 
 
@@ -118,8 +134,10 @@ def detect_category(path):
         return "companion"
     if base.startswith("boss_"):
         return "boss"
-    if base.startswith("lm_"):
+    if base.startswith(("lm_", "hero_")) or base in LANDMARK_CC0_FILES:
         return "landmark"
+    if base in CREATURE_CC0_FILES or base.startswith("creature_"):
+        return "creature"
     if base.startswith("env_"):
         return "env"
     return "prop"
@@ -471,6 +489,22 @@ def audit_glb(path, forced_type=None, strict_uv2=False):
         else:
             warns.append(msg)
 
+    # F06: Material texCoord sanity check (catches Blender exporter texCoord=-1 bug!)
+    bad_texcoords = []
+    for mi, mat in enumerate(materials):
+        pbr = mat.get("pbrMetallicRoughness", {})
+        for slot_name, slot in (
+            ("baseColorTexture", pbr.get("baseColorTexture")),
+            ("metallicRoughnessTexture", pbr.get("metallicRoughnessTexture")),
+            ("normalTexture", mat.get("normalTexture")),
+            ("emissiveTexture", mat.get("emissiveTexture")),
+            ("occlusionTexture", mat.get("occlusionTexture")),
+        ):
+            if isinstance(slot, dict) and slot.get("texCoord", 0) < 0:
+                bad_texcoords.append(f"{mat.get('name', f'mat_{mi}')}.{slot_name}={slot.get('texCoord')}")
+    if bad_texcoords:
+        fails.append(f"[F06] Material co texCoord khong hop le (<0): {', '.join(bad_texcoords[:4])}")
+
     # F06 / F07 / W02: Images & Textures
     max_tex_dim = 0
     for img_idx, img in enumerate(images):
@@ -521,6 +555,10 @@ def audit_glb(path, forced_type=None, strict_uv2=False):
     elif cat == "companion":
         if len(anim_names) < 2:
             fails.append(f"[F09] Ban dong hanh can >=2 clip animation (hien co {len(anim_names)}).")
+
+    elif cat == "creature":
+        if len(anim_names) < 1:
+            fails.append(f"[F09] Sinh vat co xuong can >=1 clip animation (hien co {len(anim_names)}).")
 
     elif cat == "boss":
         if len(anim_names) < 5:
