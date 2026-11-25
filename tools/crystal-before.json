@@ -1,0 +1,282 @@
+[
+  {
+    "level": "level4",
+    "variant": "normal",
+    "gpu": "ANGLE (Intel, Intel(R) UHD Graphics 630 (0x00009BC5) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "passes": {
+      "reflection": 0,
+      "refraction": 4
+    },
+    "glCalls": {
+      "texSubImage2D": 1,
+      "texImage2D": 0,
+      "compileShader": 0.5000000596046448,
+      "linkProgram": 0.09999996423721313,
+      "getProgramParameter": 13.199999988079071,
+      "getUniformLocation": 3.099999785423279
+    },
+    "gaps": [
+      173.29999999999927,
+      13039.600000000002
+    ],
+    "tasks": [
+      {
+        "start": 19148.80000001192,
+        "duration": 155
+      },
+      {
+        "start": 19303.80000001192,
+        "duration": 81
+      },
+      {
+        "start": 19385.80000001192,
+        "duration": 12959
+      }
+    ],
+    "build": 137,
+    "draw": 12954.599999964237,
+    "toDrawEnd": 13185.199999988079,
+    "maxGap": 13039.600000000002,
+    "memory": {
+      "geometries": 356,
+      "textures": 109
+    },
+    "programs": 118,
+    "colliders": 38,
+    "errors": 0,
+    "webglError": 0
+  },
+  {
+    "level": "level4",
+    "variant": "reflection",
+    "gpu": "ANGLE (Intel, Intel(R) UHD Graphics 630 (0x00009BC5) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "passes": {
+      "refraction": 0
+    },
+    "glCalls": {
+      "texSubImage2D": 0.8999999761581421,
+      "texImage2D": 0,
+      "compileShader": 0,
+      "linkProgram": 0.19999998807907104,
+      "getProgramParameter": 5.999999701976776,
+      "getUniformLocation": 1.2999999523162842
+    },
+    "gaps": [
+      173.29999999999927,
+      5893.0999999999985
+    ],
+    "tasks": [
+      {
+        "start": 18266.100000023842,
+        "duration": 146
+      },
+      {
+        "start": 18412.80000001192,
+        "duration": 88
+      },
+      {
+        "start": 18501.80000001192,
+        "duration": 5816
+      }
+    ],
+    "build": 130.9000000357628,
+    "draw": 5812.800000011921,
+    "toDrawEnd": 6042.399999976158,
+    "maxGap": 5893.0999999999985,
+    "memory": {
+      "geometries": 346,
+      "textures": 107
+    },
+    "programs": 88,
+    "colliders": 38,
+    "errors": 0,
+    "webglError": 0
+  },
+  {
+    "level": "level4",
+    "variant": "refraction",
+    "gpu": "ANGLE (Intel, Intel(R) UHD Graphics 630 (0x00009BC5) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "passes": {
+      "reflection": 5.299999952316284
+    },
+    "glCalls": {
+      "texSubImage2D": 1.0999999642372131,
+      "texImage2D": 0,
+      "compileShader": 0.20000004768371582,
+      "linkProgram": 0.19999998807907104,
+      "getProgramParameter": 12.59999966621399,
+      "getUniformLocation": 3.1999998688697815
+    },
+    "gaps": [
+      160.09999999999854,
+      12266.2
+    ],
+    "tasks": [
+      {
+        "start": 19311.30000001192,
+        "duration": 157
+      },
+      {
+        "start": 19469,
+        "duration": 105
+      },
+      {
+        "start": 19574.5,
+        "duration": 12153
+      }
+    ],
+    "build": 137,
+    "draw": 12149.300000011921,
+    "toDrawEnd": 12404.300000011921,
+    "maxGap": 12266.2,
+    "memory": {
+      "geometries": 356,
+      "textures": 109
+    },
+    "programs": 118,
+    "colliders": 38,
+    "errors": 0,
+    "webglError": 0
+  },
+  {
+    "level": "level4",
+    "variant": "post",
+    "gpu": "ANGLE (Intel, Intel(R) UHD Graphics 630 (0x00009BC5) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "passes": {
+      "reflection": 6.099999964237213,
+      "refraction": 0
+    },
+    "glCalls": {
+      "texSubImage2D": 1.0000001788139343,
+      "texImage2D": 0,
+      "compileShader": 0.09999996423721313,
+      "linkProgram": 0,
+      "getProgramParameter": 17.500000298023224,
+      "getUniformLocation": 4.100000083446503
+    },
+    "gaps": [
+      146.6999999999971,
+      18919.4
+    ],
+    "tasks": [
+      {
+        "start": 18729.5,
+        "duration": 150
+      },
+      {
+        "start": 18879.69999998808,
+        "duration": 78
+      },
+      {
+        "start": 18959,
+        "duration": 18836
+      }
+    ],
+    "build": 129,
+    "draw": 18833.100000023842,
+    "toDrawEnd": 19053.399999976158,
+    "maxGap": 18919.4,
+    "memory": {
+      "geometries": 356,
+      "textures": 108
+    },
+    "programs": 148,
+    "colliders": 38,
+    "errors": 0,
+    "webglError": 0
+  },
+  {
+    "level": "level4",
+    "variant": "lampShadow",
+    "gpu": "ANGLE (Intel, Intel(R) UHD Graphics 630 (0x00009BC5) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "passes": {
+      "reflection": 6.5,
+      "refraction": 0
+    },
+    "glCalls": {
+      "texSubImage2D": 0.9999998211860657,
+      "texImage2D": 0,
+      "compileShader": 0.20000004768371582,
+      "linkProgram": 0.10000002384185791,
+      "getProgramParameter": 6.8999998569488525,
+      "getUniformLocation": 1.3000001311302185
+    },
+    "gaps": [
+      199.90000000000146,
+      3613.2000000000007
+    ],
+    "tasks": [
+      {
+        "start": 19299.5,
+        "duration": 203
+      },
+      {
+        "start": 19503.30000001192,
+        "duration": 111
+      },
+      {
+        "start": 19615.200000047684,
+        "duration": 3504
+      }
+    ],
+    "build": 178.4000000357628,
+    "draw": 3499.899999976158,
+    "toDrawEnd": 3805.099999964237,
+    "maxGap": 3613.2000000000007,
+    "memory": {
+      "geometries": 356,
+      "textures": 108
+    },
+    "programs": 88,
+    "colliders": 38,
+    "errors": 0,
+    "webglError": 0
+  },
+  {
+    "level": "level4",
+    "variant": "shadows",
+    "gpu": "ANGLE (Intel, Intel(R) UHD Graphics 630 (0x00009BC5) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "passes": {
+      "reflection": 7.099999964237213,
+      "refraction": 0
+    },
+    "glCalls": {
+      "texSubImage2D": 0.8999999165534973,
+      "texImage2D": 0,
+      "compileShader": 0.20000004768371582,
+      "linkProgram": 0.19999998807907104,
+      "getProgramParameter": 12.200000047683716,
+      "getUniformLocation": 2.299999952316284
+    },
+    "gaps": [
+      146.70000000000073,
+      12026.2
+    ],
+    "tasks": [
+      {
+        "start": 17794.399999976158,
+        "duration": 138
+      },
+      {
+        "start": 17932.69999998808,
+        "duration": 84
+      },
+      {
+        "start": 18017.899999976158,
+        "duration": 11950
+      }
+    ],
+    "build": 118.19999998807907,
+    "draw": 11946.899999976158,
+    "toDrawEnd": 12160.300000011921,
+    "maxGap": 12026.2,
+    "memory": {
+      "geometries": 338,
+      "textures": 108
+    },
+    "programs": 114,
+    "colliders": 38,
+    "errors": 0,
+    "webglError": 0
+  }
+]

@@ -1,0 +1,43 @@
+{
+  "steps": [
+    {
+      "id": "turtle",
+      "ms": 592
+    },
+    {
+      "id": "l1_bubi",
+      "ms": 1102
+    },
+    {
+      "id": "l1_ink_0",
+      "ms": 2471
+    },
+    {
+      "id": "l1_ink_1",
+      "ms": 6270
+    },
+    {
+      "id": "l1_ink_2",
+      "ms": 8268
+    },
+    {
+      "id": "reflect",
+      "ms": 9533
+    },
+    {
+      "id": "altar",
+      "ms": 22783
+    }
+  ],
+  "elapsed": {
+    "active": 23571.19999998808,
+    "dialogue": 75.30000001192093,
+    "cinematic": 654.8999999761581
+  },
+  "gem": true,
+  "items": 1,
+  "quiz": 0,
+  "sideQuest": false,
+  "challenges": [],
+  "mapWaitMs": 2477.7000000476837
+}

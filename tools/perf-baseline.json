@@ -1,0 +1,6032 @@
+[
+  {
+    "run": 1,
+    "mode": "cold",
+    "readyMs": 25327.99999997951,
+    "device": {
+      "ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/158.0.0.0 Safari/537.36",
+      "renderer": "ANGLE (Intel, Intel(R) UHD Graphics 630 (0x00009BC5) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "cores": 16
+    },
+    "visits": [
+      {
+        "id": "level1",
+        "start": 27699,
+        "buildStart": 27720,
+        "build": 27875.399999976158,
+        "frame": 30650.5,
+        "maxGap": 2879.7000000000007,
+        "tasks": [
+          {
+            "start": 27713.899999976158,
+            "duration": 166
+          },
+          {
+            "start": 27945.099999964237,
+            "duration": 2709
+          }
+        ],
+        "control": {
+          "before": [
+            0,
+            4,
+            10
+          ],
+          "after": [
+            0,
+            4,
+            8.130192235770906
+          ],
+          "modal": false,
+          "cutscene": false
+        }
+      },
+      {
+        "id": "level2",
+        "start": 31106.80000001192,
+        "buildStart": 31123.19999998808,
+        "build": 31351.69999998808,
+        "frame": 33039.30000001192,
+        "maxGap": 1919.8999999999978,
+        "tasks": [
+          {
+            "start": 31116.5,
+            "duration": 243
+          },
+          {
+            "start": 31419.899999976158,
+            "duration": 1622
+          }
+        ],
+        "control": {
+          "before": [
+            0,
+            4.185176185796824,
+            44
+          ],
+          "after": [
+            0,
+            4.102079908093397,
+            42.44598345655569
+          ],
+          "modal": false,
+          "cutscene": false
+        }
+      },
+      {
+        "id": "level3",
+        "start": 33475.39999997616,
+        "buildStart": 33513.5,
+        "build": 33679.80000001192,
+        "frame": 35269.69999998808,
+        "maxGap": 1760,
+        "tasks": [
+          {
+            "start": 33507.19999998808,
+            "duration": 181
+          },
+          {
+            "start": 33746.19999998808,
+            "duration": 1527
+          }
+        ],
+        "control": {
+          "before": [
+            0,
+            2.1364655035081346,
+            44
+          ],
+          "after": [
+            0,
+            2.6007798653030405,
+            42.0062118657725
+          ],
+          "modal": false,
+          "cutscene": false
+        }
+      },
+      {
+        "id": "level4",
+        "start": 35819.39999997616,
+        "buildStart": 35842,
+        "build": 35986.09999996424,
+        "frame": 48202.09999996424,
+        "maxGap": 12359.5,
+        "tasks": [
+          {
+            "start": 35837.5,
+            "duration": 152
+          },
+          {
+            "start": 36051.39999997616,
+            "duration": 12152
+          }
+        ],
+        "control": {
+          "before": [
+            0,
+            3.7097,
+            36
+          ],
+          "after": [
+            0,
+            3.7017685770068844,
+            34.397692324623165
+          ],
+          "modal": false,
+          "cutscene": false
+        }
+      },
+      {
+        "id": "level5",
+        "start": 48642.5,
+        "buildStart": 48675.69999998808,
+        "build": 48910.09999996424,
+        "frame": 51964.30000001192,
+        "maxGap": 3293.300000000003,
+        "tasks": [
+          {
+            "start": 48668.19999998808,
+            "duration": 250
+          },
+          {
+            "start": 48996,
+            "duration": 2970
+          }
+        ],
+        "control": {
+          "before": [
+            0,
+            4.612356206133672,
+            38
+          ],
+          "after": [
+            0,
+            4.582042294314297,
+            36.55219825652275
+          ],
+          "modal": false,
+          "cutscene": false
+        }
+      },
+      {
+        "id": "level6",
+        "start": 52484.80000001192,
+        "buildStart": 52545.89999997616,
+        "build": 52889.5,
+        "frame": 54481,
+        "maxGap": 1906.5999999999985,
+        "tasks": [
+          {
+            "start": 52526.59999996424,
+            "duration": 369
+          },
+          {
+            "start": 52947.5,
+            "duration": 1535
+          }
+        ],
+        "control": {
+          "before": [
+            0,
+            9.87,
+            42
+          ],
+          "after": [
+            0,
+            10.316257189300815,
+            40.26344028908814
+          ],
+          "modal": false,
+          "cutscene": false
+        }
+      },
+      {
+        "id": "level1",
+        "start": 54886.30000001192,
+        "buildStart": 54906.39999997616,
+        "build": 54965,
+        "frame": 55237.30000001192,
+        "maxGap": 333.20000000000437,
+        "tasks": [
+          {
+            "start": 54901.5,
+            "duration": 65
+          },
+          {
+            "start": 55009,
+            "duration": 229
+          }
+        ],
+        "control": {
+          "before": [
+            0,
+            4,
+            10
+          ],
+          "after": [
+            0,
+            4,
+            8.382187358919905
+          ],
+          "modal": false,
+          "cutscene": false
+        }
+      }
+    ],
+    "oceanResources": [
+      {
+        "name": "http://127.0.0.1:62843/style.css",
+        "transfer": 27988,
+        "encoded": 27688
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/outfit-vayhong.jpg",
+        "transfer": 17292,
+        "encoded": 16992
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/hero.jpg",
+        "transfer": 86780,
+        "encoded": 86480
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/outfit-haibim.jpg",
+        "transfer": 16990,
+        "encoded": 16690
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/outfit-muvang.jpg",
+        "transfer": 20040,
+        "encoded": 19740
+      },
+      {
+        "name": "http://127.0.0.1:62843/three.min.js",
+        "transfer": 648477,
+        "encoded": 648177
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/data.js",
+        "transfer": 53371,
+        "encoded": 53071
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/audio.js",
+        "transfer": 40231,
+        "encoded": 39931
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/core.js",
+        "transfer": 44872,
+        "encoded": 44572
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/pbr.js",
+        "transfer": 100110,
+        "encoded": 99810
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/vfx.js",
+        "transfer": 38244,
+        "encoded": 37944
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/player.js",
+        "transfer": 65200,
+        "encoded": 64900
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/systems.js",
+        "transfer": 108927,
+        "encoded": 108627
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/story.js",
+        "transfer": 81206,
+        "encoded": 80906
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/cutscene.js",
+        "transfer": 16506,
+        "encoded": 16206
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/levels/hub.js",
+        "transfer": 28902,
+        "encoded": 28602
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/levels/level1_ocean.js",
+        "transfer": 43256,
+        "encoded": 42956
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/levels/level2_forest.js",
+        "transfer": 33620,
+        "encoded": 33320
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/levels/level3_desert.js",
+        "transfer": 26785,
+        "encoded": 26485
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/levels/level4_crystal.js",
+        "transfer": 32180,
+        "encoded": 31880
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/levels/level6_clouds.js",
+        "transfer": 37029,
+        "encoded": 36729
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/levels/level5_snow.js",
+        "transfer": 35945,
+        "encoded": 35645
+      },
+      {
+        "name": "http://127.0.0.1:62843/game.js",
+        "transfer": 17436,
+        "encoded": 17136
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/hero.jpg",
+        "transfer": 0,
+        "encoded": 86480
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/tex-sand.jpg",
+        "transfer": 208607,
+        "encoded": 208307
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/tex-wood.jpg",
+        "transfer": 269826,
+        "encoded": 269526
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/tex-rock.jpg",
+        "transfer": 371323,
+        "encoded": 371023
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/tex-caustics.jpg",
+        "transfer": 52637,
+        "encoded": 52337
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/tex-pano.jpg",
+        "transfer": 326663,
+        "encoded": 326363
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/tex-fan.jpg",
+        "transfer": 250060,
+        "encoded": 249760
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/tex-fanalpha.jpg",
+        "transfer": 136511,
+        "encoded": 136211
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/fish.glb",
+        "transfer": 53952,
+        "encoded": 53652
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/coral.glb",
+        "transfer": 42104,
+        "encoded": 41804
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/turtle.glb",
+        "transfer": 200088,
+        "encoded": 199788
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/jelly.glb",
+        "transfer": 33244,
+        "encoded": 32944
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/chest.glb",
+        "transfer": 123612,
+        "encoded": 123312
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/tang-blue.glb",
+        "transfer": 76496,
+        "encoded": 76196
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/tang-yellow.glb",
+        "transfer": 76368,
+        "encoded": 76068
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/manta.glb",
+        "transfer": 53420,
+        "encoded": 53120
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/barrel.glb",
+        "transfer": 98908,
+        "encoded": 98608
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/amphora.glb",
+        "transfer": 38016,
+        "encoded": 37716
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/clam.glb",
+        "transfer": 36892,
+        "encoded": 36592
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/sanddollar.glb",
+        "transfer": 25160,
+        "encoded": 24860
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/starfish.glb",
+        "transfer": 3112,
+        "encoded": 2812
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/seaweed.glb",
+        "transfer": 72784,
+        "encoded": 72484
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/kelp.glb",
+        "transfer": 9320,
+        "encoded": 9020
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/hero_lighthouse.glb",
+        "transfer": 233120,
+        "encoded": 232820
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/hero_castle.glb",
+        "transfer": 167464,
+        "encoded": 167164
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_cabin.glb",
+        "transfer": 622500,
+        "encoded": 622200
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_windmill.glb",
+        "transfer": 632964,
+        "encoded": 632664
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_shipwreck.glb",
+        "transfer": 343480,
+        "encoded": 343180
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_boat.glb",
+        "transfer": 74900,
+        "encoded": 74600
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/may_rigged.glb",
+        "transfer": 717036,
+        "encoded": 716736
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/companion_milo.glb",
+        "transfer": 215180,
+        "encoded": 214880
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/npc_tortoise_elder.glb",
+        "transfer": 102892,
+        "encoded": 102592
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/boss_mushroom_king.glb",
+        "transfer": 132328,
+        "encoded": 132028
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/boss_crystal_golem.glb",
+        "transfer": 78036,
+        "encoded": 77736
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/boss_storm_king.glb",
+        "transfer": 116608,
+        "encoded": 116308
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_fox.glb",
+        "transfer": 336096,
+        "encoded": 335796
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_deer.glb",
+        "transfer": 419956,
+        "encoded": 419656
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_reindeer.glb",
+        "transfer": 411180,
+        "encoded": 410880
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_unicorn.glb",
+        "transfer": 388836,
+        "encoded": 388536
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_alpaca.glb",
+        "transfer": 373472,
+        "encoded": 373172
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_crab.glb",
+        "transfer": 143304,
+        "encoded": 143004
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_dolphin.glb",
+        "transfer": 69348,
+        "encoded": 69048
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_whale.glb",
+        "transfer": 77764,
+        "encoded": 77464
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_clownfish.glb",
+        "transfer": 156540,
+        "encoded": 156240
+      },
+      {
+        "name": "http://127.0.0.1:62843/favicon.ico",
+        "transfer": 22776,
+        "encoded": 22476
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/audio/amb_hub.wav",
+        "transfer": 640344,
+        "encoded": 640044
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/voice/hub.mp3",
+        "transfer": 69804,
+        "encoded": 69504
+      },
+      {
+        "name": "http://127.0.0.1:62843/icons/icon-192.png",
+        "transfer": 83132,
+        "encoded": 82832
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/audio/amb_level1.wav",
+        "transfer": 640344,
+        "encoded": 640044
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/voice/level1.mp3",
+        "transfer": 60780,
+        "encoded": 60480
+      }
+    ]
+  },
+  {
+    "run": 1,
+    "mode": "reload",
+    "readyMs": 4609.99999998603,
+    "device": {
+      "ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/158.0.0.0 Safari/537.36",
+      "renderer": "ANGLE (Intel, Intel(R) UHD Graphics 630 (0x00009BC5) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "cores": 16
+    },
+    "visits": [
+      {
+        "id": "level1",
+        "start": 4983.699999988079,
+        "buildStart": 5002.100000023842,
+        "build": 5172,
+        "frame": 5555.5,
+        "maxGap": 546.6000000000004,
+        "tasks": [
+          {
+            "start": 4997.800000011921,
+            "duration": 175
+          },
+          {
+            "start": 5216.899999976158,
+            "duration": 340
+          }
+        ],
+        "control": {
+          "before": [
+            0,
+            4,
+            10
+          ],
+          "after": [
+            0,
+            4,
+            8.29640719710149
+          ],
+          "modal": false,
+          "cutscene": false
+        }
+      },
+      {
+        "id": "level2",
+        "start": 5977.800000011921,
+        "buildStart": 5997.300000011921,
+        "build": 6157.600000023842,
+        "frame": 6676.899999976158,
+        "maxGap": 680,
+        "tasks": [
+          {
+            "start": 5993.899999976158,
+            "duration": 165
+          },
+          {
+            "start": 6205.800000011921,
+            "duration": 472
+          }
+        ],
+        "control": {
+          "before": [
+            0,
+            4.185176185796824,
+            44
+          ],
+          "after": [
+            0,
+            4.101647071766791,
+            42.43879571656939
+          ],
+          "modal": false,
+          "cutscene": false
+        }
+      },
+      {
+        "id": "level3",
+        "start": 7120,
+        "buildStart": 7141,
+        "build": 7301.600000023842,
+        "frame": 7771.5,
+        "maxGap": 640,
+        "tasks": [
+          {
+            "start": 7135.399999976158,
+            "duration": 167
+          },
+          {
+            "start": 7359.600000023842,
+            "duration": 413
+          }
+        ],
+        "control": {
+          "before": [
+            0,
+            2.1364655035081346,
+            44
+          ],
+          "after": [
+            0,
+            2.5645405784036495,
+            42.15928466672661
+          ],
+          "modal": false,
+          "cutscene": false
+        }
+      },
+      {
+        "id": "level4",
+        "start": 8223.699999988079,
+        "buildStart": 8245.399999976158,
+        "build": 8388.199999988079,
+        "frame": 9125.199999988079,
+        "maxGap": 880.0999999999985,
+        "tasks": [
+          {
+            "start": 8239.800000011921,
+            "duration": 149
+          },
+          {
+            "start": 8441.899999976158,
+            "duration": 685
+          }
+        ],
+        "control": {
+          "before": [
+            0,
+            3.7097,
+            36
+          ],
+          "after": [
+            0,
+            3.702095845854408,
+            34.46380724331474
+          ],
+          "modal": false,
+          "cutscene": false
+        }
+      },
+      {
+        "id": "level5",
+        "start": 9583.600000023842,
+        "buildStart": 9619.5,
+        "build": 9863.600000023842,
+        "frame": 10692,
+        "maxGap": 1079.8999999999996,
+        "tasks": [
+          {
+            "start": 9611.300000011921,
+            "duration": 254
+          },
+          {
+            "start": 9939.300000011921,
+            "duration": 754
+          }
+        ],
+        "control": {
+          "before": [
+            0,
+            4.612356206133672,
+            38
+          ],
+          "after": [
+            0,
+            4.580125252149783,
+            36.41531934383206
+          ],
+          "modal": false,
+          "cutscene": false
+        }
+      },
+      {
+        "id": "level6",
+        "start": 11199.600000023842,
+        "buildStart": 11259.800000011921,
+        "build": 11575.199999988079,
+        "frame": 12206.800000011921,
+        "maxGap": 960,
+        "tasks": [
+          {
+            "start": 11241.300000011921,
+            "duration": 336
+          },
+          {
+            "start": 11636.899999976158,
+            "duration": 572
+          }
+        ],
+        "control": {
+          "before": [
+            0,
+            9.87,
+            42
+          ],
+          "after": [
+            0,
+            10.35472573975302,
+            40.12259152455309
+          ],
+          "modal": false,
+          "cutscene": false
+        }
+      },
+      {
+        "id": "level1",
+        "start": 12773.899999976158,
+        "buildStart": 12814.800000011921,
+        "build": 12905,
+        "frame": 13322.199999988079,
+        "maxGap": 520,
+        "tasks": [
+          {
+            "start": 12802.800000011921,
+            "duration": 105
+          },
+          {
+            "start": 12972.100000023842,
+            "duration": 352
+          }
+        ],
+        "control": {
+          "before": [
+            0,
+            4,
+            10
+          ],
+          "after": [
+            0,
+            4,
+            8.183700788078275
+          ],
+          "modal": false,
+          "cutscene": false
+        }
+      }
+    ],
+    "oceanResources": [
+      {
+        "name": "http://127.0.0.1:62843/style.css",
+        "transfer": 0,
+        "encoded": 27688
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/outfit-vayhong.jpg",
+        "transfer": 0,
+        "encoded": 16992
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/hero.jpg",
+        "transfer": 0,
+        "encoded": 86480
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/outfit-haibim.jpg",
+        "transfer": 0,
+        "encoded": 16690
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/outfit-muvang.jpg",
+        "transfer": 0,
+        "encoded": 19740
+      },
+      {
+        "name": "http://127.0.0.1:62843/three.min.js",
+        "transfer": 0,
+        "encoded": 648177
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/data.js",
+        "transfer": 0,
+        "encoded": 53071
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/audio.js",
+        "transfer": 0,
+        "encoded": 39931
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/core.js",
+        "transfer": 0,
+        "encoded": 44572
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/pbr.js",
+        "transfer": 0,
+        "encoded": 99810
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/vfx.js",
+        "transfer": 0,
+        "encoded": 37944
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/player.js",
+        "transfer": 0,
+        "encoded": 64900
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/systems.js",
+        "transfer": 0,
+        "encoded": 108627
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/story.js",
+        "transfer": 0,
+        "encoded": 80906
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/cutscene.js",
+        "transfer": 0,
+        "encoded": 16206
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/levels/hub.js",
+        "transfer": 0,
+        "encoded": 28602
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/levels/level1_ocean.js",
+        "transfer": 0,
+        "encoded": 42956
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/levels/level2_forest.js",
+        "transfer": 0,
+        "encoded": 33320
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/levels/level3_desert.js",
+        "transfer": 0,
+        "encoded": 26485
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/levels/level4_crystal.js",
+        "transfer": 0,
+        "encoded": 31880
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/levels/level5_snow.js",
+        "transfer": 0,
+        "encoded": 35645
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/levels/level6_clouds.js",
+        "transfer": 0,
+        "encoded": 36729
+      },
+      {
+        "name": "http://127.0.0.1:62843/game.js",
+        "transfer": 0,
+        "encoded": 17136
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/hero.jpg",
+        "transfer": 0,
+        "encoded": 86480
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/tex-sand.jpg",
+        "transfer": 0,
+        "encoded": 208307
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/tex-rock.jpg",
+        "transfer": 0,
+        "encoded": 371023
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/tex-wood.jpg",
+        "transfer": 0,
+        "encoded": 269526
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/tex-caustics.jpg",
+        "transfer": 0,
+        "encoded": 52337
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/tex-pano.jpg",
+        "transfer": 0,
+        "encoded": 326363
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/tex-fan.jpg",
+        "transfer": 0,
+        "encoded": 249760
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/tex-fanalpha.jpg",
+        "transfer": 0,
+        "encoded": 136211
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/fish.glb",
+        "transfer": 0,
+        "encoded": 53652
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/coral.glb",
+        "transfer": 0,
+        "encoded": 41804
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/turtle.glb",
+        "transfer": 0,
+        "encoded": 199788
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/jelly.glb",
+        "transfer": 0,
+        "encoded": 32944
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/chest.glb",
+        "transfer": 0,
+        "encoded": 123312
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/tang-blue.glb",
+        "transfer": 0,
+        "encoded": 76196
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/tang-yellow.glb",
+        "transfer": 0,
+        "encoded": 76068
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/manta.glb",
+        "transfer": 0,
+        "encoded": 53120
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/barrel.glb",
+        "transfer": 0,
+        "encoded": 98608
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/amphora.glb",
+        "transfer": 0,
+        "encoded": 37716
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/clam.glb",
+        "transfer": 0,
+        "encoded": 36592
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/sanddollar.glb",
+        "transfer": 0,
+        "encoded": 24860
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/starfish.glb",
+        "transfer": 0,
+        "encoded": 2812
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/seaweed.glb",
+        "transfer": 0,
+        "encoded": 72484
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/kelp.glb",
+        "transfer": 0,
+        "encoded": 9020
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/hero_lighthouse.glb",
+        "transfer": 0,
+        "encoded": 232820
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/hero_castle.glb",
+        "transfer": 0,
+        "encoded": 167164
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_cabin.glb",
+        "transfer": 0,
+        "encoded": 622200
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_windmill.glb",
+        "transfer": 0,
+        "encoded": 632664
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_shipwreck.glb",
+        "transfer": 0,
+        "encoded": 343180
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_boat.glb",
+        "transfer": 0,
+        "encoded": 74600
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/may_rigged.glb",
+        "transfer": 0,
+        "encoded": 716736
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/companion_milo.glb",
+        "transfer": 0,
+        "encoded": 214880
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/npc_tortoise_elder.glb",
+        "transfer": 0,
+        "encoded": 102592
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/boss_mushroom_king.glb",
+        "transfer": 0,
+        "encoded": 132028
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/boss_crystal_golem.glb",
+        "transfer": 0,
+        "encoded": 77736
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/boss_storm_king.glb",
+        "transfer": 0,
+        "encoded": 116308
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_fox.glb",
+        "transfer": 0,
+        "encoded": 335796
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_deer.glb",
+        "transfer": 0,
+        "encoded": 419656
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_reindeer.glb",
+        "transfer": 0,
+        "encoded": 410880
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_unicorn.glb",
+        "transfer": 0,
+        "encoded": 388536
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_alpaca.glb",
+        "transfer": 0,
+        "encoded": 373172
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_crab.glb",
+        "transfer": 0,
+        "encoded": 143004
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_dolphin.glb",
+        "transfer": 0,
+        "encoded": 69048
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_whale.glb",
+        "transfer": 0,
+        "encoded": 77464
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_clownfish.glb",
+        "transfer": 0,
+        "encoded": 156240
+      },
+      {
+        "name": "http://127.0.0.1:62843/favicon.ico",
+        "transfer": 0,
+        "encoded": 22476
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/audio/amb_hub.wav",
+        "transfer": 0,
+        "encoded": 640044
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/voice/hub.mp3",
+        "transfer": 0,
+        "encoded": 69504
+      },
+      {
+        "name": "http://127.0.0.1:62843/icons/icon-192.png",
+        "transfer": 0,
+        "encoded": 82832
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/audio/amb_level1.wav",
+        "transfer": 0,
+        "encoded": 640044
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/voice/level1.mp3",
+        "transfer": 0,
+        "encoded": 60480
+      }
+    ]
+  },
+  {
+    "run": 2,
+    "mode": "cold",
+    "readyMs": 3782.0000000065193,
+    "device": {
+      "ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/158.0.0.0 Safari/537.36",
+      "renderer": "ANGLE (Intel, Intel(R) UHD Graphics 630 (0x00009BC5) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "cores": 16
+    },
+    "visits": [
+      {
+        "id": "level1",
+        "start": 4442.300000011921,
+        "buildStart": 4458.199999988079,
+        "build": 4705.199999988079,
+        "frame": 5169.600000023842,
+        "maxGap": 653.3000000000002,
+        "tasks": [
+          {
+            "start": 4451.699999988079,
+            "duration": 259
+          },
+          {
+            "start": 4794.399999976158,
+            "duration": 378
+          }
+        ],
+        "control": {
+          "before": [
+            0,
+            4,
+            10
+          ],
+          "after": [
+            0,
+            4,
+            8.323633816340937
+          ],
+          "modal": false,
+          "cutscene": false
+        }
+      },
+      {
+        "id": "level2",
+        "start": 5673.399999976158,
+        "buildStart": 5714.800000011921,
+        "build": 5938.399999976158,
+        "frame": 6764.399999976158,
+        "maxGap": 1039.8999999999996,
+        "tasks": [
+          {
+            "start": 5708.600000023842,
+            "duration": 238
+          },
+          {
+            "start": 6016.5,
+            "duration": 753
+          }
+        ],
+        "control": {
+          "before": [
+            0,
+            4.185176185796824,
+            44
+          ],
+          "after": [
+            0,
+            4.0864615739151,
+            42.19085520068824
+          ],
+          "modal": false,
+          "cutscene": false
+        }
+      },
+      {
+        "id": "level3",
+        "start": 7364,
+        "buildStart": 7436.399999976158,
+        "build": 7729.300000011921,
+        "frame": 8566.5,
+        "maxGap": 1146.7000000000007,
+        "tasks": [
+          {
+            "start": 7423.199999988079,
+            "duration": 318
+          },
+          {
+            "start": 7829,
+            "duration": 741
+          }
+        ],
+        "control": {
+          "before": [
+            0,
+            2.1364655035081346,
+            44
+          ],
+          "after": [
+            0,
+            2.574539074145971,
+            42.11701876941151
+          ],
+          "modal": false,
+          "cutscene": false
+        }
+      },
+      {
+        "id": "level4",
+        "start": 9123.300000011921,
+        "buildStart": 9192.199999988079,
+        "build": 9460.800000011921,
+        "frame": 10457.899999976158,
+        "maxGap": 1226.6000000000004,
+        "tasks": [
+          {
+            "start": 9182.300000011921,
+            "duration": 284
+          },
+          {
+            "start": 9527.699999988079,
+            "duration": 932
+          }
+        ],
+        "control": {
+          "before": [
+            0,
+            3.7097,
+            36
+          ],
+          "after": [
+            0,
+            3.7016386425674725,
+            34.37144294292377
+          ],
+          "modal": false,
+          "cutscene": false
+        }
+      },
+      {
+        "id": "level5",
+        "start": 10973.5,
+        "buildStart": 10991.100000023842,
+        "build": 11220.600000023842,
+        "frame": 12007.899999976158,
+        "maxGap": 1026.6000000000004,
+        "tasks": [
+          {
+            "start": 10983.199999988079,
+            "duration": 243
+          },
+          {
+            "start": 11287.5,
+            "duration": 722
+          }
+        ],
+        "control": {
+          "before": [
+            0,
+            4.612356206133672,
+            38
+          ],
+          "after": [
+            0,
+            4.581676411708532,
+            36.526960891358044
+          ],
+          "modal": false,
+          "cutscene": false
+        }
+      },
+      {
+        "id": "level6",
+        "start": 12444.800000011921,
+        "buildStart": 12484.800000011921,
+        "build": 12722.300000011921,
+        "frame": 13062.600000023842,
+        "maxGap": 573.3999999999996,
+        "tasks": [
+          {
+            "start": 12473.199999988079,
+            "duration": 255
+          },
+          {
+            "start": 12780.399999976158,
+            "duration": 284
+          }
+        ],
+        "control": {
+          "before": [
+            0,
+            9.87,
+            42
+          ],
+          "after": [
+            0,
+            10.319097159504022,
+            40.253046463267594
+          ],
+          "modal": false,
+          "cutscene": false
+        }
+      },
+      {
+        "id": "level1",
+        "start": 13453.300000011921,
+        "buildStart": 13471,
+        "build": 13517.199999988079,
+        "frame": 13804.100000023842,
+        "maxGap": 333.39999999999964,
+        "tasks": [
+          {
+            "start": 13465.5,
+            "duration": 53
+          },
+          {
+            "start": 13554.399999976158,
+            "duration": 251
+          }
+        ],
+        "control": {
+          "before": [
+            0,
+            4,
+            10
+          ],
+          "after": [
+            0,
+            4,
+            8.227033834096966
+          ],
+          "modal": false,
+          "cutscene": false
+        }
+      }
+    ],
+    "oceanResources": [
+      {
+        "name": "http://127.0.0.1:62843/style.css",
+        "transfer": 27988,
+        "encoded": 27688
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/outfit-vayhong.jpg",
+        "transfer": 17292,
+        "encoded": 16992
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/hero.jpg",
+        "transfer": 86780,
+        "encoded": 86480
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/outfit-haibim.jpg",
+        "transfer": 16990,
+        "encoded": 16690
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/outfit-muvang.jpg",
+        "transfer": 20040,
+        "encoded": 19740
+      },
+      {
+        "name": "http://127.0.0.1:62843/three.min.js",
+        "transfer": 648477,
+        "encoded": 648177
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/data.js",
+        "transfer": 53371,
+        "encoded": 53071
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/audio.js",
+        "transfer": 40231,
+        "encoded": 39931
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/core.js",
+        "transfer": 44872,
+        "encoded": 44572
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/pbr.js",
+        "transfer": 100110,
+        "encoded": 99810
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/vfx.js",
+        "transfer": 38244,
+        "encoded": 37944
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/systems.js",
+        "transfer": 108927,
+        "encoded": 108627
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/player.js",
+        "transfer": 65200,
+        "encoded": 64900
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/cutscene.js",
+        "transfer": 16506,
+        "encoded": 16206
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/story.js",
+        "transfer": 81206,
+        "encoded": 80906
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/levels/hub.js",
+        "transfer": 28902,
+        "encoded": 28602
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/levels/level1_ocean.js",
+        "transfer": 43256,
+        "encoded": 42956
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/levels/level2_forest.js",
+        "transfer": 33620,
+        "encoded": 33320
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/levels/level3_desert.js",
+        "transfer": 26785,
+        "encoded": 26485
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/levels/level4_crystal.js",
+        "transfer": 32180,
+        "encoded": 31880
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/levels/level5_snow.js",
+        "transfer": 35945,
+        "encoded": 35645
+      },
+      {
+        "name": "http://127.0.0.1:62843/game.js",
+        "transfer": 17436,
+        "encoded": 17136
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/levels/level6_clouds.js",
+        "transfer": 37029,
+        "encoded": 36729
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/hero.jpg",
+        "transfer": 0,
+        "encoded": 86480
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/tex-sand.jpg",
+        "transfer": 208607,
+        "encoded": 208307
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/tex-rock.jpg",
+        "transfer": 371323,
+        "encoded": 371023
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/tex-wood.jpg",
+        "transfer": 269826,
+        "encoded": 269526
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/tex-caustics.jpg",
+        "transfer": 52637,
+        "encoded": 52337
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/tex-pano.jpg",
+        "transfer": 326663,
+        "encoded": 326363
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/tex-fan.jpg",
+        "transfer": 250060,
+        "encoded": 249760
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/tex-fanalpha.jpg",
+        "transfer": 136511,
+        "encoded": 136211
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/fish.glb",
+        "transfer": 53952,
+        "encoded": 53652
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/coral.glb",
+        "transfer": 42104,
+        "encoded": 41804
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/turtle.glb",
+        "transfer": 200088,
+        "encoded": 199788
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/jelly.glb",
+        "transfer": 33244,
+        "encoded": 32944
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/chest.glb",
+        "transfer": 123612,
+        "encoded": 123312
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/tang-blue.glb",
+        "transfer": 76496,
+        "encoded": 76196
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/tang-yellow.glb",
+        "transfer": 76368,
+        "encoded": 76068
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/manta.glb",
+        "transfer": 53420,
+        "encoded": 53120
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/barrel.glb",
+        "transfer": 98908,
+        "encoded": 98608
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/amphora.glb",
+        "transfer": 38016,
+        "encoded": 37716
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/clam.glb",
+        "transfer": 36892,
+        "encoded": 36592
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/sanddollar.glb",
+        "transfer": 25160,
+        "encoded": 24860
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/starfish.glb",
+        "transfer": 3112,
+        "encoded": 2812
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/seaweed.glb",
+        "transfer": 72784,
+        "encoded": 72484
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/kelp.glb",
+        "transfer": 9320,
+        "encoded": 9020
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/hero_lighthouse.glb",
+        "transfer": 233120,
+        "encoded": 232820
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/hero_castle.glb",
+        "transfer": 167464,
+        "encoded": 167164
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_cabin.glb",
+        "transfer": 622500,
+        "encoded": 622200
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_windmill.glb",
+        "transfer": 632964,
+        "encoded": 632664
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_shipwreck.glb",
+        "transfer": 343480,
+        "encoded": 343180
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_boat.glb",
+        "transfer": 74900,
+        "encoded": 74600
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/may_rigged.glb",
+        "transfer": 717036,
+        "encoded": 716736
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/companion_milo.glb",
+        "transfer": 215180,
+        "encoded": 214880
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/npc_tortoise_elder.glb",
+        "transfer": 102892,
+        "encoded": 102592
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/boss_mushroom_king.glb",
+        "transfer": 132328,
+        "encoded": 132028
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/boss_crystal_golem.glb",
+        "transfer": 78036,
+        "encoded": 77736
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/boss_storm_king.glb",
+        "transfer": 116608,
+        "encoded": 116308
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_fox.glb",
+        "transfer": 336096,
+        "encoded": 335796
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_deer.glb",
+        "transfer": 419956,
+        "encoded": 419656
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_reindeer.glb",
+        "transfer": 411180,
+        "encoded": 410880
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_unicorn.glb",
+        "transfer": 388836,
+        "encoded": 388536
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_alpaca.glb",
+        "transfer": 373472,
+        "encoded": 373172
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_crab.glb",
+        "transfer": 143304,
+        "encoded": 143004
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_dolphin.glb",
+        "transfer": 69348,
+        "encoded": 69048
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_whale.glb",
+        "transfer": 77764,
+        "encoded": 77464
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_clownfish.glb",
+        "transfer": 156540,
+        "encoded": 156240
+      },
+      {
+        "name": "http://127.0.0.1:62843/favicon.ico",
+        "transfer": 22776,
+        "encoded": 22476
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/audio/amb_hub.wav",
+        "transfer": 640344,
+        "encoded": 640044
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/voice/hub.mp3",
+        "transfer": 69804,
+        "encoded": 69504
+      },
+      {
+        "name": "http://127.0.0.1:62843/icons/icon-192.png",
+        "transfer": 83132,
+        "encoded": 82832
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/audio/amb_level1.wav",
+        "transfer": 640344,
+        "encoded": 640044
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/voice/level1.mp3",
+        "transfer": 60780,
+        "encoded": 60480
+      }
+    ]
+  },
+  {
+    "run": 2,
+    "mode": "reload",
+    "readyMs": 3422.000000020489,
+    "device": {
+      "ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/158.0.0.0 Safari/537.36",
+      "renderer": "ANGLE (Intel, Intel(R) UHD Graphics 630 (0x00009BC5) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "cores": 16
+    },
+    "visits": [
+      {
+        "id": "level1",
+        "start": 3602.600000023842,
+        "buildStart": 3613.600000023842,
+        "build": 3813.800000011921,
+        "frame": 4127.699999988079,
+        "maxGap": 520,
+        "tasks": [
+          {
+            "start": 3609.600000023842,
+            "duration": 205
+          },
+          {
+            "start": 3843.600000023842,
+            "duration": 285
+          }
+        ],
+        "control": {
+          "before": [
+            0,
+            4,
+            10
+          ],
+          "after": [
+            0,
+            4,
+            8.228776446839886
+          ],
+          "modal": false,
+          "cutscene": false
+        }
+      },
+      {
+        "id": "level2",
+        "start": 4559.400000035763,
+        "buildStart": 4568.900000035763,
+        "build": 4706,
+        "frame": 5265,
+        "maxGap": 693.4000000000005,
+        "tasks": [
+          {
+            "start": 4565.100000023842,
+            "duration": 142
+          },
+          {
+            "start": 4751.900000035763,
+            "duration": 514
+          }
+        ],
+        "control": {
+          "before": [
+            0,
+            4.185176185796824,
+            44
+          ],
+          "after": [
+            0,
+            4.109549760052733,
+            42.57115507245484
+          ],
+          "modal": false,
+          "cutscene": false
+        }
+      },
+      {
+        "id": "level3",
+        "start": 5765.800000011921,
+        "buildStart": 5842.199999988079,
+        "build": 5989.5,
+        "frame": 6592.199999988079,
+        "maxGap": 759.8999999999996,
+        "tasks": [
+          {
+            "start": 5836.5,
+            "duration": 154
+          },
+          {
+            "start": 6045.900000035763,
+            "duration": 548
+          }
+        ],
+        "control": {
+          "before": [
+            0,
+            2.1364655035081346,
+            44
+          ],
+          "after": [
+            0,
+            2.5822738208511065,
+            42.0843395991513
+          ],
+          "modal": false,
+          "cutscene": false
+        }
+      },
+      {
+        "id": "level4",
+        "start": 7122.400000035763,
+        "buildStart": 7154.100000023842,
+        "build": 7322.5,
+        "frame": 8009.300000011921,
+        "maxGap": 866.6000000000004,
+        "tasks": [
+          {
+            "start": 7144.300000011921,
+            "duration": 179
+          },
+          {
+            "start": 7375.400000035763,
+            "duration": 635
+          }
+        ],
+        "control": {
+          "before": [
+            0,
+            3.7097,
+            36
+          ],
+          "after": [
+            0,
+            3.702265969040521,
+            34.498175563741626
+          ],
+          "modal": false,
+          "cutscene": false
+        }
+      },
+      {
+        "id": "level5",
+        "start": 8437.400000035763,
+        "buildStart": 8460.699999988079,
+        "build": 8653.100000023842,
+        "frame": 9473.600000023842,
+        "maxGap": 986.6000000000004,
+        "tasks": [
+          {
+            "start": 8454.400000035763,
+            "duration": 200
+          },
+          {
+            "start": 8712,
+            "duration": 762
+          }
+        ],
+        "control": {
+          "before": [
+            0,
+            4.612356206133672,
+            38
+          ],
+          "after": [
+            0,
+            4.581521719965028,
+            36.51617261463075
+          ],
+          "modal": false,
+          "cutscene": false
+        }
+      },
+      {
+        "id": "level6",
+        "start": 9941.800000011921,
+        "buildStart": 10010,
+        "build": 10372.5,
+        "frame": 10981.900000035763,
+        "maxGap": 999.8999999999996,
+        "tasks": [
+          {
+            "start": 9987.900000035763,
+            "duration": 387
+          },
+          {
+            "start": 10473.300000011921,
+            "duration": 510
+          }
+        ],
+        "control": {
+          "before": [
+            0,
+            9.87,
+            42
+          ],
+          "after": [
+            0,
+            10.328785620834763,
+            40.217583049903546
+          ],
+          "modal": false,
+          "cutscene": false
+        }
+      },
+      {
+        "id": "level1",
+        "start": 11445.199999988079,
+        "buildStart": 11473.800000011921,
+        "build": 11544.900000035763,
+        "frame": 11837.900000035763,
+        "maxGap": 373.2999999999993,
+        "tasks": [
+          {
+            "start": 11463,
+            "duration": 84
+          },
+          {
+            "start": 11588.199999988079,
+            "duration": 251
+          }
+        ],
+        "control": {
+          "before": [
+            0,
+            4,
+            10
+          ],
+          "after": [
+            0,
+            4,
+            8.291023873354517
+          ],
+          "modal": false,
+          "cutscene": false
+        }
+      }
+    ],
+    "oceanResources": [
+      {
+        "name": "http://127.0.0.1:62843/style.css",
+        "transfer": 0,
+        "encoded": 27688
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/outfit-vayhong.jpg",
+        "transfer": 0,
+        "encoded": 16992
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/hero.jpg",
+        "transfer": 0,
+        "encoded": 86480
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/outfit-haibim.jpg",
+        "transfer": 0,
+        "encoded": 16690
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/outfit-muvang.jpg",
+        "transfer": 0,
+        "encoded": 19740
+      },
+      {
+        "name": "http://127.0.0.1:62843/three.min.js",
+        "transfer": 0,
+        "encoded": 648177
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/data.js",
+        "transfer": 0,
+        "encoded": 53071
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/audio.js",
+        "transfer": 0,
+        "encoded": 39931
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/core.js",
+        "transfer": 0,
+        "encoded": 44572
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/pbr.js",
+        "transfer": 0,
+        "encoded": 99810
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/vfx.js",
+        "transfer": 0,
+        "encoded": 37944
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/player.js",
+        "transfer": 0,
+        "encoded": 64900
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/systems.js",
+        "transfer": 0,
+        "encoded": 108627
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/story.js",
+        "transfer": 0,
+        "encoded": 80906
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/cutscene.js",
+        "transfer": 0,
+        "encoded": 16206
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/levels/hub.js",
+        "transfer": 0,
+        "encoded": 28602
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/levels/level1_ocean.js",
+        "transfer": 0,
+        "encoded": 42956
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/levels/level2_forest.js",
+        "transfer": 0,
+        "encoded": 33320
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/levels/level3_desert.js",
+        "transfer": 0,
+        "encoded": 26485
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/levels/level4_crystal.js",
+        "transfer": 0,
+        "encoded": 31880
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/levels/level5_snow.js",
+        "transfer": 0,
+        "encoded": 35645
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/levels/level6_clouds.js",
+        "transfer": 0,
+        "encoded": 36729
+      },
+      {
+        "name": "http://127.0.0.1:62843/game.js",
+        "transfer": 0,
+        "encoded": 17136
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/hero.jpg",
+        "transfer": 0,
+        "encoded": 86480
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/tex-sand.jpg",
+        "transfer": 0,
+        "encoded": 208307
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/tex-rock.jpg",
+        "transfer": 0,
+        "encoded": 371023
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/tex-wood.jpg",
+        "transfer": 0,
+        "encoded": 269526
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/tex-caustics.jpg",
+        "transfer": 0,
+        "encoded": 52337
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/tex-pano.jpg",
+        "transfer": 0,
+        "encoded": 326363
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/tex-fan.jpg",
+        "transfer": 0,
+        "encoded": 249760
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/tex-fanalpha.jpg",
+        "transfer": 0,
+        "encoded": 136211
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/fish.glb",
+        "transfer": 0,
+        "encoded": 53652
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/coral.glb",
+        "transfer": 0,
+        "encoded": 41804
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/turtle.glb",
+        "transfer": 0,
+        "encoded": 199788
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/jelly.glb",
+        "transfer": 0,
+        "encoded": 32944
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/chest.glb",
+        "transfer": 0,
+        "encoded": 123312
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/tang-blue.glb",
+        "transfer": 0,
+        "encoded": 76196
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/tang-yellow.glb",
+        "transfer": 0,
+        "encoded": 76068
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/manta.glb",
+        "transfer": 0,
+        "encoded": 53120
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/barrel.glb",
+        "transfer": 0,
+        "encoded": 98608
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/amphora.glb",
+        "transfer": 0,
+        "encoded": 37716
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/clam.glb",
+        "transfer": 0,
+        "encoded": 36592
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/sanddollar.glb",
+        "transfer": 0,
+        "encoded": 24860
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/starfish.glb",
+        "transfer": 0,
+        "encoded": 2812
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/seaweed.glb",
+        "transfer": 0,
+        "encoded": 72484
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/kelp.glb",
+        "transfer": 0,
+        "encoded": 9020
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/hero_lighthouse.glb",
+        "transfer": 0,
+        "encoded": 232820
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/hero_castle.glb",
+        "transfer": 0,
+        "encoded": 167164
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_cabin.glb",
+        "transfer": 0,
+        "encoded": 622200
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_windmill.glb",
+        "transfer": 0,
+        "encoded": 632664
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_shipwreck.glb",
+        "transfer": 0,
+        "encoded": 343180
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_boat.glb",
+        "transfer": 0,
+        "encoded": 74600
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/may_rigged.glb",
+        "transfer": 0,
+        "encoded": 716736
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/companion_milo.glb",
+        "transfer": 0,
+        "encoded": 214880
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/npc_tortoise_elder.glb",
+        "transfer": 0,
+        "encoded": 102592
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/boss_mushroom_king.glb",
+        "transfer": 0,
+        "encoded": 132028
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/boss_crystal_golem.glb",
+        "transfer": 0,
+        "encoded": 77736
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/boss_storm_king.glb",
+        "transfer": 0,
+        "encoded": 116308
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_fox.glb",
+        "transfer": 0,
+        "encoded": 335796
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_deer.glb",
+        "transfer": 0,
+        "encoded": 419656
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_reindeer.glb",
+        "transfer": 0,
+        "encoded": 410880
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_unicorn.glb",
+        "transfer": 0,
+        "encoded": 388536
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_alpaca.glb",
+        "transfer": 0,
+        "encoded": 373172
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_crab.glb",
+        "transfer": 0,
+        "encoded": 143004
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_dolphin.glb",
+        "transfer": 0,
+        "encoded": 69048
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_whale.glb",
+        "transfer": 0,
+        "encoded": 77464
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_clownfish.glb",
+        "transfer": 0,
+        "encoded": 156240
+      },
+      {
+        "name": "http://127.0.0.1:62843/favicon.ico",
+        "transfer": 0,
+        "encoded": 22476
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/audio/amb_hub.wav",
+        "transfer": 0,
+        "encoded": 640044
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/voice/hub.mp3",
+        "transfer": 0,
+        "encoded": 69504
+      },
+      {
+        "name": "http://127.0.0.1:62843/icons/icon-192.png",
+        "transfer": 0,
+        "encoded": 82832
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/audio/amb_level1.wav",
+        "transfer": 0,
+        "encoded": 640044
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/voice/level1.mp3",
+        "transfer": 0,
+        "encoded": 60480
+      }
+    ]
+  },
+  {
+    "run": 3,
+    "mode": "cold",
+    "readyMs": 5563.000000023749,
+    "device": {
+      "ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/158.0.0.0 Safari/537.36",
+      "renderer": "ANGLE (Intel, Intel(R) UHD Graphics 630 (0x00009BC5) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "cores": 16
+    },
+    "visits": [
+      {
+        "id": "level1",
+        "start": 6025.600000023842,
+        "buildStart": 6129.5,
+        "build": 6302.699999988079,
+        "frame": 6726,
+        "maxGap": 599.8999999999996,
+        "tasks": [
+          {
+            "start": 6122,
+            "duration": 186
+          },
+          {
+            "start": 6377.899999976158,
+            "duration": 350
+          }
+        ],
+        "control": {
+          "before": [
+            0,
+            4,
+            10
+          ],
+          "after": [
+            0,
+            4,
+            8.230945573287158
+          ],
+          "modal": false,
+          "cutscene": false
+        }
+      },
+      {
+        "id": "level2",
+        "start": 7153.600000023842,
+        "buildStart": 7171.300000011921,
+        "build": 7348.699999988079,
+        "frame": 7934.5,
+        "maxGap": 773.3000000000002,
+        "tasks": [
+          {
+            "start": 7167.5,
+            "duration": 190
+          },
+          {
+            "start": 7413.800000011921,
+            "duration": 524
+          }
+        ],
+        "control": {
+          "before": [
+            0,
+            4.185176185796824,
+            44
+          ],
+          "after": [
+            0,
+            4.104843780661149,
+            42.49204690725458
+          ],
+          "modal": false,
+          "cutscene": false
+        }
+      },
+      {
+        "id": "level3",
+        "start": 8396.100000023842,
+        "buildStart": 8424.199999988079,
+        "build": 8585,
+        "frame": 9050.5,
+        "maxGap": 626.7999999999993,
+        "tasks": [
+          {
+            "start": 8418.199999988079,
+            "duration": 173
+          },
+          {
+            "start": 8639.100000023842,
+            "duration": 413
+          }
+        ],
+        "control": {
+          "before": [
+            0,
+            2.1364655035081346,
+            44
+          ],
+          "after": [
+            0,
+            2.558588449737804,
+            42.18445785145552
+          ],
+          "modal": false,
+          "cutscene": false
+        }
+      },
+      {
+        "id": "level4",
+        "start": 9475.399999976158,
+        "buildStart": 9497.800000011921,
+        "build": 9652.800000011921,
+        "frame": 10405.699999988079,
+        "maxGap": 906.5999999999985,
+        "tasks": [
+          {
+            "start": 9492.600000023842,
+            "duration": 165
+          },
+          {
+            "start": 9713.800000011921,
+            "duration": 694
+          }
+        ],
+        "control": {
+          "before": [
+            0,
+            3.7097,
+            36
+          ],
+          "after": [
+            0,
+            3.7018299340733902,
+            34.41008769159397
+          ],
+          "modal": false,
+          "cutscene": false
+        }
+      },
+      {
+        "id": "level5",
+        "start": 10955.899999976158,
+        "buildStart": 10976.800000011921,
+        "build": 11246.600000023842,
+        "frame": 12397.699999988079,
+        "maxGap": 1426.699999999999,
+        "tasks": [
+          {
+            "start": 10965.600000023842,
+            "duration": 290
+          },
+          {
+            "start": 11342.100000023842,
+            "duration": 1059
+          }
+        ],
+        "control": {
+          "before": [
+            0,
+            4.612356206133672,
+            38
+          ],
+          "after": [
+            0,
+            4.578873335465831,
+            36.318836301549545
+          ],
+          "modal": false,
+          "cutscene": false
+        }
+      },
+      {
+        "id": "level6",
+        "start": 12920,
+        "buildStart": 12986,
+        "build": 13367.699999988079,
+        "frame": 13809.800000011921,
+        "maxGap": 840,
+        "tasks": [
+          {
+            "start": 12961.899999976158,
+            "duration": 412
+          },
+          {
+            "start": 13434.399999976158,
+            "duration": 378
+          }
+        ],
+        "control": {
+          "before": [
+            0,
+            9.87,
+            42
+          ],
+          "after": [
+            0,
+            10.288865749288975,
+            40.36365379889005
+          ],
+          "modal": false,
+          "cutscene": false
+        }
+      },
+      {
+        "id": "level1",
+        "start": 14241.699999988079,
+        "buildStart": 14265.399999976158,
+        "build": 14326.600000023842,
+        "frame": 14691,
+        "maxGap": 426.60000000000036,
+        "tasks": [
+          {
+            "start": 14260.300000011921,
+            "duration": 69
+          },
+          {
+            "start": 14363.800000011921,
+            "duration": 329
+          }
+        ],
+        "control": {
+          "before": [
+            0,
+            4,
+            10
+          ],
+          "after": [
+            0,
+            4,
+            8.158130782841333
+          ],
+          "modal": false,
+          "cutscene": false
+        }
+      }
+    ],
+    "oceanResources": [
+      {
+        "name": "http://127.0.0.1:62843/style.css",
+        "transfer": 27988,
+        "encoded": 27688
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/outfit-vayhong.jpg",
+        "transfer": 17292,
+        "encoded": 16992
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/hero.jpg",
+        "transfer": 86780,
+        "encoded": 86480
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/outfit-haibim.jpg",
+        "transfer": 16990,
+        "encoded": 16690
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/outfit-muvang.jpg",
+        "transfer": 20040,
+        "encoded": 19740
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/data.js",
+        "transfer": 53371,
+        "encoded": 53071
+      },
+      {
+        "name": "http://127.0.0.1:62843/three.min.js",
+        "transfer": 648477,
+        "encoded": 648177
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/audio.js",
+        "transfer": 40231,
+        "encoded": 39931
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/core.js",
+        "transfer": 44872,
+        "encoded": 44572
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/pbr.js",
+        "transfer": 100110,
+        "encoded": 99810
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/vfx.js",
+        "transfer": 38244,
+        "encoded": 37944
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/player.js",
+        "transfer": 65200,
+        "encoded": 64900
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/systems.js",
+        "transfer": 108927,
+        "encoded": 108627
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/story.js",
+        "transfer": 81206,
+        "encoded": 80906
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/cutscene.js",
+        "transfer": 16506,
+        "encoded": 16206
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/levels/hub.js",
+        "transfer": 28902,
+        "encoded": 28602
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/levels/level1_ocean.js",
+        "transfer": 43256,
+        "encoded": 42956
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/levels/level3_desert.js",
+        "transfer": 26785,
+        "encoded": 26485
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/levels/level2_forest.js",
+        "transfer": 33620,
+        "encoded": 33320
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/levels/level4_crystal.js",
+        "transfer": 32180,
+        "encoded": 31880
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/levels/level5_snow.js",
+        "transfer": 35945,
+        "encoded": 35645
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/levels/level6_clouds.js",
+        "transfer": 37029,
+        "encoded": 36729
+      },
+      {
+        "name": "http://127.0.0.1:62843/game.js",
+        "transfer": 17436,
+        "encoded": 17136
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/hero.jpg",
+        "transfer": 0,
+        "encoded": 86480
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/tex-sand.jpg",
+        "transfer": 208607,
+        "encoded": 208307
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/tex-rock.jpg",
+        "transfer": 371323,
+        "encoded": 371023
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/tex-caustics.jpg",
+        "transfer": 52637,
+        "encoded": 52337
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/tex-wood.jpg",
+        "transfer": 269826,
+        "encoded": 269526
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/tex-pano.jpg",
+        "transfer": 326663,
+        "encoded": 326363
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/tex-fanalpha.jpg",
+        "transfer": 136511,
+        "encoded": 136211
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/tex-fan.jpg",
+        "transfer": 250060,
+        "encoded": 249760
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/fish.glb",
+        "transfer": 53952,
+        "encoded": 53652
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/coral.glb",
+        "transfer": 42104,
+        "encoded": 41804
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/turtle.glb",
+        "transfer": 200088,
+        "encoded": 199788
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/jelly.glb",
+        "transfer": 33244,
+        "encoded": 32944
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/chest.glb",
+        "transfer": 123612,
+        "encoded": 123312
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/tang-blue.glb",
+        "transfer": 76496,
+        "encoded": 76196
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/tang-yellow.glb",
+        "transfer": 76368,
+        "encoded": 76068
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/manta.glb",
+        "transfer": 53420,
+        "encoded": 53120
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/barrel.glb",
+        "transfer": 98908,
+        "encoded": 98608
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/amphora.glb",
+        "transfer": 38016,
+        "encoded": 37716
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/clam.glb",
+        "transfer": 36892,
+        "encoded": 36592
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/sanddollar.glb",
+        "transfer": 25160,
+        "encoded": 24860
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/starfish.glb",
+        "transfer": 3112,
+        "encoded": 2812
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/seaweed.glb",
+        "transfer": 72784,
+        "encoded": 72484
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/kelp.glb",
+        "transfer": 9320,
+        "encoded": 9020
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/hero_lighthouse.glb",
+        "transfer": 233120,
+        "encoded": 232820
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/hero_castle.glb",
+        "transfer": 167464,
+        "encoded": 167164
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_cabin.glb",
+        "transfer": 622500,
+        "encoded": 622200
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_windmill.glb",
+        "transfer": 632964,
+        "encoded": 632664
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_shipwreck.glb",
+        "transfer": 343480,
+        "encoded": 343180
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_boat.glb",
+        "transfer": 74900,
+        "encoded": 74600
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/may_rigged.glb",
+        "transfer": 717036,
+        "encoded": 716736
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/companion_milo.glb",
+        "transfer": 215180,
+        "encoded": 214880
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/npc_tortoise_elder.glb",
+        "transfer": 102892,
+        "encoded": 102592
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/boss_mushroom_king.glb",
+        "transfer": 132328,
+        "encoded": 132028
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/boss_crystal_golem.glb",
+        "transfer": 78036,
+        "encoded": 77736
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/boss_storm_king.glb",
+        "transfer": 116608,
+        "encoded": 116308
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_fox.glb",
+        "transfer": 336096,
+        "encoded": 335796
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_deer.glb",
+        "transfer": 419956,
+        "encoded": 419656
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_reindeer.glb",
+        "transfer": 411180,
+        "encoded": 410880
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_unicorn.glb",
+        "transfer": 388836,
+        "encoded": 388536
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_alpaca.glb",
+        "transfer": 373472,
+        "encoded": 373172
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_crab.glb",
+        "transfer": 143304,
+        "encoded": 143004
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_dolphin.glb",
+        "transfer": 69348,
+        "encoded": 69048
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_whale.glb",
+        "transfer": 77764,
+        "encoded": 77464
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_clownfish.glb",
+        "transfer": 156540,
+        "encoded": 156240
+      },
+      {
+        "name": "http://127.0.0.1:62843/favicon.ico",
+        "transfer": 22776,
+        "encoded": 22476
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/audio/amb_hub.wav",
+        "transfer": 640344,
+        "encoded": 640044
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/voice/hub.mp3",
+        "transfer": 69804,
+        "encoded": 69504
+      },
+      {
+        "name": "http://127.0.0.1:62843/icons/icon-192.png",
+        "transfer": 83132,
+        "encoded": 82832
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/audio/amb_level1.wav",
+        "transfer": 640344,
+        "encoded": 640044
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/voice/level1.mp3",
+        "transfer": 60780,
+        "encoded": 60480
+      }
+    ]
+  },
+  {
+    "run": 3,
+    "mode": "reload",
+    "readyMs": 4936.999999976251,
+    "device": {
+      "ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/158.0.0.0 Safari/537.36",
+      "renderer": "ANGLE (Intel, Intel(R) UHD Graphics 630 (0x00009BC5) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "cores": 16
+    },
+    "visits": [
+      {
+        "id": "level1",
+        "start": 5590.100000023842,
+        "buildStart": 5613.100000023842,
+        "build": 5796.200000047684,
+        "frame": 6387.300000011921,
+        "maxGap": 693.3000000000002,
+        "tasks": [
+          {
+            "start": 5605.200000047684,
+            "duration": 194
+          },
+          {
+            "start": 5871.300000011921,
+            "duration": 518
+          }
+        ],
+        "control": {
+          "before": [
+            0,
+            4,
+            10
+          ],
+          "after": [
+            0,
+            4,
+            7.8805852271849
+          ],
+          "modal": false,
+          "cutscene": false
+        }
+      },
+      {
+        "id": "level2",
+        "start": 6958,
+        "buildStart": 6986.900000035763,
+        "build": 7223.900000035763,
+        "frame": 7974.800000011921,
+        "maxGap": 986.5999999999995,
+        "tasks": [
+          {
+            "start": 6979.900000035763,
+            "duration": 246
+          },
+          {
+            "start": 7310.400000035763,
+            "duration": 665
+          }
+        ],
+        "control": {
+          "before": [
+            0,
+            4.185176185796824,
+            44
+          ],
+          "after": [
+            0,
+            4.108819186097537,
+            42.55881694779026
+          ],
+          "modal": false,
+          "cutscene": false
+        }
+      },
+      {
+        "id": "level3",
+        "start": 8452.900000035763,
+        "buildStart": 8483.100000023842,
+        "build": 8655.600000023842,
+        "frame": 9260.900000035763,
+        "maxGap": 786.8000000000011,
+        "tasks": [
+          {
+            "start": 8474.600000023842,
+            "duration": 183
+          },
+          {
+            "start": 8745.700000047684,
+            "duration": 517
+          }
+        ],
+        "control": {
+          "before": [
+            0,
+            2.1364655035081346,
+            44
+          ],
+          "after": [
+            0,
+            2.5488054832266775,
+            42.22585279967533
+          ],
+          "modal": false,
+          "cutscene": false
+        }
+      },
+      {
+        "id": "level4",
+        "start": 9703.5,
+        "buildStart": 9726.900000035763,
+        "build": 9915.400000035763,
+        "frame": 10720.700000047684,
+        "maxGap": 986.5999999999985,
+        "tasks": [
+          {
+            "start": 9721.200000047684,
+            "duration": 195
+          },
+          {
+            "start": 9969.800000011921,
+            "duration": 752
+          }
+        ],
+        "control": {
+          "before": [
+            0,
+            3.7097,
+            36
+          ],
+          "after": [
+            0,
+            3.7024437234542322,
+            34.53408554630952
+          ],
+          "modal": false,
+          "cutscene": false
+        }
+      },
+      {
+        "id": "level5",
+        "start": 11168.100000023842,
+        "buildStart": 11184.800000011921,
+        "build": 11391.300000011921,
+        "frame": 12186.900000035763,
+        "maxGap": 999.7999999999993,
+        "tasks": [
+          {
+            "start": 11175.900000035763,
+            "duration": 216
+          },
+          {
+            "start": 11441.800000011921,
+            "duration": 746
+          }
+        ],
+        "control": {
+          "before": [
+            0,
+            4.612356206133672,
+            38
+          ],
+          "after": [
+            0,
+            4.582496581826897,
+            36.58300867346806
+          ],
+          "modal": false,
+          "cutscene": false
+        }
+      },
+      {
+        "id": "level6",
+        "start": 12694.800000011921,
+        "buildStart": 12747.200000047684,
+        "build": 13159.900000035763,
+        "frame": 13547.800000011921,
+        "maxGap": 813.2999999999993,
+        "tasks": [
+          {
+            "start": 12721.700000047684,
+            "duration": 439
+          },
+          {
+            "start": 13231.200000047684,
+            "duration": 317
+          }
+        ],
+        "control": {
+          "before": [
+            0,
+            9.87,
+            42
+          ],
+          "after": [
+            0,
+            10.340872528164688,
+            40.173328878090054
+          ],
+          "modal": false,
+          "cutscene": false
+        }
+      },
+      {
+        "id": "level1",
+        "start": 14024.300000011921,
+        "buildStart": 14055.200000047684,
+        "build": 14143.600000023842,
+        "frame": 14584,
+        "maxGap": 533.1999999999989,
+        "tasks": [
+          {
+            "start": 14045.300000011921,
+            "duration": 100
+          },
+          {
+            "start": 14206.800000011921,
+            "duration": 379
+          }
+        ],
+        "control": {
+          "before": [
+            0,
+            4,
+            10
+          ],
+          "after": [
+            0,
+            4,
+            8.182115415658716
+          ],
+          "modal": false,
+          "cutscene": false
+        }
+      }
+    ],
+    "oceanResources": [
+      {
+        "name": "http://127.0.0.1:62843/style.css",
+        "transfer": 0,
+        "encoded": 27688
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/outfit-vayhong.jpg",
+        "transfer": 0,
+        "encoded": 16992
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/hero.jpg",
+        "transfer": 0,
+        "encoded": 86480
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/outfit-haibim.jpg",
+        "transfer": 0,
+        "encoded": 16690
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/outfit-muvang.jpg",
+        "transfer": 0,
+        "encoded": 19740
+      },
+      {
+        "name": "http://127.0.0.1:62843/three.min.js",
+        "transfer": 0,
+        "encoded": 648177
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/data.js",
+        "transfer": 0,
+        "encoded": 53071
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/audio.js",
+        "transfer": 0,
+        "encoded": 39931
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/core.js",
+        "transfer": 0,
+        "encoded": 44572
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/pbr.js",
+        "transfer": 0,
+        "encoded": 99810
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/vfx.js",
+        "transfer": 0,
+        "encoded": 37944
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/player.js",
+        "transfer": 0,
+        "encoded": 64900
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/systems.js",
+        "transfer": 0,
+        "encoded": 108627
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/story.js",
+        "transfer": 0,
+        "encoded": 80906
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/cutscene.js",
+        "transfer": 0,
+        "encoded": 16206
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/levels/hub.js",
+        "transfer": 0,
+        "encoded": 28602
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/levels/level1_ocean.js",
+        "transfer": 0,
+        "encoded": 42956
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/levels/level2_forest.js",
+        "transfer": 0,
+        "encoded": 33320
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/levels/level3_desert.js",
+        "transfer": 0,
+        "encoded": 26485
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/levels/level4_crystal.js",
+        "transfer": 0,
+        "encoded": 31880
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/levels/level5_snow.js",
+        "transfer": 0,
+        "encoded": 35645
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/levels/level6_clouds.js",
+        "transfer": 0,
+        "encoded": 36729
+      },
+      {
+        "name": "http://127.0.0.1:62843/game.js",
+        "transfer": 0,
+        "encoded": 17136
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/hero.jpg",
+        "transfer": 0,
+        "encoded": 86480
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/tex-sand.jpg",
+        "transfer": 0,
+        "encoded": 208307
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/tex-rock.jpg",
+        "transfer": 0,
+        "encoded": 371023
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/tex-wood.jpg",
+        "transfer": 0,
+        "encoded": 269526
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/tex-caustics.jpg",
+        "transfer": 0,
+        "encoded": 52337
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/tex-pano.jpg",
+        "transfer": 0,
+        "encoded": 326363
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/tex-fan.jpg",
+        "transfer": 0,
+        "encoded": 249760
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/tex-fanalpha.jpg",
+        "transfer": 0,
+        "encoded": 136211
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/fish.glb",
+        "transfer": 0,
+        "encoded": 53652
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/coral.glb",
+        "transfer": 0,
+        "encoded": 41804
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/turtle.glb",
+        "transfer": 0,
+        "encoded": 199788
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/jelly.glb",
+        "transfer": 0,
+        "encoded": 32944
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/chest.glb",
+        "transfer": 0,
+        "encoded": 123312
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/tang-blue.glb",
+        "transfer": 0,
+        "encoded": 76196
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/tang-yellow.glb",
+        "transfer": 0,
+        "encoded": 76068
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/manta.glb",
+        "transfer": 0,
+        "encoded": 53120
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/barrel.glb",
+        "transfer": 0,
+        "encoded": 98608
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/amphora.glb",
+        "transfer": 0,
+        "encoded": 37716
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/clam.glb",
+        "transfer": 0,
+        "encoded": 36592
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/sanddollar.glb",
+        "transfer": 0,
+        "encoded": 24860
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/starfish.glb",
+        "transfer": 0,
+        "encoded": 2812
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/seaweed.glb",
+        "transfer": 0,
+        "encoded": 72484
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/kelp.glb",
+        "transfer": 0,
+        "encoded": 9020
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/hero_lighthouse.glb",
+        "transfer": 0,
+        "encoded": 232820
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/hero_castle.glb",
+        "transfer": 0,
+        "encoded": 167164
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_cabin.glb",
+        "transfer": 0,
+        "encoded": 622200
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_windmill.glb",
+        "transfer": 0,
+        "encoded": 632664
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_shipwreck.glb",
+        "transfer": 0,
+        "encoded": 343180
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_boat.glb",
+        "transfer": 0,
+        "encoded": 74600
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/may_rigged.glb",
+        "transfer": 0,
+        "encoded": 716736
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/companion_milo.glb",
+        "transfer": 0,
+        "encoded": 214880
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/npc_tortoise_elder.glb",
+        "transfer": 0,
+        "encoded": 102592
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/boss_mushroom_king.glb",
+        "transfer": 0,
+        "encoded": 132028
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/boss_crystal_golem.glb",
+        "transfer": 0,
+        "encoded": 77736
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/boss_storm_king.glb",
+        "transfer": 0,
+        "encoded": 116308
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_fox.glb",
+        "transfer": 0,
+        "encoded": 335796
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_deer.glb",
+        "transfer": 0,
+        "encoded": 419656
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_reindeer.glb",
+        "transfer": 0,
+        "encoded": 410880
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_unicorn.glb",
+        "transfer": 0,
+        "encoded": 388536
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_alpaca.glb",
+        "transfer": 0,
+        "encoded": 373172
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_crab.glb",
+        "transfer": 0,
+        "encoded": 143004
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_dolphin.glb",
+        "transfer": 0,
+        "encoded": 69048
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_whale.glb",
+        "transfer": 0,
+        "encoded": 77464
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_clownfish.glb",
+        "transfer": 0,
+        "encoded": 156240
+      },
+      {
+        "name": "http://127.0.0.1:62843/favicon.ico",
+        "transfer": 0,
+        "encoded": 22476
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/audio/amb_hub.wav",
+        "transfer": 0,
+        "encoded": 640044
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/voice/hub.mp3",
+        "transfer": 0,
+        "encoded": 69504
+      },
+      {
+        "name": "http://127.0.0.1:62843/icons/icon-192.png",
+        "transfer": 0,
+        "encoded": 82832
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/audio/amb_level1.wav",
+        "transfer": 0,
+        "encoded": 640044
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/voice/level1.mp3",
+        "transfer": 0,
+        "encoded": 60480
+      }
+    ]
+  },
+  {
+    "run": 4,
+    "mode": "cold",
+    "readyMs": 4452.999999979511,
+    "device": {
+      "ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/158.0.0.0 Safari/537.36",
+      "renderer": "ANGLE (Intel, Intel(R) UHD Graphics 630 (0x00009BC5) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "cores": 16
+    },
+    "visits": [
+      {
+        "id": "level1",
+        "start": 5219.400000035763,
+        "buildStart": 5246.800000011921,
+        "build": 5473.800000011921,
+        "frame": 6192.300000011921,
+        "maxGap": 880,
+        "tasks": [
+          {
+            "start": 5238.200000047684,
+            "duration": 244
+          },
+          {
+            "start": 5580.200000047684,
+            "duration": 617
+          }
+        ],
+        "control": {
+          "before": [
+            0,
+            4,
+            10
+          ],
+          "after": [
+            0,
+            4,
+            8.246061526551895
+          ],
+          "modal": false,
+          "cutscene": false
+        }
+      },
+      {
+        "id": "level2",
+        "start": 6702.900000035763,
+        "buildStart": 6746.300000011921,
+        "build": 6977.200000047684,
+        "frame": 7630.400000035763,
+        "maxGap": 879.8999999999996,
+        "tasks": [
+          {
+            "start": 6738.700000047684,
+            "duration": 247
+          },
+          {
+            "start": 7049.5,
+            "duration": 583
+          }
+        ],
+        "control": {
+          "before": [
+            0,
+            4.185176185796824,
+            44
+          ],
+          "after": [
+            0,
+            4.103026651267074,
+            42.46172964209025
+          ],
+          "modal": false,
+          "cutscene": false
+        }
+      },
+      {
+        "id": "level3",
+        "start": 8072.800000011921,
+        "buildStart": 8096.900000035763,
+        "build": 8267.700000047684,
+        "frame": 8706.100000023842,
+        "maxGap": 599.8999999999996,
+        "tasks": [
+          {
+            "start": 8089.200000047684,
+            "duration": 185
+          },
+          {
+            "start": 8318.700000047684,
+            "duration": 389
+          }
+        ],
+        "control": {
+          "before": [
+            0,
+            2.1364655035081346,
+            44
+          ],
+          "after": [
+            0,
+            2.5604813217085787,
+            42.17645138088875
+          ],
+          "modal": false,
+          "cutscene": false
+        }
+      },
+      {
+        "id": "level4",
+        "start": 9137.300000011921,
+        "buildStart": 9148.200000047684,
+        "build": 9290.900000035763,
+        "frame": 10002.300000011921,
+        "maxGap": 853.2000000000007,
+        "tasks": [
+          {
+            "start": 9143.200000047684,
+            "duration": 152
+          },
+          {
+            "start": 9347.900000035763,
+            "duration": 655
+          }
+        ],
+        "control": {
+          "before": [
+            0,
+            3.7097,
+            36
+          ],
+          "after": [
+            0,
+            3.7020361835902675,
+            34.45175426066013
+          ],
+          "modal": false,
+          "cutscene": false
+        }
+      },
+      {
+        "id": "level5",
+        "start": 10440.700000047684,
+        "buildStart": 10470.100000023842,
+        "build": 10723.700000047684,
+        "frame": 11577.700000047684,
+        "maxGap": 1106.699999999999,
+        "tasks": [
+          {
+            "start": 10462.800000011921,
+            "duration": 267
+          },
+          {
+            "start": 10796,
+            "duration": 783
+          }
+        ],
+        "control": {
+          "before": [
+            0,
+            4.612356206133672,
+            38
+          ],
+          "after": [
+            0,
+            4.582446059131289,
+            36.57960998679206
+          ],
+          "modal": false,
+          "cutscene": false
+        }
+      },
+      {
+        "id": "level6",
+        "start": 12020.700000047684,
+        "buildStart": 12045.400000035763,
+        "build": 12266,
+        "frame": 12614,
+        "maxGap": 586.5,
+        "tasks": [
+          {
+            "start": 12028.900000035763,
+            "duration": 243
+          },
+          {
+            "start": 12321.5,
+            "duration": 294
+          }
+        ],
+        "control": {
+          "before": [
+            0,
+            9.87,
+            42
+          ],
+          "after": [
+            0,
+            10.279121038790247,
+            40.399290798288135
+          ],
+          "modal": false,
+          "cutscene": false
+        }
+      },
+      {
+        "id": "level1",
+        "start": 13030.300000011921,
+        "buildStart": 13039.600000023842,
+        "build": 13099.200000047684,
+        "frame": 13403.900000035763,
+        "maxGap": 373.2999999999993,
+        "tasks": [
+          {
+            "start": 13035.5,
+            "duration": 65
+          },
+          {
+            "start": 13138.800000011921,
+            "duration": 266
+          }
+        ],
+        "control": {
+          "before": [
+            0,
+            4,
+            10
+          ],
+          "after": [
+            0,
+            4,
+            8.260907888828392
+          ],
+          "modal": false,
+          "cutscene": false
+        }
+      }
+    ],
+    "oceanResources": [
+      {
+        "name": "http://127.0.0.1:62843/style.css",
+        "transfer": 27988,
+        "encoded": 27688
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/outfit-vayhong.jpg",
+        "transfer": 17292,
+        "encoded": 16992
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/hero.jpg",
+        "transfer": 86780,
+        "encoded": 86480
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/outfit-haibim.jpg",
+        "transfer": 16990,
+        "encoded": 16690
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/outfit-muvang.jpg",
+        "transfer": 20040,
+        "encoded": 19740
+      },
+      {
+        "name": "http://127.0.0.1:62843/three.min.js",
+        "transfer": 648477,
+        "encoded": 648177
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/data.js",
+        "transfer": 53371,
+        "encoded": 53071
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/audio.js",
+        "transfer": 40231,
+        "encoded": 39931
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/core.js",
+        "transfer": 44872,
+        "encoded": 44572
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/pbr.js",
+        "transfer": 100110,
+        "encoded": 99810
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/vfx.js",
+        "transfer": 38244,
+        "encoded": 37944
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/player.js",
+        "transfer": 65200,
+        "encoded": 64900
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/systems.js",
+        "transfer": 108927,
+        "encoded": 108627
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/story.js",
+        "transfer": 81206,
+        "encoded": 80906
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/cutscene.js",
+        "transfer": 16506,
+        "encoded": 16206
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/levels/hub.js",
+        "transfer": 28902,
+        "encoded": 28602
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/levels/level1_ocean.js",
+        "transfer": 43256,
+        "encoded": 42956
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/levels/level2_forest.js",
+        "transfer": 33620,
+        "encoded": 33320
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/levels/level3_desert.js",
+        "transfer": 26785,
+        "encoded": 26485
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/levels/level4_crystal.js",
+        "transfer": 32180,
+        "encoded": 31880
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/levels/level6_clouds.js",
+        "transfer": 37029,
+        "encoded": 36729
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/levels/level5_snow.js",
+        "transfer": 35945,
+        "encoded": 35645
+      },
+      {
+        "name": "http://127.0.0.1:62843/game.js",
+        "transfer": 17436,
+        "encoded": 17136
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/hero.jpg",
+        "transfer": 0,
+        "encoded": 86480
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/tex-sand.jpg",
+        "transfer": 208607,
+        "encoded": 208307
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/tex-rock.jpg",
+        "transfer": 371323,
+        "encoded": 371023
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/tex-wood.jpg",
+        "transfer": 269826,
+        "encoded": 269526
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/tex-caustics.jpg",
+        "transfer": 52637,
+        "encoded": 52337
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/tex-pano.jpg",
+        "transfer": 326663,
+        "encoded": 326363
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/tex-fan.jpg",
+        "transfer": 250060,
+        "encoded": 249760
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/tex-fanalpha.jpg",
+        "transfer": 136511,
+        "encoded": 136211
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/fish.glb",
+        "transfer": 53952,
+        "encoded": 53652
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/coral.glb",
+        "transfer": 42104,
+        "encoded": 41804
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/turtle.glb",
+        "transfer": 200088,
+        "encoded": 199788
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/jelly.glb",
+        "transfer": 33244,
+        "encoded": 32944
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/chest.glb",
+        "transfer": 123612,
+        "encoded": 123312
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/tang-blue.glb",
+        "transfer": 76496,
+        "encoded": 76196
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/tang-yellow.glb",
+        "transfer": 76368,
+        "encoded": 76068
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/manta.glb",
+        "transfer": 53420,
+        "encoded": 53120
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/barrel.glb",
+        "transfer": 98908,
+        "encoded": 98608
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/amphora.glb",
+        "transfer": 38016,
+        "encoded": 37716
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/clam.glb",
+        "transfer": 36892,
+        "encoded": 36592
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/sanddollar.glb",
+        "transfer": 25160,
+        "encoded": 24860
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/starfish.glb",
+        "transfer": 3112,
+        "encoded": 2812
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/seaweed.glb",
+        "transfer": 72784,
+        "encoded": 72484
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/kelp.glb",
+        "transfer": 9320,
+        "encoded": 9020
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/hero_lighthouse.glb",
+        "transfer": 233120,
+        "encoded": 232820
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/hero_castle.glb",
+        "transfer": 167464,
+        "encoded": 167164
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_cabin.glb",
+        "transfer": 622500,
+        "encoded": 622200
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_windmill.glb",
+        "transfer": 632964,
+        "encoded": 632664
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_shipwreck.glb",
+        "transfer": 343480,
+        "encoded": 343180
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_boat.glb",
+        "transfer": 74900,
+        "encoded": 74600
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/may_rigged.glb",
+        "transfer": 717036,
+        "encoded": 716736
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/companion_milo.glb",
+        "transfer": 215180,
+        "encoded": 214880
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/npc_tortoise_elder.glb",
+        "transfer": 102892,
+        "encoded": 102592
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/boss_mushroom_king.glb",
+        "transfer": 132328,
+        "encoded": 132028
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/boss_crystal_golem.glb",
+        "transfer": 78036,
+        "encoded": 77736
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/boss_storm_king.glb",
+        "transfer": 116608,
+        "encoded": 116308
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_fox.glb",
+        "transfer": 336096,
+        "encoded": 335796
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_deer.glb",
+        "transfer": 419956,
+        "encoded": 419656
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_reindeer.glb",
+        "transfer": 411180,
+        "encoded": 410880
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_unicorn.glb",
+        "transfer": 388836,
+        "encoded": 388536
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_alpaca.glb",
+        "transfer": 373472,
+        "encoded": 373172
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_crab.glb",
+        "transfer": 143304,
+        "encoded": 143004
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_dolphin.glb",
+        "transfer": 69348,
+        "encoded": 69048
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_whale.glb",
+        "transfer": 77764,
+        "encoded": 77464
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_clownfish.glb",
+        "transfer": 156540,
+        "encoded": 156240
+      },
+      {
+        "name": "http://127.0.0.1:62843/favicon.ico",
+        "transfer": 22776,
+        "encoded": 22476
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/audio/amb_hub.wav",
+        "transfer": 640344,
+        "encoded": 640044
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/voice/hub.mp3",
+        "transfer": 69804,
+        "encoded": 69504
+      },
+      {
+        "name": "http://127.0.0.1:62843/icons/icon-192.png",
+        "transfer": 83132,
+        "encoded": 82832
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/audio/amb_level1.wav",
+        "transfer": 640344,
+        "encoded": 640044
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/voice/level1.mp3",
+        "transfer": 60780,
+        "encoded": 60480
+      }
+    ]
+  },
+  {
+    "run": 4,
+    "mode": "reload",
+    "readyMs": 3922.000000020489,
+    "device": {
+      "ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/158.0.0.0 Safari/537.36",
+      "renderer": "ANGLE (Intel, Intel(R) UHD Graphics 630 (0x00009BC5) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "cores": 16
+    },
+    "visits": [
+      {
+        "id": "level1",
+        "start": 4251,
+        "buildStart": 4262.699999988079,
+        "build": 4383.599999964237,
+        "frame": 4741.299999952316,
+        "maxGap": 480,
+        "tasks": [
+          {
+            "start": 4256.799999952316,
+            "duration": 128
+          },
+          {
+            "start": 4424.799999952316,
+            "duration": 318
+          }
+        ],
+        "control": {
+          "before": [
+            0,
+            4,
+            10
+          ],
+          "after": [
+            0,
+            4,
+            8.100194289820326
+          ],
+          "modal": false,
+          "cutscene": false
+        }
+      },
+      {
+        "id": "level2",
+        "start": 5186.799999952316,
+        "buildStart": 5201.699999988079,
+        "build": 5390.099999964237,
+        "frame": 6184.199999988079,
+        "maxGap": 1000,
+        "tasks": [
+          {
+            "start": 5195.299999952316,
+            "duration": 197
+          },
+          {
+            "start": 5477.199999988079,
+            "duration": 709
+          }
+        ],
+        "control": {
+          "before": [
+            0,
+            4.185176185796824,
+            44
+          ],
+          "after": [
+            0,
+            4.101024961486625,
+            42.42847707430871
+          ],
+          "modal": false,
+          "cutscene": false
+        }
+      },
+      {
+        "id": "level3",
+        "start": 6720.799999952316,
+        "buildStart": 6786,
+        "build": 7038.199999988079,
+        "frame": 7839.099999964237,
+        "maxGap": 986.6000000000004,
+        "tasks": [
+          {
+            "start": 6773.699999988079,
+            "duration": 267
+          },
+          {
+            "start": 7123.899999976158,
+            "duration": 718
+          }
+        ],
+        "control": {
+          "before": [
+            0,
+            2.1364655035081346,
+            44
+          ],
+          "after": [
+            0,
+            2.5926190068973716,
+            42.04065459556659
+          ],
+          "modal": false,
+          "cutscene": false
+        }
+      },
+      {
+        "id": "level4",
+        "start": 8341,
+        "buildStart": 8367.199999988079,
+        "build": 8522.899999976158,
+        "frame": 9210.699999988079,
+        "maxGap": 813.2000000000007,
+        "tasks": [
+          {
+            "start": 8360.699999988079,
+            "duration": 163
+          },
+          {
+            "start": 8574,
+            "duration": 638
+          }
+        ],
+        "control": {
+          "before": [
+            0,
+            3.7097,
+            36
+          ],
+          "after": [
+            0,
+            3.7016956499434537,
+            34.38295958453608
+          ],
+          "modal": false,
+          "cutscene": false
+        }
+      },
+      {
+        "id": "level5",
+        "start": 9664.099999964237,
+        "buildStart": 9685.699999988079,
+        "build": 9868.5,
+        "frame": 10627.799999952316,
+        "maxGap": 946.6000000000004,
+        "tasks": [
+          {
+            "start": 9680.199999988079,
+            "duration": 189
+          },
+          {
+            "start": 9914.899999976158,
+            "duration": 714
+          }
+        ],
+        "control": {
+          "before": [
+            0,
+            4.612356206133672,
+            38
+          ],
+          "after": [
+            0,
+            4.58010196257097,
+            36.413580520897575
+          ],
+          "modal": false,
+          "cutscene": false
+        }
+      },
+      {
+        "id": "level6",
+        "start": 11099.099999964237,
+        "buildStart": 11115.699999988079,
+        "build": 11331.799999952316,
+        "frame": 11750.299999952316,
+        "maxGap": 640,
+        "tasks": [
+          {
+            "start": 11105.799999952316,
+            "duration": 227
+          },
+          {
+            "start": 11374.699999988079,
+            "duration": 377
+          }
+        ],
+        "control": {
+          "before": [
+            0,
+            9.87,
+            42
+          ],
+          "after": [
+            0,
+            10.289025690893627,
+            40.363068819637334
+          ],
+          "modal": false,
+          "cutscene": false
+        }
+      },
+      {
+        "id": "level1",
+        "start": 12150.899999976158,
+        "buildStart": 12163.599999964237,
+        "build": 12218.699999988079,
+        "frame": 12572.599999964237,
+        "maxGap": 413.2999999999993,
+        "tasks": [
+          {
+            "start": 12158.799999952316,
+            "duration": 61
+          },
+          {
+            "start": 12269.5,
+            "duration": 305
+          }
+        ],
+        "control": {
+          "before": [
+            0,
+            4,
+            10
+          ],
+          "after": [
+            0,
+            4,
+            8.169231714717574
+          ],
+          "modal": false,
+          "cutscene": false
+        }
+      }
+    ],
+    "oceanResources": [
+      {
+        "name": "http://127.0.0.1:62843/style.css",
+        "transfer": 0,
+        "encoded": 27688
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/outfit-vayhong.jpg",
+        "transfer": 0,
+        "encoded": 16992
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/hero.jpg",
+        "transfer": 0,
+        "encoded": 86480
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/outfit-haibim.jpg",
+        "transfer": 0,
+        "encoded": 16690
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/outfit-muvang.jpg",
+        "transfer": 0,
+        "encoded": 19740
+      },
+      {
+        "name": "http://127.0.0.1:62843/three.min.js",
+        "transfer": 0,
+        "encoded": 648177
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/data.js",
+        "transfer": 0,
+        "encoded": 53071
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/audio.js",
+        "transfer": 0,
+        "encoded": 39931
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/core.js",
+        "transfer": 0,
+        "encoded": 44572
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/pbr.js",
+        "transfer": 0,
+        "encoded": 99810
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/vfx.js",
+        "transfer": 0,
+        "encoded": 37944
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/player.js",
+        "transfer": 0,
+        "encoded": 64900
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/systems.js",
+        "transfer": 0,
+        "encoded": 108627
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/story.js",
+        "transfer": 0,
+        "encoded": 80906
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/cutscene.js",
+        "transfer": 0,
+        "encoded": 16206
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/levels/hub.js",
+        "transfer": 0,
+        "encoded": 28602
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/levels/level1_ocean.js",
+        "transfer": 0,
+        "encoded": 42956
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/levels/level2_forest.js",
+        "transfer": 0,
+        "encoded": 33320
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/levels/level3_desert.js",
+        "transfer": 0,
+        "encoded": 26485
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/levels/level4_crystal.js",
+        "transfer": 0,
+        "encoded": 31880
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/levels/level5_snow.js",
+        "transfer": 0,
+        "encoded": 35645
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/levels/level6_clouds.js",
+        "transfer": 0,
+        "encoded": 36729
+      },
+      {
+        "name": "http://127.0.0.1:62843/game.js",
+        "transfer": 0,
+        "encoded": 17136
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/hero.jpg",
+        "transfer": 0,
+        "encoded": 86480
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/tex-sand.jpg",
+        "transfer": 0,
+        "encoded": 208307
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/tex-rock.jpg",
+        "transfer": 0,
+        "encoded": 371023
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/tex-wood.jpg",
+        "transfer": 0,
+        "encoded": 269526
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/tex-caustics.jpg",
+        "transfer": 0,
+        "encoded": 52337
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/tex-pano.jpg",
+        "transfer": 0,
+        "encoded": 326363
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/tex-fan.jpg",
+        "transfer": 0,
+        "encoded": 249760
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/tex-fanalpha.jpg",
+        "transfer": 0,
+        "encoded": 136211
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/fish.glb",
+        "transfer": 0,
+        "encoded": 53652
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/coral.glb",
+        "transfer": 0,
+        "encoded": 41804
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/turtle.glb",
+        "transfer": 0,
+        "encoded": 199788
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/jelly.glb",
+        "transfer": 0,
+        "encoded": 32944
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/chest.glb",
+        "transfer": 0,
+        "encoded": 123312
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/tang-blue.glb",
+        "transfer": 0,
+        "encoded": 76196
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/tang-yellow.glb",
+        "transfer": 0,
+        "encoded": 76068
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/manta.glb",
+        "transfer": 0,
+        "encoded": 53120
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/barrel.glb",
+        "transfer": 0,
+        "encoded": 98608
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/amphora.glb",
+        "transfer": 0,
+        "encoded": 37716
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/clam.glb",
+        "transfer": 0,
+        "encoded": 36592
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/sanddollar.glb",
+        "transfer": 0,
+        "encoded": 24860
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/starfish.glb",
+        "transfer": 0,
+        "encoded": 2812
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/seaweed.glb",
+        "transfer": 0,
+        "encoded": 72484
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/kelp.glb",
+        "transfer": 0,
+        "encoded": 9020
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/hero_lighthouse.glb",
+        "transfer": 0,
+        "encoded": 232820
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/hero_castle.glb",
+        "transfer": 0,
+        "encoded": 167164
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_cabin.glb",
+        "transfer": 0,
+        "encoded": 622200
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_windmill.glb",
+        "transfer": 0,
+        "encoded": 632664
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_shipwreck.glb",
+        "transfer": 0,
+        "encoded": 343180
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_boat.glb",
+        "transfer": 0,
+        "encoded": 74600
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/may_rigged.glb",
+        "transfer": 0,
+        "encoded": 716736
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/companion_milo.glb",
+        "transfer": 0,
+        "encoded": 214880
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/npc_tortoise_elder.glb",
+        "transfer": 0,
+        "encoded": 102592
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/boss_mushroom_king.glb",
+        "transfer": 0,
+        "encoded": 132028
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/boss_crystal_golem.glb",
+        "transfer": 0,
+        "encoded": 77736
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/boss_storm_king.glb",
+        "transfer": 0,
+        "encoded": 116308
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_fox.glb",
+        "transfer": 0,
+        "encoded": 335796
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_deer.glb",
+        "transfer": 0,
+        "encoded": 419656
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_reindeer.glb",
+        "transfer": 0,
+        "encoded": 410880
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_unicorn.glb",
+        "transfer": 0,
+        "encoded": 388536
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_alpaca.glb",
+        "transfer": 0,
+        "encoded": 373172
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_crab.glb",
+        "transfer": 0,
+        "encoded": 143004
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_dolphin.glb",
+        "transfer": 0,
+        "encoded": 69048
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_whale.glb",
+        "transfer": 0,
+        "encoded": 77464
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_clownfish.glb",
+        "transfer": 0,
+        "encoded": 156240
+      },
+      {
+        "name": "http://127.0.0.1:62843/favicon.ico",
+        "transfer": 0,
+        "encoded": 22476
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/audio/amb_hub.wav",
+        "transfer": 0,
+        "encoded": 640044
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/voice/hub.mp3",
+        "transfer": 0,
+        "encoded": 69504
+      },
+      {
+        "name": "http://127.0.0.1:62843/icons/icon-192.png",
+        "transfer": 0,
+        "encoded": 82832
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/audio/amb_level1.wav",
+        "transfer": 0,
+        "encoded": 640044
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/voice/level1.mp3",
+        "transfer": 0,
+        "encoded": 60480
+      }
+    ]
+  },
+  {
+    "run": 5,
+    "mode": "cold",
+    "readyMs": 3532.0000000065193,
+    "device": {
+      "ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/158.0.0.0 Safari/537.36",
+      "renderer": "ANGLE (Intel, Intel(R) UHD Graphics 630 (0x00009BC5) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "cores": 16
+    },
+    "visits": [
+      {
+        "id": "level1",
+        "start": 3883.5,
+        "buildStart": 3896.899999976158,
+        "build": 4123.699999988079,
+        "frame": 4510.699999988079,
+        "maxGap": 613.2000000000003,
+        "tasks": [
+          {
+            "start": 3890.5,
+            "duration": 239
+          },
+          {
+            "start": 4186.899999976158,
+            "duration": 326
+          }
+        ],
+        "control": {
+          "before": [
+            0,
+            4,
+            10
+          ],
+          "after": [
+            0,
+            4,
+            8.3236654167722
+          ],
+          "modal": false,
+          "cutscene": false
+        }
+      },
+      {
+        "id": "level2",
+        "start": 4954.899999976158,
+        "buildStart": 4967,
+        "build": 5132.800000011921,
+        "frame": 5659.699999988079,
+        "maxGap": 693.2999999999993,
+        "tasks": [
+          {
+            "start": 4962.100000023842,
+            "duration": 178
+          },
+          {
+            "start": 5198.300000011921,
+            "duration": 464
+          }
+        ],
+        "control": {
+          "before": [
+            0,
+            4.185176185796824,
+            44
+          ],
+          "after": [
+            0,
+            4.106904290498997,
+            42.52657785798338
+          ],
+          "modal": false,
+          "cutscene": false
+        }
+      },
+      {
+        "id": "level3",
+        "start": 6105.5,
+        "buildStart": 6118.199999988079,
+        "build": 6290.899999976158,
+        "frame": 6746.699999988079,
+        "maxGap": 626.5999999999995,
+        "tasks": [
+          {
+            "start": 6113,
+            "duration": 185
+          },
+          {
+            "start": 6351.600000023842,
+            "duration": 398
+          }
+        ],
+        "control": {
+          "before": [
+            0,
+            2.1364655035081346,
+            44
+          ],
+          "after": [
+            0,
+            2.5457528790789206,
+            42.238774548875355
+          ],
+          "modal": false,
+          "cutscene": false
+        }
+      },
+      {
+        "id": "level4",
+        "start": 7176.600000023842,
+        "buildStart": 7189.800000011921,
+        "build": 7354.399999976158,
+        "frame": 8049.300000011921,
+        "maxGap": 866.6000000000004,
+        "tasks": [
+          {
+            "start": 7184.100000023842,
+            "duration": 176
+          },
+          {
+            "start": 7413.899999976158,
+            "duration": 636
+          }
+        ],
+        "control": {
+          "before": [
+            0,
+            3.7097,
+            36
+          ],
+          "after": [
+            0,
+            3.701817784844581,
+            34.407633301935554
+          ],
+          "modal": false,
+          "cutscene": false
+        }
+      },
+      {
+        "id": "level5",
+        "start": 8500.5,
+        "buildStart": 8526.899999976158,
+        "build": 8733.300000011921,
+        "frame": 9483.100000023842,
+        "maxGap": 906.7000000000007,
+        "tasks": [
+          {
+            "start": 8518.899999976158,
+            "duration": 220
+          },
+          {
+            "start": 8797.199999988079,
+            "duration": 688
+          }
+        ],
+        "control": {
+          "before": [
+            0,
+            4.612356206133672,
+            38
+          ],
+          "after": [
+            0,
+            4.580246814549417,
+            36.42436317662886
+          ],
+          "modal": false,
+          "cutscene": false
+        }
+      },
+      {
+        "id": "level6",
+        "start": 9961.199999988079,
+        "buildStart": 9977.399999976158,
+        "build": 10197,
+        "frame": 10553.699999988079,
+        "maxGap": 573.3000000000011,
+        "tasks": [
+          {
+            "start": 9966.5,
+            "duration": 236
+          },
+          {
+            "start": 10255,
+            "duration": 300
+          }
+        ],
+        "control": {
+          "before": [
+            0,
+            9.87,
+            42
+          ],
+          "after": [
+            0,
+            10.302374452756444,
+            40.31423901365796
+          ],
+          "modal": false,
+          "cutscene": false
+        }
+      },
+      {
+        "id": "level1",
+        "start": 10946.5,
+        "buildStart": 10957.5,
+        "build": 11005.800000011921,
+        "frame": 11262.199999988079,
+        "maxGap": 306.60000000000036,
+        "tasks": [
+          {
+            "start": 10953,
+            "duration": 54
+          },
+          {
+            "start": 11055,
+            "duration": 208
+          }
+        ],
+        "control": {
+          "before": [
+            0,
+            4,
+            10
+          ],
+          "after": [
+            0,
+            4,
+            8.188915932043555
+          ],
+          "modal": false,
+          "cutscene": false
+        }
+      }
+    ],
+    "oceanResources": [
+      {
+        "name": "http://127.0.0.1:62843/style.css",
+        "transfer": 27988,
+        "encoded": 27688
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/outfit-vayhong.jpg",
+        "transfer": 17292,
+        "encoded": 16992
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/hero.jpg",
+        "transfer": 86780,
+        "encoded": 86480
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/outfit-haibim.jpg",
+        "transfer": 16990,
+        "encoded": 16690
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/outfit-muvang.jpg",
+        "transfer": 20040,
+        "encoded": 19740
+      },
+      {
+        "name": "http://127.0.0.1:62843/three.min.js",
+        "transfer": 648477,
+        "encoded": 648177
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/data.js",
+        "transfer": 53371,
+        "encoded": 53071
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/audio.js",
+        "transfer": 40231,
+        "encoded": 39931
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/core.js",
+        "transfer": 44872,
+        "encoded": 44572
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/pbr.js",
+        "transfer": 100110,
+        "encoded": 99810
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/vfx.js",
+        "transfer": 38244,
+        "encoded": 37944
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/player.js",
+        "transfer": 65200,
+        "encoded": 64900
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/systems.js",
+        "transfer": 108927,
+        "encoded": 108627
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/story.js",
+        "transfer": 81206,
+        "encoded": 80906
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/cutscene.js",
+        "transfer": 16506,
+        "encoded": 16206
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/levels/hub.js",
+        "transfer": 28902,
+        "encoded": 28602
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/levels/level1_ocean.js",
+        "transfer": 43256,
+        "encoded": 42956
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/levels/level2_forest.js",
+        "transfer": 33620,
+        "encoded": 33320
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/levels/level3_desert.js",
+        "transfer": 26785,
+        "encoded": 26485
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/levels/level4_crystal.js",
+        "transfer": 32180,
+        "encoded": 31880
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/levels/level5_snow.js",
+        "transfer": 35945,
+        "encoded": 35645
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/levels/level6_clouds.js",
+        "transfer": 37029,
+        "encoded": 36729
+      },
+      {
+        "name": "http://127.0.0.1:62843/game.js",
+        "transfer": 17436,
+        "encoded": 17136
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/hero.jpg",
+        "transfer": 0,
+        "encoded": 86480
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/tex-sand.jpg",
+        "transfer": 208607,
+        "encoded": 208307
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/tex-rock.jpg",
+        "transfer": 371323,
+        "encoded": 371023
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/tex-wood.jpg",
+        "transfer": 269826,
+        "encoded": 269526
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/tex-caustics.jpg",
+        "transfer": 52637,
+        "encoded": 52337
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/tex-pano.jpg",
+        "transfer": 326663,
+        "encoded": 326363
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/tex-fan.jpg",
+        "transfer": 250060,
+        "encoded": 249760
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/tex-fanalpha.jpg",
+        "transfer": 136511,
+        "encoded": 136211
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/fish.glb",
+        "transfer": 53952,
+        "encoded": 53652
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/coral.glb",
+        "transfer": 42104,
+        "encoded": 41804
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/turtle.glb",
+        "transfer": 200088,
+        "encoded": 199788
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/jelly.glb",
+        "transfer": 33244,
+        "encoded": 32944
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/chest.glb",
+        "transfer": 123612,
+        "encoded": 123312
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/tang-blue.glb",
+        "transfer": 76496,
+        "encoded": 76196
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/tang-yellow.glb",
+        "transfer": 76368,
+        "encoded": 76068
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/manta.glb",
+        "transfer": 53420,
+        "encoded": 53120
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/barrel.glb",
+        "transfer": 98908,
+        "encoded": 98608
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/amphora.glb",
+        "transfer": 38016,
+        "encoded": 37716
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/clam.glb",
+        "transfer": 36892,
+        "encoded": 36592
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/sanddollar.glb",
+        "transfer": 25160,
+        "encoded": 24860
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/starfish.glb",
+        "transfer": 3112,
+        "encoded": 2812
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/seaweed.glb",
+        "transfer": 72784,
+        "encoded": 72484
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/kelp.glb",
+        "transfer": 9320,
+        "encoded": 9020
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/hero_lighthouse.glb",
+        "transfer": 233120,
+        "encoded": 232820
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/hero_castle.glb",
+        "transfer": 167464,
+        "encoded": 167164
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_cabin.glb",
+        "transfer": 622500,
+        "encoded": 622200
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_shipwreck.glb",
+        "transfer": 343480,
+        "encoded": 343180
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_windmill.glb",
+        "transfer": 632964,
+        "encoded": 632664
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_boat.glb",
+        "transfer": 74900,
+        "encoded": 74600
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/may_rigged.glb",
+        "transfer": 717036,
+        "encoded": 716736
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/companion_milo.glb",
+        "transfer": 215180,
+        "encoded": 214880
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/npc_tortoise_elder.glb",
+        "transfer": 102892,
+        "encoded": 102592
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/boss_mushroom_king.glb",
+        "transfer": 132328,
+        "encoded": 132028
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/boss_crystal_golem.glb",
+        "transfer": 78036,
+        "encoded": 77736
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/boss_storm_king.glb",
+        "transfer": 116608,
+        "encoded": 116308
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_fox.glb",
+        "transfer": 336096,
+        "encoded": 335796
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_deer.glb",
+        "transfer": 419956,
+        "encoded": 419656
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_reindeer.glb",
+        "transfer": 411180,
+        "encoded": 410880
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_unicorn.glb",
+        "transfer": 388836,
+        "encoded": 388536
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_alpaca.glb",
+        "transfer": 373472,
+        "encoded": 373172
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_crab.glb",
+        "transfer": 143304,
+        "encoded": 143004
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_dolphin.glb",
+        "transfer": 69348,
+        "encoded": 69048
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_whale.glb",
+        "transfer": 77764,
+        "encoded": 77464
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_clownfish.glb",
+        "transfer": 156540,
+        "encoded": 156240
+      },
+      {
+        "name": "http://127.0.0.1:62843/favicon.ico",
+        "transfer": 22776,
+        "encoded": 22476
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/audio/amb_hub.wav",
+        "transfer": 640344,
+        "encoded": 640044
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/voice/hub.mp3",
+        "transfer": 69804,
+        "encoded": 69504
+      },
+      {
+        "name": "http://127.0.0.1:62843/icons/icon-192.png",
+        "transfer": 83132,
+        "encoded": 82832
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/audio/amb_level1.wav",
+        "transfer": 640344,
+        "encoded": 640044
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/voice/level1.mp3",
+        "transfer": 60780,
+        "encoded": 60480
+      }
+    ]
+  },
+  {
+    "run": 5,
+    "mode": "reload",
+    "readyMs": 4484.99999998603,
+    "device": {
+      "ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/158.0.0.0 Safari/537.36",
+      "renderer": "ANGLE (Intel, Intel(R) UHD Graphics 630 (0x00009BC5) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "cores": 16
+    },
+    "visits": [
+      {
+        "id": "level1",
+        "start": 4872,
+        "buildStart": 4916.600000023842,
+        "build": 5075.900000035763,
+        "frame": 5528.900000035763,
+        "maxGap": 586.6000000000004,
+        "tasks": [
+          {
+            "start": 4910.900000035763,
+            "duration": 167
+          },
+          {
+            "start": 5135,
+            "duration": 396
+          }
+        ],
+        "control": {
+          "before": [
+            0,
+            4,
+            10
+          ],
+          "after": [
+            0,
+            4,
+            8.199035748875632
+          ],
+          "modal": false,
+          "cutscene": false
+        }
+      },
+      {
+        "id": "level2",
+        "start": 6001.400000035763,
+        "buildStart": 6028.100000023842,
+        "build": 6192,
+        "frame": 6831.200000047684,
+        "maxGap": 813.2999999999993,
+        "tasks": [
+          {
+            "start": 6022.300000011921,
+            "duration": 171
+          },
+          {
+            "start": 6253.600000023842,
+            "duration": 579
+          }
+        ],
+        "control": {
+          "before": [
+            0,
+            4.185176185796824,
+            44
+          ],
+          "after": [
+            0,
+            4.103185642441418,
+            42.45537005587632
+          ],
+          "modal": false,
+          "cutscene": false
+        }
+      },
+      {
+        "id": "level3",
+        "start": 7275.200000047684,
+        "buildStart": 7295.600000023842,
+        "build": 7438.900000035763,
+        "frame": 7890.800000011921,
+        "maxGap": 586.6999999999998,
+        "tasks": [
+          {
+            "start": 7290.700000047684,
+            "duration": 149
+          },
+          {
+            "start": 7493.5,
+            "duration": 398
+          }
+        ],
+        "control": {
+          "before": [
+            0,
+            2.1364655035081346,
+            44
+          ],
+          "after": [
+            0,
+            2.53930134550583,
+            42.26609225157675
+          ],
+          "modal": false,
+          "cutscene": false
+        }
+      },
+      {
+        "id": "level4",
+        "start": 8288.900000035763,
+        "buildStart": 8307.900000035763,
+        "build": 8451.800000011921,
+        "frame": 9076.300000011921,
+        "maxGap": 773.2999999999993,
+        "tasks": [
+          {
+            "start": 8303.800000011921,
+            "duration": 149
+          },
+          {
+            "start": 8497.200000047684,
+            "duration": 580
+          }
+        ],
+        "control": {
+          "before": [
+            0,
+            3.7097,
+            36
+          ],
+          "after": [
+            0,
+            3.702489755678438,
+            34.54338498554297
+          ],
+          "modal": false,
+          "cutscene": false
+        }
+      },
+      {
+        "id": "level5",
+        "start": 9500.800000011921,
+        "buildStart": 9510.700000047684,
+        "build": 9699.700000047684,
+        "frame": 10438.800000011921,
+        "maxGap": 920,
+        "tasks": [
+          {
+            "start": 9505.800000011921,
+            "duration": 195
+          },
+          {
+            "start": 9742.400000035763,
+            "duration": 697
+          }
+        ],
+        "control": {
+          "before": [
+            0,
+            4.612356206133672,
+            38
+          ],
+          "after": [
+            0,
+            4.579709982896084,
+            36.384009774666694
+          ],
+          "modal": false,
+          "cutscene": false
+        }
+      },
+      {
+        "id": "level6",
+        "start": 10895,
+        "buildStart": 10911.800000011921,
+        "build": 11147.400000035763,
+        "frame": 11504.200000047684,
+        "maxGap": 600,
+        "tasks": [
+          {
+            "start": 10900.900000035763,
+            "duration": 247
+          },
+          {
+            "start": 11203.100000023842,
+            "duration": 302
+          }
+        ],
+        "control": {
+          "before": [
+            0,
+            9.87,
+            42
+          ],
+          "after": [
+            0,
+            10.315857145815608,
+            40.26490432737674
+          ],
+          "modal": false,
+          "cutscene": false
+        }
+      },
+      {
+        "id": "level1",
+        "start": 11892.700000047684,
+        "buildStart": 11913.200000047684,
+        "build": 11962.800000011921,
+        "frame": 12234,
+        "maxGap": 320,
+        "tasks": [
+          {
+            "start": 11907.700000047684,
+            "duration": 56
+          },
+          {
+            "start": 12020.800000011921,
+            "duration": 214
+          }
+        ],
+        "control": {
+          "before": [
+            0,
+            4,
+            10
+          ],
+          "after": [
+            0,
+            4,
+            8.294590459613662
+          ],
+          "modal": false,
+          "cutscene": false
+        }
+      }
+    ],
+    "oceanResources": [
+      {
+        "name": "http://127.0.0.1:62843/style.css",
+        "transfer": 0,
+        "encoded": 27688
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/outfit-vayhong.jpg",
+        "transfer": 0,
+        "encoded": 16992
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/hero.jpg",
+        "transfer": 0,
+        "encoded": 86480
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/outfit-haibim.jpg",
+        "transfer": 0,
+        "encoded": 16690
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/outfit-muvang.jpg",
+        "transfer": 0,
+        "encoded": 19740
+      },
+      {
+        "name": "http://127.0.0.1:62843/three.min.js",
+        "transfer": 0,
+        "encoded": 648177
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/data.js",
+        "transfer": 0,
+        "encoded": 53071
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/audio.js",
+        "transfer": 0,
+        "encoded": 39931
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/core.js",
+        "transfer": 0,
+        "encoded": 44572
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/pbr.js",
+        "transfer": 0,
+        "encoded": 99810
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/vfx.js",
+        "transfer": 0,
+        "encoded": 37944
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/player.js",
+        "transfer": 0,
+        "encoded": 64900
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/systems.js",
+        "transfer": 0,
+        "encoded": 108627
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/story.js",
+        "transfer": 0,
+        "encoded": 80906
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/cutscene.js",
+        "transfer": 0,
+        "encoded": 16206
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/levels/hub.js",
+        "transfer": 0,
+        "encoded": 28602
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/levels/level1_ocean.js",
+        "transfer": 0,
+        "encoded": 42956
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/levels/level2_forest.js",
+        "transfer": 0,
+        "encoded": 33320
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/levels/level3_desert.js",
+        "transfer": 0,
+        "encoded": 26485
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/levels/level4_crystal.js",
+        "transfer": 0,
+        "encoded": 31880
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/levels/level5_snow.js",
+        "transfer": 0,
+        "encoded": 35645
+      },
+      {
+        "name": "http://127.0.0.1:62843/js/levels/level6_clouds.js",
+        "transfer": 0,
+        "encoded": 36729
+      },
+      {
+        "name": "http://127.0.0.1:62843/game.js",
+        "transfer": 0,
+        "encoded": 17136
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/hero.jpg",
+        "transfer": 0,
+        "encoded": 86480
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/tex-sand.jpg",
+        "transfer": 0,
+        "encoded": 208307
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/tex-rock.jpg",
+        "transfer": 0,
+        "encoded": 371023
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/tex-wood.jpg",
+        "transfer": 0,
+        "encoded": 269526
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/tex-caustics.jpg",
+        "transfer": 0,
+        "encoded": 52337
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/tex-pano.jpg",
+        "transfer": 0,
+        "encoded": 326363
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/tex-fan.jpg",
+        "transfer": 0,
+        "encoded": 249760
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/img/tex-fanalpha.jpg",
+        "transfer": 0,
+        "encoded": 136211
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/fish.glb",
+        "transfer": 0,
+        "encoded": 53652
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/coral.glb",
+        "transfer": 0,
+        "encoded": 41804
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/turtle.glb",
+        "transfer": 0,
+        "encoded": 199788
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/jelly.glb",
+        "transfer": 0,
+        "encoded": 32944
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/chest.glb",
+        "transfer": 0,
+        "encoded": 123312
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/tang-blue.glb",
+        "transfer": 0,
+        "encoded": 76196
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/tang-yellow.glb",
+        "transfer": 0,
+        "encoded": 76068
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/manta.glb",
+        "transfer": 0,
+        "encoded": 53120
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/barrel.glb",
+        "transfer": 0,
+        "encoded": 98608
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/amphora.glb",
+        "transfer": 0,
+        "encoded": 37716
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/clam.glb",
+        "transfer": 0,
+        "encoded": 36592
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/sanddollar.glb",
+        "transfer": 0,
+        "encoded": 24860
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/starfish.glb",
+        "transfer": 0,
+        "encoded": 2812
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/seaweed.glb",
+        "transfer": 0,
+        "encoded": 72484
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/kelp.glb",
+        "transfer": 0,
+        "encoded": 9020
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/hero_lighthouse.glb",
+        "transfer": 0,
+        "encoded": 232820
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/hero_castle.glb",
+        "transfer": 0,
+        "encoded": 167164
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_cabin.glb",
+        "transfer": 0,
+        "encoded": 622200
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_windmill.glb",
+        "transfer": 0,
+        "encoded": 632664
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_shipwreck.glb",
+        "transfer": 0,
+        "encoded": 343180
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_boat.glb",
+        "transfer": 0,
+        "encoded": 74600
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/may_rigged.glb",
+        "transfer": 0,
+        "encoded": 716736
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/companion_milo.glb",
+        "transfer": 0,
+        "encoded": 214880
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/npc_tortoise_elder.glb",
+        "transfer": 0,
+        "encoded": 102592
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/boss_mushroom_king.glb",
+        "transfer": 0,
+        "encoded": 132028
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/boss_crystal_golem.glb",
+        "transfer": 0,
+        "encoded": 77736
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/boss_storm_king.glb",
+        "transfer": 0,
+        "encoded": 116308
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_fox.glb",
+        "transfer": 0,
+        "encoded": 335796
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_deer.glb",
+        "transfer": 0,
+        "encoded": 419656
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_reindeer.glb",
+        "transfer": 0,
+        "encoded": 410880
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_unicorn.glb",
+        "transfer": 0,
+        "encoded": 388536
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_alpaca.glb",
+        "transfer": 0,
+        "encoded": 373172
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_crab.glb",
+        "transfer": 0,
+        "encoded": 143004
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_dolphin.glb",
+        "transfer": 0,
+        "encoded": 69048
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_whale.glb",
+        "transfer": 0,
+        "encoded": 77464
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/models/cc0_clownfish.glb",
+        "transfer": 0,
+        "encoded": 156240
+      },
+      {
+        "name": "http://127.0.0.1:62843/favicon.ico",
+        "transfer": 0,
+        "encoded": 22476
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/audio/amb_hub.wav",
+        "transfer": 0,
+        "encoded": 640044
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/voice/hub.mp3",
+        "transfer": 0,
+        "encoded": 69504
+      },
+      {
+        "name": "http://127.0.0.1:62843/icons/icon-192.png",
+        "transfer": 0,
+        "encoded": 82832
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/audio/amb_level1.wav",
+        "transfer": 0,
+        "encoded": 640044
+      },
+      {
+        "name": "http://127.0.0.1:62843/assets/voice/level1.mp3",
+        "transfer": 0,
+        "encoded": 60480
+      }
+    ]
+  }
+]
