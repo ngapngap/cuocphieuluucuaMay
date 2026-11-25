@@ -789,6 +789,88 @@
       }
     });
 
+    // Chuyến cứu hộ mở từ xác tàu; trạng thái lưu trong story.steps.journey.
+    var expedition = MAY.createChapterJourney(ctx, {
+      title: "Bubi quay lại", entry: [-53, 4.1, -43], color: 0x48d9d1,
+      sections: [
+        { name: "Khoang tàu đắm", brief: "Bubi quay lại cứu bạn cá cuối cùng. Chọn khe đủ rộng cho cả đàn.", landmark: "Khung tàu vỡ", length: 580, sky: 0x285c77, ground: 0x597c7b, path: 0x5fb5b0, scenery: "wreck", companion: "fish", events: [
+          {at:.08,kind:"pass",lane:-1,cue:"Xà gỗ chắn giữa; lách qua trái.",success:"Mây tìm được đường qua."},
+          {at:.19,kind:"cast",lane:0,spell:"wave",cue:"Dùng Sóng đẩy thùng gỗ.",success:"Dòng nước mở lối."},
+          {at:.30,kind:"escort",lane:1,cue:"Mắt lưới hẹp bên trái; dẫn đàn sang phải.",success:"Bạn đồng hành đã đi qua cùng Mây."},
+          {at:.41,kind:"pass",lane:0,cue:"Qua khoảng giữa hai đầu ván.",success:"Mây tìm được đường qua."},
+          {at:.52,kind:"cast",lane:-1,spell:"wave",cue:"Dùng Sóng đẩy tấm ván nghiêng.",success:"Dòng nước mở lối."},
+          {at:.64,kind:"escort",lane:-1,cue:"Dẫn đàn qua khe trái.",success:"Bạn đồng hành đã đi qua cùng Mây."},
+          {at:.76,kind:"pass",lane:1,cue:"Dây neo bên trái; đi phía phải.",success:"Mây tìm được đường qua."},
+          {at:.88,kind:"escort",lane:0,cue:"Giữ giữa lối để đàn không vướng lưới.",success:"Bạn đồng hành đã đi qua cùng Mây."}
+        ]},
+        { name: "Khe nước xiết", brief: "Nhìn bọt nước báo dòng; tìm phía khuất để đưa đàn qua.", landmark: "Khe đá và dòng bọt", length: 580, sky: 0x246781, ground: 0x426b79, path: 0x69c7c4, scenery: "reef", companion: "bubi", events: [
+          {at:.08,kind:"escort",lane:-1,cue:"Bọt dồn bên phải: nép đàn về trái.",success:"Bạn đồng hành đã đi qua cùng Mây."},
+          {at:.19,kind:"pass",lane:1,cue:"Dòng đổi chiều; phía phải đang yên.",success:"Mây tìm được đường qua."},
+          {at:.30,kind:"cast",lane:0,spell:"wave",cue:"Dùng Sóng dạt rong khỏi khe.",success:"Dòng nước mở lối."},
+          {at:.41,kind:"escort",lane:1,cue:"Bubi chờ bên phải; dẫn đàn theo.",success:"Bạn đồng hành đã đi qua cùng Mây."},
+          {at:.52,kind:"pass",lane:-1,cue:"Bọt trắng giữa khe; men theo trái.",success:"Mây tìm được đường qua."},
+          {at:.64,kind:"escort",lane:0,cue:"Hai mỏm đá che dòng ở giữa.",success:"Bạn đồng hành đã đi qua cùng Mây."},
+          {at:.76,kind:"cast",lane:1,spell:"wave",cue:"Thổi rong cuốn khỏi đường cá.",success:"Dòng nước mở lối."},
+          {at:.88,kind:"escort",lane:-1,cue:"Né bọt về phía trái.",success:"Bạn đồng hành đã đi qua cùng Mây."}
+        ]},
+        { name: "Rạn trú cá", brief: "Chọn rạn xanh hoặc vịnh vàng làm nơi trú cho đàn.", landmark: "Cổng san hô đôi", length: 580, sky: 0x378b9a, ground: 0x578f86, path: 0x8bcdb4, scenery: "reef", companion: "fish", events: [
+          {at:.08,kind:"pass",lane:0,cue:"Qua giữa hai nhánh san hô.",success:"Mây tìm được đường qua."},
+          {at:.19,kind:"escort",lane:-1,cue:"Đưa đàn tránh gai phía phải.",success:"Bạn đồng hành đã đi qua cùng Mây."},
+          {at:.30,kind:"fork",lane:0,choices:["Rạn xanh", "Vịnh vàng"],cue:"Chọn rạn xanh bên trái hoặc vịnh vàng bên phải.",success:"Đàn cá theo cửa Mây chọn."},
+          {at:.41,kind:"cast",lane:0,spell:"wave",cue:"Dùng Sóng mở rong trước cửa trú.",success:"Dòng nước mở lối.", afterFork:[
+            {lane:-1,cue:"Ở rạn xanh, dạt rong bên trái để vào chỗ trú.",success:"Rong rẽ ra, rạn xanh đón đàn cá."},
+            {lane:1,cue:"Ở vịnh vàng, dạt rong bên phải để vào chỗ trú.",success:"Rong rẽ ra, vịnh vàng đón đàn cá."}
+          ]},
+          {at:.52,kind:"escort",lane:1,cue:"Đi bên phải qua nhánh san hô.",success:"Bạn đồng hành đã đi qua cùng Mây."},
+          {at:.64,kind:"pass",lane:-1,cue:"Lối trái vòng qua bụi gai.",success:"Mây tìm được đường qua."},
+          {at:.76,kind:"escort",lane:0,cue:"Dẫn đàn giữa hai cột đá.",success:"Bạn đồng hành đã đi qua cùng Mây."},
+          {at:.88,kind:"pass",lane:1,cue:"Bubi bơi ngược: theo bạn qua lối phải.",success:"Mây tìm được đường qua."}
+        ]},
+        { name: "Trở lại khoang tàu", brief: "Bubi dẫn Mây quay vào từ mạn tàu khác để tìm cá nhỏ còn mắc lưới.", landmark: "Mạn tàu thủng", length: 580, sky: 0x315b76, ground: 0x526e73, path: 0x74c6c4, scenery: "wreck", companion: "bubi", events: [
+          {at:.08,kind:"pass",lane:1,cue:"Qua mạn tàu thủng bên phải.",success:"Mây tìm được đường qua."},
+          {at:.19,kind:"cast",lane:0,spell:"wave",cue:"Dùng Sóng đẩy xà gỗ khỏi lối vào.",success:"Xà gỗ trôi khỏi mạn tàu."},
+          {at:.30,kind:"pass",lane:-1,cue:"Vòng trái qua tấm lưới.",success:"Mây tìm được đường qua."},
+          {at:.41,kind:"cast",lane:1,spell:"wave",cue:"Dùng Sóng dạt đống ván chắn khoang.",success:"Lối vào khoang sâu đã thông."},
+          {at:.52,kind:"escort",lane:-1,cue:"Cùng Bubi qua khe trái.",success:"Bubi theo Mây qua khe."},
+          {at:.64,kind:"escort",lane:1,cue:"Cùng Bubi vòng phải sau thùng gỗ.",success:"Hai bạn vượt qua thùng gỗ."},
+          {at:.76,kind:"pass",lane:0,cue:"Theo ánh sáng xuyên qua cửa giữa.",success:"Mây thấy khoang còn mắc lưới."},
+          {at:.88,kind:"escort",lane:0,cue:"Cùng Bubi đến cửa khoang.",success:"Hai bạn đã tìm được khoang cá nhỏ."}
+        ]}
+      ],
+      clearing: {
+        section: 3, name: "Khoang cá cuối cùng", brief: "Tìm cá nhỏ trong lưới rồi dẫn bạn đến nơi trú. Bubi đợi ở cửa.",
+        devices: [
+          {id:"net",name:"Mắt lưới mắc cá",x:-17,z:-23,form:"net",color:0xe8b07e,spell:"wave"},
+          {id:"fish",name:"Cá nhỏ",x:-14,z:-21,form:"fish",color:0xffa969},
+          {id:"reef",name:"Rạn trú an toàn",x:17,z:-27,form:"reef",color:0x69dfbb},
+          {id:"shell",name:"Vỏ sò của Bubi",x:15,z:3,form:"shell",color:0xffd17e}
+        ],
+        hint: function(v) { return v.safe ? "Cá nhỏ đã tới rạn. Gọi Bubi bằng vỏ sò." : v.free ? "Cá nhỏ đang theo Mây. Dẫn bạn tới rạn xanh." : "Tìm mắt lưới đang giữ cá nhỏ."; },
+        action: function(id,v) {
+          if(id==='net') { v.free=true; return {text:"Mắt lưới mở ra! Cá nhỏ bơi theo Mây.",done:false}; }
+          if(id==='fish') return {text:v.free?"Cá nhỏ đang theo Mây tới rạn.":"Cá nhỏ còn vướng lưới; mở lưới trước.",done:false};
+          if(id==='reef') { if(!v.free)return {text:"Rạn yên rồi, nhưng cá nhỏ vẫn mắc trong khoang.",done:false}; v.safe=true;return {text:"Cá nhỏ đã đến nơi trú an toàn!",done:false}; }
+          if(id==='shell' && v.safe) {v.called=true;return {text:"Bubi đáp lại: bạn cuối đã an toàn!",done:true};}
+          return {text:"Bubi chờ tín hiệu sau khi cá nhỏ tới rạn.",done:false};
+        },
+        look: function(id,v) { var result={lit:id==='net'?!!v.free:id==='reef'?!!v.safe:id==='shell'?!!v.called:false,angle:id==='net'&&v.free?1.1:0}; if(id==='fish'&&v.safe){result.x=17;result.z=-27;}return result; },
+        links: function(v) { return v.safe?[["reef","shell",0x7cebd0]]:[]; },
+        followers: function(v) { return v.free&&!v.safe?["fish"]:[]; }
+      },
+      makeLandmark: function (index) {
+        var g = new THREE.Group();
+        var wood = new THREE.MeshStandardMaterial({color: index === 0 || index === 3 ? 0x79553c : 0xe88677, roughness: .85});
+        var accent = new THREE.MeshStandardMaterial({color: index === 2 ? 0x5ee7b1 : 0x75d8dd, emissive: 0x123c3c});
+        for (var side = -1; side <= 1; side += 2) {
+          var post = new THREE.Mesh(new THREE.BoxGeometry(1.2, 6, 1.3), wood); post.position.set(side * 4.8, 3, 0); post.rotation.z = side * .12; g.add(post);
+          var coral = new THREE.Mesh(new THREE.ConeGeometry(1.2, 3, 6), accent); coral.position.set(side * 4.8, 6.4, 0); g.add(coral);
+        }
+        var beam = new THREE.Mesh(new THREE.BoxGeometry(10, .8, 1), wood); beam.position.y = 6; g.add(beam);
+        if (index === 2) { var ring = new THREE.Mesh(new THREE.TorusGeometry(1.5, .25, 8, 20), accent); ring.position.set(0, 3.5, 0); g.add(ring); }
+        return g;
+      }, onComplete: updateCh1Story
+    });
+
     function updateCh1Story() {
       if (replayRescue) {
         var goal = replayRescue.fishRescue === 2 ? rescueHavens[replayRescue.fishRescueExit] : null;
@@ -832,6 +914,7 @@
         else if (rescueStep === 1) ctx.setObjective("🐟", "CHỌN LỐI XANH TỚI RẠN HOẶC LỐI VÀNG VỀ VỊNH — DÙNG 🌊 MỞ LỐI", null);
         else ctx.setObjective("🐟", chosenExit ? "DẪN ĐÀN CÁ VỀ VỊNH YÊN" : "DẪN ĐÀN CÁ TỚI RẠN AN TOÀN", rescueHavens[chosenExit]);
       } else {
+        if (ch1St.stage < 2 && expedition.block()) return;
         ch1St.stage = 2;
         MAY.persist();
         ch1Npc.setMarker("?");
