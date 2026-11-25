@@ -35,6 +35,12 @@ Nạp texture lên GPU trước khung đầu mất 98 ms và khung vẽ tiếp t
 
 Ở bản cuối, cảnh cũ giữ vật liệu tới khi cảnh mới đã dùng được các shader chung. Trong bốn lượt quay lại mỗi vùng, khoảng ngắt ở Vịnh giảm từ 387–427 ms xuống 160–213 ms, ở Hang từ 467–520 ms xuống 213–320 ms. Số texture ổn định ở 115–116 tại Vịnh và 124 tại Hang. [Trace cuối](../tools/crystal-final.json) · [Mười lần chuyển ở bản cuối](../tools/water-crystal-final.json)
 
+### Khảo sát thêm P0: nhũ đá Hang Pha Lê
+
+Thử trên hai bản sao tạm giống nhau, chỉ thay 28 nhũ đá tĩnh riêng lẻ bằng một `InstancedMesh` có cùng vật liệu và vị trí, tỷ lệ, hướng. Không đổi mức Vừa hay cấu hình hình ảnh. Chrome headless/D3D11, Intel UHD 630, 1180×760; hai đợt, mỗi đợt bốn cặp với thứ tự baseline/ứng viên luân phiên. Browser dùng lại GPU cache giữa các lượt, nên lượt baseline đầu tiên của mỗi đợt lạnh hơn và không phải phép đo cold hoàn toàn cân bằng.
+
+Trung vị tám lượt yêu cầu chuyển màn → hoàn tất khung đầu là 612 ms ở baseline và 620 ms ở ứng viên; trung vị thời gian render của các khung 2–30 là 7,8 và 7,7 ms. Ở đợt xác nhận, khoảng ngắt RAF lớn nhất sau khung đầu là 40–53 ms cho baseline và 40 ms cho ứng viên; thời gian render khung sau chậm nhất là 10,9–23,9 ms và 9,5–15,4 ms. Số draw khung đầu thường giảm nhưng biến thiên theo góc nhìn. Hai đợt cho kết quả thời gian khung đầu khác chiều; chưa có bằng chứng giảm khựng đủ thuyết phục, nên **không đưa thử nghiệm vào game**. [Lượt đầu](../tools/p0-crystal-paired.json) · [Đợt xác nhận và 29 khung sau](../tools/p0-crystal-confirm.json). Không coi các lượt chạy headless này là dữ liệu thiết bị di động thực.
+
 ## Tuyến biết đường ở Vịnh San Hô
 
 Chạy qua bản đồ ở chế độ Cốt truyện từ bản lưu mới. Kịch bản đọc vị trí để gửi phím di chuyển, nhận Sóng từ Cụ Rùa, cứu Bubi, phá ba đám mực, đẩy ngọc trai rồi bơi tới bệ Ngọc. Cả hai lượt nhận một Ngọc với 1/10 vật phẩm, 0 câu đố, 0 thử thách và 0 nhiệm vụ phụ. Thời gian giữa các hoạt động đo bằng đồng hồ thực của trình duyệt.
