@@ -1,11 +1,11 @@
 /* Shell installation is independent of optional world downloads. */
 importScripts("js/packages.js");
-var CACHE = "may-phieu-luu-v14.0-4";
+var CACHE = "may-phieu-luu-v14.0-5";
 var SHELL = [
   "./", "index.html", "style.css", "three.min.js",
   "game.js", "manifest.json", "favicon.ico", "js/data.js",
   "js/audio.js", "js/packages.js", "js/core.js", "js/pbr.js",
-  "js/vfx.js", "js/outfit-color.js", "js/player.js", "js/systems.js", "js/story.js",
+  "js/vfx.js", "js/outfit-color.js", "js/player.js", "js/systems.js", "js/replays.js", "js/story.js",
   "js/cutscene.js", "js/levels/hub.js", "js/levels/level1_ocean.js", "js/levels/level2_forest.js",
   "js/levels/level3_desert.js", "js/levels/level4_crystal.js", "js/levels/level5_snow.js", "js/levels/level6_clouds.js",
   "icons/icon-192.png", "icons/icon-512.png"

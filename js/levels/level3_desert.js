@@ -286,11 +286,69 @@
     if (ch3St.steps.oasisRevived) oasisTree.revive(true);
 
     /* 3 Đài Gương Mặt Trời quanh sa mạc (đốt bóng tối bằng ☀️ -> bắn 3 tia laser vàng lên đỉnh Kim Tự Tháp!) */
-    var mirrorCoords = [[-32, 12], [32, 4], [-18, -32]];
+    var mirrorCoords = [[-34, 25], [32, 4], [-27, -25]];
     var mirrors = mirrorCoords.map(function (c, i) {
       var mr = MAY.buildSolarMirror(ctx, c[0], c[1], pyrPeak);
       if (ch3St.steps["mir" + i]) mr.activate(true);
       return mr;
+    });
+
+    // Each reflected guide ray can be turned through distinct bearings. The
+    // golden sun receiver is the goal; blue moons are decoys, not switches.
+    var mirrorSlots = [4, 6, 8], mirrorAnswers = [1, 3, 6];
+    var mirrorPuzzles = mirrors.map(function (mr, idx) {
+      var slots = mirrorSlots[idx], answer = mirrorAnswers[idx], distance = 9;
+      var saved = Number(ch3St.steps["mirrorAim" + idx]);
+      var aim = Number.isInteger(saved) && saved >= 0 && saved < slots ? saved : 0;
+      var guide = new THREE.Group(); ctx.add(guide);
+      var beamMat = new THREE.MeshBasicMaterial({ color: 0xffdf62, transparent: true, opacity: 0.9, depthWrite: false });
+      var preview = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.10, distance, 8), beamMat); guide.add(preview);
+      var endpoint = new THREE.Mesh(new THREE.SphereGeometry(0.24, 8, 6), beamMat); guide.add(endpoint);
+      var receivers = [];
+      function bearing(slot) { return slot * Math.PI * 2 / slots; }
+      function groundPoint(slot) {
+        var a = bearing(slot), x = mr.pos.x + Math.sin(a) * distance, z = mr.pos.z + Math.cos(a) * distance;
+        return new THREE.Vector3(x, ctx.groundH(x, z), z);
+      }
+      var decoys = idx === 0 ? [(answer + 2) % slots] : idx === 1 ? [(answer + 1) % slots, (answer + 4) % slots] : [(answer + 1) % slots, (answer + 3) % slots, (answer + 5) % slots];
+      [answer].concat(decoys).forEach(function (slot) {
+        var pt = groundPoint(slot), correct = slot === answer, receiver = new THREE.Group(); receiver.position.copy(pt);
+        var plinth = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.7, 0.5, 10), new THREE.MeshStandardMaterial({ color: correct ? 0xc68d37 : 0x55708d, roughness: 0.8 }));
+        plinth.position.y = 0.25; receiver.add(plinth);
+        var ring = new THREE.Mesh(new THREE.TorusGeometry(0.6, 0.10, 6, 16), new THREE.MeshBasicMaterial({ color: correct ? 0xffd33d : 0x75a9d0 }));
+        ring.rotation.x = Math.PI / 2; ring.position.y = 0.53; receiver.add(ring);
+        var icon = MAY.makeLabel(correct ? "☀️ ĐÍCH NẮNG" : "🌙", { sx: correct ? 2.8 : 1.0, sy: 0.65, bg: "rgba(28,31,48,.84)" });
+        icon.position.y = 1.55; receiver.add(icon); ctx.trackLabel(icon, 24, correct ? 2 : 0);
+        ctx.add(receiver); receivers.push({ group: receiver, ring: ring, correct: correct });
+      });
+      // The existing dark cover conceals the reflecting face. Reveal it while
+      // adjusting, then keep the original solved beam to the pyramid.
+      var dish = mr.group.children[1], cover = mr.group.children[2];
+      if (!mr.lit && cover) cover.visible = false;
+      var control = {
+        obj: mr.group, label: "Xoay gương (T / Enter)",
+        isActive: function () { return ch3St.stage >= 2 && !ch3St.steps["mir" + idx]; },
+        onInteract: function () {
+          if (!control.isActive()) return;
+          aim = (aim + 1) % slots; ch3St.steps["mirrorAim" + idx] = aim; MAY.persist(); sync();
+          MAY.toast(aim === answer ? "☀️ Tia đã chạm đích nắng! Dùng Tia Nắng (3+R) vào gương." : "🔄 Xoay tiếp để tia vàng chạm vòng ☀️; vòng 🌙 là hướng sai.");
+        }
+      };
+      ctx.interactives.push(control);
+      function sync() {
+        var active = ch3St.stage >= 2 && !ch3St.steps["mir" + idx];
+        guide.visible = active;
+        var start = new THREE.Vector3(mr.pos.x, ctx.groundH(mr.pos.x, mr.pos.z) + 0.18, mr.pos.z);
+        var end = groundPoint(aim).add(new THREE.Vector3(0, 0.55, 0));
+        var delta = end.clone().sub(start); preview.position.copy(start).add(end).multiplyScalar(0.5);
+        preview.scale.y = delta.length() / distance;
+        preview.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), delta.normalize());
+        endpoint.position.copy(end);
+        if (dish && active) dish.rotation.set(0, bearing(aim), 0);
+        receivers.forEach(function (r) { r.group.visible = ch3St.stage >= 2; r.ring.material.color.setHex(r.correct && ch3St.steps["mir" + idx] ? 0x67ef9b : r.correct ? 0xffd33d : 0x75a9d0); });
+      }
+      sync();
+      return { aligned: function () { return aim === answer; }, sync: sync, dish: dish };
     });
 
     /* 4 Bọ Cạp Cát Xám canh giữ các Đài Gương */
@@ -344,6 +402,7 @@
     });
 
     function updateCh3Story() {
+      mirrorPuzzles.forEach(function (puzzle) { puzzle.sync(); });
       if (ch3St.rewarded || ctx.save.gem) {
         ch3Npc.setMarker("♥");
         ctx.setObjective("🟡", "SA MẠC ĐÃ RỰC NẮNG — SANG CHƯƠNG 4 HANG PHA LÊ (PHÍM M)", null);
@@ -375,7 +434,7 @@
         ch3Npc.setMarker("?");
         var nextM = mirrors[0].pos;
         for (var j = 0; j < 3; j++) if (!ch3St.steps["mir" + j]) { nextM = mirrors[j].pos; break; }
-        ctx.setObjective("☀️", "DÙNG ☀️ TIA NẮNG (3+R) THẮP 3 ĐÀI GƯƠNG LASER (" + litCount + "/3)", nextM);
+        ctx.setObjective("☀️", "XOAY GƯƠNG ĐẾN ĐÍCH ☀️, RỒI DÙNG TIA NẮNG (" + litCount + "/3)", nextM);
       } else {
         ch3St.stage = 3; MAY.persist();
         if (darkSeal.visible) {
@@ -412,10 +471,15 @@
     mirrors.forEach(function (mr, idx) {
       ctx.addSkillTarget({
         id: "l3_mir_" + idx, pos: mr.pos, radius: 9.0, reqSpell: "solar",
-        hint: "☀️ Thắp Đài Gương Nắng (" + (idx + 1) + "/3)", done: !!ch3St.steps["mir" + idx],
+        hint: "🔄 Xoay gương (T / Enter) → ☀️ Tia Nắng", done: !!ch3St.steps["mir" + idx],
         isActive: function () { return ch3St.stage >= 2 && !ch3St.steps["mir" + idx]; },
         onHit: function (sp, tg) {
+          if (!mirrorPuzzles[idx].aligned()) {
+            MAY.toast("🔄 Tia chưa chạm vòng ☀️! Đến gần và xoay gương bằng T / Enter hoặc chạm nút.");
+            return;
+          }
           ch3St.steps["mir" + idx] = true; MAY.persist();
+          if (mirrorPuzzles[idx].dish) mirrorPuzzles[idx].dish.lookAt(pyrPeak);
           mr.activate(false);
           tg.markDone();
           MAY.toast("☀️ Đài Gương " + (idx + 1) + "/3 bắn tia nắng vàng rực lên đỉnh Kim Tự Tháp!", "Đài Gương Mặt Trời đã sáng rực, bắn tia nắng vàng thẳng lên Kim Tự Tháp!");

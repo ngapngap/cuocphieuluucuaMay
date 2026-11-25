@@ -13,19 +13,19 @@ Nhặt vật phẩm là nhánh khám phá tùy chọn: mỗi vật phẩm hồi 
 
 | Chương | Học và tự vận dụng | Điều kiện Ngọc | Công dụng vật phẩm / thưởng tùy chọn | Khi thử sai |
 | --- | --- | --- | --- | --- |
-| 1 – Biển | Học Sóng cứu Bubi, tự phá mây mực và đẩy ngọc trai về trùm | Hạ Bạch Tuộc | Sao biển hồi tim; tìm rương, kỷ vật và bảo vật ẩn | Chờ trùm nhả ngọc trai rồi dùng Sóng đẩy ngược |
-| 2 – Rừng | Rửa bùn, học Nở Hoa và chọn cây chết để hồi sinh | Hạ Vua Nấm | Nấm sáng hồi tim; 5 nấm mở giày nhảy; khám phá rương và bảo vật | Tiến lại gần cây chết rồi chọn Nở Hoa |
-| 3 – Sa mạc | Hồi sinh ốc đảo, dùng Nắng kích hoạt các gương | Hạ Bọ Cạp | Đá mặt trời hồi tim; 5 đá mở khăn gió; khám phá rương và bảo vật | Chọn Nắng và hướng tới gương chưa sáng |
+| 1 – Biển | Cứu Bubi, cùng vượt hai luồng nước, phá mây mực, chọn lối đưa đàn cá thoát khỏi tàu đắm rồi đẩy ngọc trai về trùm | Hạ Bạch Tuộc | Sao biển hồi tim. Sau Ngọc, có thể quay lại dẫn cá theo lối khác | Dùng Sóng khi dòng chảy mạnh. Đàn cá đuổi kịp khi Mây bơi chậm |
+| 2 – Rừng | Hồi sinh cây, dẫn nước tới rễ Cây Mẹ rồi dùng Nở Hoa trước khi đấu Vua Nấm | Hạ Vua Nấm | Nấm sáng hồi tim. Năm nấm mở giày nhảy | Nhìn màu rễ để chọn Sóng hoặc Nở Hoa |
+| 3 – Sa mạc | Hồi sinh ốc đảo, xoay ba gương sao cho vệt sáng gặp đích Mặt Trời rồi truyền Nắng về kim tự tháp | Hạ Bọ Cạp | Đá mặt trời hồi tim. Năm đá mở khăn gió | Xoay tiếp khi tia chiếu vào đích Mặt Trăng |
 | 4 – Pha lê | Thắp đuốc, chơi lại hai mẫu giai điệu và dùng Nắng khi giáp Golem mở | Hạ Golem | Tinh thể hồi tim; 5 tinh thể mở đèn pha; khám phá rương và bảo vật | Nghe hoặc nhìn lại mẫu, so với các nốt vừa gõ, rồi sửa nốt sai |
 | 5 – Tuyết | Phá băng nứt, dùng Sương Băng xây cầu và đóng cầu tuyết | Hạ Sói Tuyết | Bông tuyết hồi tim; 5 bông mở ván trượt; khám phá rương và bảo vật | Dùng Sương Băng gần khe suối hoặc cầu tuyết |
 | 6 – Mây | Học Lốc Cầu Vồng, tự phá ổ khóa và phối hợp phép đấu trùm | Hạ Vua Mây Bão | Lông vũ hồi tim; 5 lông mở cánh lướt; khám phá rương và bảo vật | Chọn phép theo pha trùm và tránh đòn trước khi phản công |
 **Vua Mây Bão (Bóng Xám)** đã cướp **6 Viên Ngọc Cầu Vồng**, bắt cóc **Bé Gió Lốc Tí Hon** và phủ Màn Sương Xám lên 6 vùng đất. Bé **Mây** xuất phát tại **Đảo Mây** với Cây Gậy Phép còn trống rỗng, trò chuyện với các **NPC Giao Nhiệm Vụ (`!`)**, thức tỉnh lần lượt **6 Kỹ Năng Nguyên Tố thực chiến**, dùng chúng giải đố/biến đổi thế giới và đánh bại **6 Trùm Sương Xám**:
-1. **🌊 Chương 1 — Vịnh San Hô Xanh** *(Giải cứu & Phản đòn)*: Gặp **Cụ Rùa San Hô Cổ** nhận **Phép `1` Sóng Xung Kích (`🌊`)** -> phá lưới đá cứu Cá heo Bubi, thổi tan 3 Đám Mây Mực quanh Tàu Đắm -> đấu **Trùm Bạch Tuộc Mực Khổng Lồ** bằng cách đẩy ngược Ngọc Trai Đen Nổ!
+1. **🌊 Chương 1 — Vịnh San Hô Xanh** *(Giải cứu & Phản đòn)*: Gặp **Cụ Rùa San Hô Cổ** nhận **Phép `1` Sóng Xung Kích (`🌊`)** -> phá lưới đá cứu Cá heo Bubi, vượt hai luồng nước, dọn mây mực rồi tìm một trong hai lối đưa đàn cá về nơi trú -> đấu **Trùm Bạch Tuộc Mực Khổng Lồ** bằng cách đẩy ngược Ngọc Trai Đen Nổ!
 2. **🌲 Chương 2 — Khu Rừng Nấm Xanh** *(Hồi sinh hệ sinh thái)*: Gặp **Bà Sóc Hạt Dẻ** -> rửa Ụ Bùn Đen bằng `🌊` để thức tỉnh **Phép `2` Nở Hoa Hồi Sinh (`🌿`)** -> **hồi sinh 3 Cây Cổ Thụ Chết Khô** mọc lá xanh, hoa & nấm lò xo -> phối hợp `🌊`+`🌿` đánh bại **Vua Nấm Khô Héo** hồi sinh Cây Cổ Thụ Mẹ!
-3. **🏜️ Chương 3 — Sa Mạc Kim Tự Tháp** *(Giải đố 3 Đài Gương Laser)*: Gặp **Lạc Đà Kiki** -> hồi sinh Cây Chà Là Ốc Đảo bằng `🌿` để thức tỉnh **Phép `3` Tia Nắng Rực Rỡ (`☀️`)** -> đốt bóng tối kích hoạt **3 Đài Gương bắn tia Laser Vàng** hội tụ phá Phong Ấn Kim Tự Tháp -> hạ **Bọ Cạp Sa Mạc Khổng Lồ**!
-4. **💎 Chương 4 — Hang Động Pha Lê** *(Phá hầm & Đàn Nhạc)*: Gặp **Nhạc Sư Cú Mèo**, thắp 2 đuốc và học phép `💎`, rồi phá tường. Nghe hoặc nhìn mẫu ● Đô–▲ Mi–◆ Son, gõ lại và thử một nhịp mới; nút trên đàn cho nghe lại mẫu hoặc các nốt đã gõ, và một nốt sai có thể sửa ngay. Nhịp mới mở giáp Golem để dùng `☀️` chiếu lõi. Game lưu từng nốt đúng. Sau trận, Mây có thể luyện thêm để nhận pháo sao.
+3. **🏜️ Chương 3 — Sa Mạc Kim Tự Tháp** *(Giải đố 3 Đài Gương Laser)*: Gặp **Lạc Đà Kiki** -> hồi sinh Cây Chà Là Ốc Đảo bằng `🌿` để thức tỉnh **Phép `3` Tia Nắng Rực Rỡ (`☀️`)** -> xoay từng gương để tia trên cát gặp đích Mặt Trời rồi dùng Nắng kích hoạt **3 Đài Gương** hội tụ phá Phong Ấn Kim Tự Tháp -> hạ **Bọ Cạp Sa Mạc Khổng Lồ**!
+4. **💎 Chương 4 — Hang Động Pha Lê** *(Phá hầm & Đàn Nhạc)*: Gặp **Nhạc Sư Cú Mèo**, thắp 2 đuốc và học phép `💎`, rồi phá tường. Nghe hoặc nhìn mẫu ● Đô–▲ Mi–◆ Son, gõ lại và thử một nhịp mới; nút trên đàn cho nghe lại mẫu hoặc các nốt đã gõ, và một nốt sai có thể sửa ngay. Nhịp mới mở giáp Golem để dùng `☀️` chiếu lõi. Game lưu từng nốt đúng. Sau khi nhận Ngọc, quay lại cùng Cú Mèo để chơi các bản hòa tấu mới.
 5. **❄️ Chương 5 — Thung Lũng Tuyết Trắng** *(Xây Cầu Băng & Đặt Bẫy)*: Gặp **Trưởng Làng Cánh Cụt Bông** -> phá tảng băng nứt bằng `💎` để thức tỉnh **Phép `5` Sương Băng Đóng Kết (`❄️`)** -> **đóng băng mặt suối xây 3 Cầu Băng đi bộ thật**, đóng cứng Quả Cầu Tuyết Lăn -> dựng Cột Băng bẫy **Sói Tuyết Băng Giá**!
-6. **☁️ Chương 6 — Vương Quốc Trên Mây** *(Hất Văng Quái Lên Trời & Trùm Cuối 3 Pha)*: Gặp **Sứ Giả Phượng Hoàng** -> tới Đài Hợp Nhất thức tỉnh **Phép `6` Lốc Cầu Vồng (`🌈`)** -> **hất văng bầy Lính Mây Sấm bay thẳng lên bầu trời**, cưỡi cột khí nâng bay qua đảo cao -> quyết chiến **Trùm Cuối Vua Mây Bão** kết hợp đa kỹ năng & hất tung Bóng Xám tan thành Cầu Vồng 7 Sắc!
+6. **☁️ Chương 6 — Vương Quốc Trên Mây** *(Hất Văng Quái Lên Trời & Trùm Cuối 3 Pha)*: Gặp **Sứ Giả Phượng Hoàng** -> tới Đài Hợp Nhất thức tỉnh **Phép `6` Lốc Cầu Vồng (`🌈`)** -> **hất văng bầy Lính Mây Sấm bay thẳng lên bầu trời**, cưỡi cột khí nâng bay qua đảo cao, thắp đèn và lần theo các đốm sáng đến cứu Bé Gió -> quyết chiến **Trùm Cuối Vua Mây Bão** kết hợp đa kỹ năng & hất tung Bóng Xám tan thành Cầu Vồng 7 Sắc!
 
 ## Nâng cấp kỹ thuật v10.0 (`js/story.js`, `js/pbr.js`, `js/audio.js`)
 - **Hộp thoại RPG kể chuyện NPC (`!`/`?`/`★`/`♥`)**, **3 Trái Tim Ánh Sáng**, **Thanh Máu Trùm**, **Biến đổi khí quyển Sương Xám → Rực Rỡ** sau khi hạ Boss & **Chế độ Tự Do mở nhanh 6 phép** trong Sổ Tay (`J`).
@@ -36,6 +36,7 @@ Nhặt vật phẩm là nhánh khám phá tùy chọn: mỗi vật phẩm hồi 
 
 Tác giả, giấy phép và các thay đổi của chín mẫu thú được ghi trong [danh sách mô hình Polyfork](assets/models/POLYFORK.md).
 Ảnh trước và sau của Mây, gấu, thỏ, Đảo Mây và cầu mây nằm trong [báo cáo kiểm tra hình ảnh](docs/kiem-tra-hinh-anh.md).
+Các chặng cứu hộ, đài gương và hoạt động mở sau khi nhận Ngọc có trong [bảng nhịp chơi và chơi lại](docs/nhip-choi-va-choi-lai.md).
 
 - `index.html`, `style.css`, `game.js`: Giao diện HUD, Thanh Phép Thuật, Bản Đồ Thế Giới (`M`), Sổ Tay & Tủ Đồ (`J`), và vòng lặp chính.
 - `js/data.js`: Dữ liệu 6 màn, 6 phép thuật, trang phục, trang bị, câu đố giáo dục & lưu `localStorage`.

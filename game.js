@@ -238,6 +238,7 @@
   document.getElementById("album-close").onclick = function () { MAY.closeAllModals(); };
   document.getElementById("btn-win-stay").onclick = function () { MAY.closeAllModals(); };
   var btnFinaleReplay = document.getElementById("btn-finale-replay");
+  document.getElementById("btn-finale-activities").onclick = function () { MAY.openFestivalInvites(); };
   if (btnFinaleReplay) btnFinaleReplay.onclick = function () {
     if (MAY.showGrandFinale) MAY.showGrandFinale();
   };

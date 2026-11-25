@@ -153,12 +153,12 @@ window.MAY = window.MAY || {};
       introBtn: "🌿 Mây sẽ hồi sinh Ốc Đảo ngay!",
       stage2GiveSkill: [
         "Ốc Đảo xanh mát trở lại và Đĩa Mặt Trời đã sáng rực rồi! Kiki trao cho Mây Phép ☀️ Tia Nắng Rực Rỡ (Phím 3 + R)!",
-        "Nhiệm vụ lần này là Giải Đố Ánh Sáng: hãy tìm 3 Đài Gương Cổ bị rào bóng tối che khuất quanh sa mạc, dùng ☀️ Tia Nắng đốt tan bóng tối và thắp sáng cả 3 Đài Gương để bắn tia sáng vàng hội tụ về đỉnh Kim Tự Tháp!",
+        "Tìm ba Đài Gương Cổ. Đến gần và bấm T, Enter hoặc chạm nút để xoay gương; nhìn tia vàng trên cát và hướng tới vòng ☀️, đừng nhầm vòng 🌙. Khi tia chạm đích, dùng ☀️ Tia Nắng (3 + R) để gửi ánh sáng lên Kim Tự Tháp!",
         "Coi chừng lũ Bọ Cạp Cát lẩn dưới cát nhé — tung ☀️ Tia Nắng sẽ làm chúng chói mắt bật tung khỏi cát!"
       ],
       stage2Btn: "☀️ Nhận Tia Nắng & Thắp 3 Đài Gương!",
       inProgress: [
-        "Hãy tìm đủ 3 Đài Gương Nắng quanh sa mạc và tung ☀️ Tia Nắng (Phím 3 + R) vào từng gương để bắn tia laser vàng nối thẳng lên đỉnh Kim Tự Tháp nhé!"
+        "Đến gần đài, bấm T, Enter hoặc chạm nút để xoay tia vàng tới vòng ☀️. Sau đó dùng Tia Nắng (3 + R); vòng 🌙 chỉ là hướng thử. Mây có thể xoay lại bất cứ lúc nào!"
       ],
       bossIntro: [
         "Cả 3 tia nắng đã hội tụ phá vỡ Phong Ấn Kim Tự Tháp! Cẩn thận — Bọ Cạp Sa Mạc Khổng Lồ vừa chui từ dưới cát lên ngay trước bậc thang!",
@@ -264,7 +264,7 @@ window.MAY = window.MAY || {};
         "Kết hợp tất cả những gì Mây đã học (3 pha): Pha 1 dùng 🌈 Lốc Cầu Vồng hất Lính Mây Sấm đâm vỡ Khiên Mây Đen; Pha 2 né sét & bắn ☀️ Tia Nắng xuyên tâm bão; Pha 3 dùng 🌿 Nở Hoa trói chặt rồi tung 🌈 Lốc Cầu Vồng HẤT TUNG BÓNG XÁM LÊN TRỜI!"
       ],
       reward: [
-        "BÓNG XÁM TAN BIẾN THÀNH CẦU VỒNG 7 SẮC RỒI!! Bé Gió Lốc Tí Hon đã thoát khỏi lồng sét và sà vào ôm chầm lấy Mây kìa!",
+        "Bóng Xám đã tan thành cầu vồng bảy sắc! Bé Gió Lốc Tí Hon bay một vòng quanh lâu đài rồi sà vào ôm chầm lấy Mây.",
         "Bé Gió Lốc thì thầm: 'Cảm ơn Mây đã không bỏ rơi tớ! Tớ xin trao lại 🌈 Viên Ngọc Hồng Cầu Vồng cuối cùng và Đôi Cánh Mây Vĩnh Viễn!' Hãy trở về Đảo Mây dự Đại Tiệc Chiến Thắng thôi nào!"
       ],
       rewardBtn: "🌈 Nhận Ngọc Cuối & Mở Đại Tiệc!",
@@ -490,6 +490,22 @@ window.MAY = window.MAY || {};
     }
   };
 
+  function readRaceRecord(raw) {
+    if (!raw || !Number.isFinite(raw.best) || raw.best <= 0 ||
+        !Array.isArray(raw.path) || raw.path.length < 2 || raw.path.length > 400 ||
+        !Array.isArray(raw.splits) || !raw.splits.every(Number.isFinite)) return null;
+    for (var i = 0; i < raw.path.length; i++) {
+      var point = raw.path[i];
+      if (!Array.isArray(point) || point.length !== 4 || !point.every(Number.isFinite) ||
+          (i === 0 ? point[0] !== 0 : point[0] <= raw.path[i - 1][0])) return null;
+    }
+    return { best: raw.best, wins: Number.isSafeInteger(raw.wins) && raw.wins > 0 ? raw.wins : 1, splits: raw.splits, path: raw.path };
+  }
+
+  MAY.badgeCount = function (level) {
+    return ["rings", "race", "quiz"].filter(function (key) { return !!level.challenges[key]; }).length;
+  };
+
   function freshLevelSave() {
     return {
       items: [],
@@ -499,6 +515,7 @@ window.MAY = window.MAY || {};
       interacts: [],
       hidden: false,
       challenges: {},
+      raceRecord: null,
       quizDone: 0,
       quizLearning: { firstRight: 0, afterHint: 0, recent: [], pending: null },
       gem: false,
@@ -521,6 +538,7 @@ window.MAY = window.MAY || {};
       currentLevel: "hub",
       storySeen: false,
       finaleSeen: false,
+      festivalConcerts: 0,
       freeSpells: false,
       freeExplore: false,
       quality: "mid",
@@ -542,6 +560,7 @@ window.MAY = window.MAY || {};
         s.currentLevel = raw.currentLevel || "hub";
         s.storySeen = !!raw.storySeen;
         s.finaleSeen = !!raw.finaleSeen;
+        s.festivalConcerts = Number.isSafeInteger(raw.festivalConcerts) && raw.festivalConcerts > 0 ? raw.festivalConcerts : 0;
         s.freeSpells = !!raw.freeSpells;
         s.freeExplore = !!raw.freeExplore;
         s.quality = (raw.quality === "low" || raw.quality === "mid" || raw.quality === "high") ? raw.quality : "mid";
@@ -562,7 +581,8 @@ window.MAY = window.MAY || {};
           dst.souvenirs = Array.isArray(src.souvenirs) ? src.souvenirs : [];
           dst.interacts = Array.isArray(src.interacts) ? src.interacts : [];
           dst.hidden = !!src.hidden;
-          dst.challenges = src.challenges || {};
+          dst.challenges = src.challenges && typeof src.challenges === "object" && !Array.isArray(src.challenges) ? src.challenges : {};
+          dst.raceRecord = readRaceRecord(src.raceRecord);
           dst.quizDone = src.quizDone || 0;
           var learning = src.quizLearning || {};
           dst.quizLearning = {
@@ -635,6 +655,7 @@ window.MAY = window.MAY || {};
     if (MAY.save.freeExplore || MAY.save.freeSpells) return true;
     var meta = MAY.getMeta(levelId);
     if (!meta || meta.num <= 1) return true;
+    if (MAY.getLevelSave(levelId).gem) return true;
     var prevNum = meta.num - 1;
     return MAY.save.gems.indexOf(prevNum) !== -1 || (MAY.save.legacyAccess || []).indexOf(meta.num) !== -1;
   };
@@ -652,6 +673,9 @@ window.MAY = window.MAY || {};
 
   MAY.isSpellUnlocked = function (spellId) {
     if (MAY.save.freeSpells) return true;
+    var ctx = MAY.currentCtx;
+    if (ctx && ctx.fishRescueActive && spellId === "wave") return true;
+    if (ctx && ctx.id === "level5" && ctx.bossRematchActive && (spellId === "frost" || spellId === "solar")) return true;
     return MAY.save.unlockedSpells.indexOf(spellId) !== -1;
   };
 

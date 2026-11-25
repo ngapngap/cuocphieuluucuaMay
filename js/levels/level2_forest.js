@@ -458,7 +458,46 @@
       }
     });
 
+    // The roots carry the stream to the Mother Tree. This is introduced only
+    // when the final tree is revived, so older saves already at the boss keep
+    // their existing progress.
+    var rootTrialPos = new THREE.Vector3(0, ctx.groundH(0, 17), 17);
+    var rootTrial = new THREE.Group(); rootTrial.position.copy(rootTrialPos);
+    var rootBasin = new THREE.Mesh(new THREE.TorusGeometry(1.35, 0.28, 8, 16), new THREE.MeshStandardMaterial({ color: 0x75634b, roughness: 0.9 }));
+    rootBasin.rotation.x = Math.PI / 2; rootBasin.position.y = 0.3; rootTrial.add(rootBasin);
+    var rootCore = new THREE.Mesh(new THREE.OctahedronGeometry(0.65, 0), new THREE.MeshStandardMaterial({ color: 0x8d6b48, emissive: 0x163d2c, emissiveIntensity: 0.6 }));
+    rootCore.position.y = 1.1; rootTrial.add(rootCore); ctx.add(rootTrial);
+    function rootTrialActive() { return ch2St.stage === 2 && !!ch2St.steps.rootTrialStarted && !ch2St.steps.rootTrialDone; }
+    var rootTarget = ctx.addSkillTarget({
+      id: "l2_root_trial", pos: rootTrialPos, radius: 7, reqSpell: ["wave", "growth"],
+      hint: "🌊 Tưới rễ → 🌿 đánh thức mầm", ringColor: 0x4ade80,
+      isActive: rootTrialActive,
+      onHit: function (sp, tg) {
+        if (!ch2St.steps.rootTrialWet && sp === "wave") {
+          ch2St.steps.rootTrialWet = true; MAY.persist();
+          rootCore.material.color.setHex(0x41bce0);
+          MAY.burstAt(rootTrialPos.clone().add(new THREE.Vector3(0, 1, 0)), 0x38bdf8, 16);
+          MAY.toast("🌊 Nước đã tới rễ! Dùng 🌿 Nở Hoa đánh thức mầm bảo vệ Cây Mẹ.");
+          updateCh2Story();
+        } else if (ch2St.steps.rootTrialWet && sp === "growth") {
+          ch2St.steps.rootTrialDone = true; MAY.persist(); tg.markDone();
+          MAY.VFX.spawnVineTrap(rootTrialPos.clone(), 2.3);
+          MAY.toast("🌿 Rễ Cây Mẹ bừng sáng! Vua Nấm đã xuất hiện.");
+          updateCh2Story();
+        } else {
+          MAY.toast(ch2St.steps.rootTrialWet ? "🌿 Rễ đã ướt: dùng Nở Hoa (2+R)!" : "🌊 Rễ còn khô: dùng Sóng (1+R) trước!");
+        }
+      }
+    });
+    function syncRootTrial() {
+      var active = rootTrialActive(); rootTrial.visible = active;
+      rootCore.material.color.setHex(ch2St.steps.rootTrialWet ? 0x41bce0 : 0x8d6b48);
+      if (rootTarget.hintLb) rootTarget.hintLb.visible = active;
+      rootTarget.ring.visible = active;
+    }
+
     function updateCh2Story() {
+      syncRootTrial();
       if (ch2St.rewarded || ctx.save.gem) {
         ch2Npc.setMarker("♥");
         ctx.setObjective("🟢", "RỪNG NẤM ĐÃ HỒI SINH — SANG CHƯƠNG 3 SA MẠC (PHÍM M)", null);
@@ -491,6 +530,11 @@
         var nextT = deadTrees[0].pos;
         for (var j = 0; j < 3; j++) if (!ch2St.steps["tree" + j]) { nextT = deadTrees[j].pos; break; }
         ctx.setObjective("🌿", "DÙNG 🌿 NỞ HOA (2+R) HỒI SINH 3 CÂY CHẾT (" + revCount + "/3)", nextT);
+      } else if (rootTrialActive()) {
+        ch2Npc.setMarker("?");
+        ctx.setObjective(ch2St.steps.rootTrialWet ? "🌿" : "🌊", ch2St.steps.rootTrialWet
+          ? "DÙNG 🌿 NỞ HOA ĐÁNH THỨC RỄ CÂY MẸ (2+R)"
+          : "DÙNG 🌊 SÓNG DẪN NƯỚC VỀ RỄ CÂY MẸ (1+R)", rootTrialPos);
       } else {
         ch2St.stage = 3;
         MAY.persist();
@@ -530,6 +574,9 @@
         isActive: function () { return ch2St.stage >= 2 && !ch2St.steps["tree" + idx]; },
         onHit: function (sp, tg) {
           ch2St.steps["tree" + idx] = true; MAY.persist();
+          if (deadTrees.every(function (_, i) { return !!ch2St.steps["tree" + i]; }) && ch2St.stage === 2) {
+            ch2St.steps.rootTrialStarted = true; MAY.persist();
+          }
           dtObj.revive(false);
           tg.markDone();
           MAY.toast("🌿 Cây Cổ Thụ sống lại nở hoa rực rỡ và mọc Nấm Lò Xo!", "Kỳ diệu quá! Cây cổ thụ đã hồi sinh nở hoa rực rỡ rồi!");

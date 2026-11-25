@@ -307,6 +307,17 @@ body.touch #big { display: none; }
   padding: 8px 6px; text-align: center; opacity: .55;
 }
 .alb-chip.got { opacity: 1; background: rgba(255,217,61,.16); border-color: rgba(255,217,61,.55); }
+.alb-chip.replay-choice { opacity: 1; color: #fff; cursor: pointer; font-family: inherit; min-height: 48px; }
+.alb-chip.replay-choice:focus-visible, .alb-chip.replay-choice:hover { border-color: #7fe3ff; }
+#festival-invites { margin: 10px 0 16px; text-align: left; }
+#festival-title { margin: 0 0 4px; color: #ffdd82; font-size: 19px; }
+#festival-progress { margin: 0 0 10px; }
+#festival-guests { display: grid; gap: 6px; }
+.festival-guest { display: grid; gap: 3px; padding: 8px 12px; border: 1px solid #52768c; border-radius: 9px; background: #203b50; color: #fff; text-align: left; font: inherit; }
+button.festival-guest { cursor: pointer; }
+button.festival-guest:is(:focus-visible,:hover) { border-color: #7fe3ff; }
+.festival-guest small { color: #d2e8f5; line-height: 1.35; }
+#festival-conduct { margin-top: 10px; }
 .alb-chip .aico { display: block; font-size: 22px; }
 .alb-chip b { display: block; font-size: 12px; margin-top: 2px; }
 .alb-chip small { display: block; font-size: 10px; color: #cfe8f5; margin-top: 2px; line-height: 1.25; }

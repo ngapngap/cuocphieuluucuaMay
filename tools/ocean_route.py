@@ -11,6 +11,12 @@ from trace_transition import Handler, Server
 ROUTE = """async () => {
   let held = new Set(), waypoint = '', previous = performance.now(), category = 'active';
   const elapsed = {active: 0, dialogue: 0, cinematic: 0};
+  let engineActive = 0;
+  const routeCtx = MAY.currentCtx, priorUpdate = routeCtx.onUpdate;
+  routeCtx.onUpdate = function(dt, t) {
+    if (!MAY.dialogueOpen && !MAY.Cutscene.isPlaying()) engineActive += dt;
+    if (priorUpdate) priorUpdate(dt, t);
+  };
   const steps = [];
   const press = (code, down) => window.dispatchEvent(new KeyboardEvent(down ? 'keydown' : 'keyup',
     {code, key: code.replace('Key','').toLowerCase(), bubbles: true}));
@@ -28,7 +34,10 @@ ROUTE = """async () => {
     previous = now;
     if (ctx.save.gem) {
       hold([]);
-      return {steps, elapsed, gem: ctx.save.gem, items: ctx.save.items.length, quiz: ctx.save.quizDone,
+      routeCtx.onUpdate = priorUpdate;
+      return {steps, elapsed, engineActiveMs: engineActive * 1000, gem: ctx.save.gem,
+              fishRescue: st.steps.fishRescue, fishRescueExit: st.steps.fishRescueExit,
+              items: ctx.save.items.length, quiz: ctx.save.quizDone,
               sideQuest: ctx.save.sideQuest.done, challenges: Object.keys(ctx.save.challenges).filter(k => ctx.save.challenges[k])};
     }
     if (MAY.Cutscene.isPlaying() || MAY.dialogueOpen) {
@@ -40,13 +49,14 @@ ROUTE = """async () => {
     const pending = ctx.skillTargets.find(t => !t.done && t.isActive());
     if (!st.stage) { id = 'turtle'; target = {x:0,y:4,z:2}; }
     else if (pending) { id = pending.id; target = pending.pos; }
+    else if (ctx.oceanRescueGoal) { id = st.steps.fishRescue === 2 ? 'escort_fish' : 'survey_wreck'; target = ctx.oceanRescueGoal; }
     else if (!st.bossDown) { id = 'reflect'; target = {x:-27,y:5,z:15}; }
     else { id = 'altar'; target = ctx.gemAltar.pos; }
     if (id !== waypoint) { steps.push({id, ms:Math.round(now-start)}); waypoint = id; }
     const dx = target.x-pos.x, dz = target.z-pos.z, dy = target.y-pos.y;
     const yaw = MAY.player.yaw, cos = Math.cos(yaw), sin = Math.sin(yaw);
     const f = -dx*sin-dz*cos, s = dx*cos-dz*sin;
-    const range = id === 'altar' || id === 'turtle' ? 1.8 : 4;
+    const range = id === 'altar' || id === 'turtle' ? 1.8 : id.startsWith('l1_current_') || id === 'escort_fish' || id === 'survey_wreck' ? 2.2 : 4;
     const keys = [];
     if (Math.hypot(dx,dz) > range) {
       keys.push('ShiftLeft');
@@ -60,6 +70,7 @@ ROUTE = """async () => {
     if (id === 'reflect' && ctx.bossOrbs.some(o => !o.reflected && pos.distanceTo(o.mesh.position)<9)) tap('KeyR');
   }
   hold([]);
+  routeCtx.onUpdate = priorUpdate;
   throw Error('Timed out at ' + waypoint + ': ' + JSON.stringify(MAY.player.pos));
 }"""
 

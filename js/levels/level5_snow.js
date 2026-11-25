@@ -446,9 +446,107 @@
       }
     });
 
+    // Optional training match: the story boss and its progress are restored on exit.
+    var rematch = null, rematchRing = null;
+    function rematchTip() {
+      if (!rematch || !rematch.open) return "Chờ vòng màu xuất hiện quanh Sói Tuyết nhé!";
+      return rematch.required === "frost"
+        ? "Vòng xanh: dùng ❄️ Sương Băng (5 + R)!"
+        : "Vòng vàng: dùng ☀️ Tia Nắng (3 + R)!";
+    }
+    function leaveRematch() {
+      if (!rematch) return;
+      var saved = rematch.saved;
+      rematch = null;
+      ctx.bossRematchActive = false;
+      if (rematchRing) rematchRing.visible = false;
+      clearBossIceTrap();
+      ch5Boss.active = saved.active; ch5Boss.defeated = saved.defeated;
+      ch5Boss.state = saved.state; ch5Boss.stateT = saved.stateT;
+      ch5Boss.hp = saved.hp; ch5Boss.atkT = saved.atkT; ch5Boss.subState = saved.subState;
+      ch5Boss.onTick = saved.onTick; ch5Boss.onSpellHit = saved.onSpellHit; ch5Boss.tipFn = saved.tipFn;
+      ch5Boss.mesh.position.copy(saved.position); ch5Boss.mesh.rotation.copy(saved.rotation);
+      ch5Boss.mesh.scale.copy(saved.scale); ch5Boss.mesh.visible = saved.visible;
+      ch5Boss.syncHUD();
+      if (MAY.VFX && MAY.VFX.syncSpellUI) MAY.VFX.syncSpellUI();
+    }
+    ctx.leaveBossRematch = leaveRematch;
+    ctx.startBossRematch = function () {
+      if (!ctx.save.gem || MAY.currentCtx !== ctx) return false;
+      if (rematch) return true;
+      var old = {
+        active: ch5Boss.active, defeated: ch5Boss.defeated, state: ch5Boss.state,
+        stateT: ch5Boss.stateT, hp: ch5Boss.hp, atkT: ch5Boss.atkT, subState: ch5Boss.subState,
+        onTick: ch5Boss.onTick, onSpellHit: ch5Boss.onSpellHit, tipFn: ch5Boss.tipFn,
+        position: ch5Boss.mesh.position.clone(), rotation: ch5Boss.mesh.rotation.clone(),
+        scale: ch5Boss.mesh.scale.clone(), visible: ch5Boss.mesh.visible
+      };
+      var record = ctx.save.challenges.bossRematch;
+      if (!record || typeof record !== "object" || Array.isArray(record)) {
+        record = ctx.save.challenges.bossRematch = { wins: 0, clean: 0 };
+      }
+      record.wins = Math.max(0, Math.floor(Number(record.wins) || 0));
+      record.clean = Math.max(0, Math.floor(Number(record.clean) || 0));
+      rematch = { saved: old, round: 0, mistakes: 0, open: false, wait: 0.6,
+        first: record.wins % 2 ? "solar" : "frost" };
+      ctx.bossRematchActive = true;
+      if (MAY.VFX && MAY.VFX.syncSpellUI) MAY.VFX.syncSpellUI();
+      if (!rematchRing) {
+        rematchRing = new THREE.Mesh(new THREE.RingGeometry(3.7, 4.1, 32),
+          new THREE.MeshBasicMaterial({ color: 0x38bdf8, side: THREE.DoubleSide, transparent: true, opacity: 0.9, depthWrite: false }));
+        rematchRing.rotation.x = -Math.PI / 2;
+        rematchRing.position.set(0, ctx.groundH(0, -6) + 0.12, -6);
+        ctx.add(rematchRing);
+      }
+      rematchRing.visible = false;
+      clearBossIceTrap();
+      ch5Boss.active = true; ch5Boss.defeated = false; ch5Boss.state = "idle";
+      ch5Boss.hp = ch5Boss.maxHp; ch5Boss.subState = {};
+      ch5Boss.mesh.position.set(0, 1.1, -6); ch5Boss.mesh.visible = true;
+      ch5Boss.mesh.scale.setScalar(ch5Boss.baseScale || 1);
+      ch5Boss.tipFn = rematchTip;
+      ch5Boss.onTick = function (dt, t, bs) {
+        if (!rematch) return;
+        rematch.wait -= dt;
+        if (rematch.wait > 0) return;
+        if (rematch.open) {
+          rematch.open = false; rematch.mistakes++; rematch.wait = 1;
+          rematchRing.visible = false;
+          MAY.toast("🐺 Chưa kịp rồi, Sói sẽ cho Mây thử lại nhé!");
+          bs.syncHUD(); return;
+        }
+        rematch.required = rematch.round % 2 === 0 ? rematch.first : (rematch.first === "frost" ? "solar" : "frost");
+        rematch.open = true; rematch.wait = 6;
+        rematchRing.material.color.setHex(rematch.required === "frost" ? 0x38bdf8 : 0xffd93d);
+        rematchRing.visible = true;
+        MAY.toast("🐺 " + rematchTip()); bs.syncHUD();
+      };
+      ch5Boss.onSpellHit = function (spellId, castPos, bs) {
+        if (!rematch || !rematch.open) { MAY.toast("🐺 Đợi vòng màu xuất hiện nhé!"); return; }
+        if (spellId !== rematch.required) {
+          rematch.mistakes++;
+          MAY.toast("🐺 Chưa đúng màu. " + rematchTip()); return;
+        }
+        rematch.open = false; rematchRing.visible = false; rematch.round++; bs.hp = bs.maxHp - rematch.round;
+        MAY.sndStar(); MAY.burstAt(bs.pos.clone().add(new THREE.Vector3(0, 2, 0)), 0xffd93d, 20);
+        if (rematch.round < bs.maxHp) {
+          rematch.wait = 1; bs.syncHUD();
+          MAY.toast("⭐ Đúng rồi! Chờ vòng màu tiếp theo nhé."); return;
+        }
+        var clean = rematch.mistakes === 0;
+        record.wins++; if (clean) record.clean++; MAY.persist();
+        leaveRematch();
+        MAY.toast("⭐ Hoàn thành buổi tập với Sói Tuyết" + (clean ? " không sai!" : "! Cùng thử lại nhé!"));
+      };
+      MAY.player.spawnAt(0, ctx.groundH(0, 2) + 1.05, 2, 0, false);
+      ch5Boss.syncHUD();
+      MAY.toast("🐺 Sói Tuyết mời Mây luyện phản xạ: vòng xanh dùng ❄️, vòng vàng dùng ☀️. Sai được thử lại!");
+      return true;
+    };
+
     /* Dựng Cột Băng DUY NHẤT 1 lần mỗi lượt tung phép ❄️ khi Boss đang hoạt động */
     ctx.onSpellCast = function (spellId, targetPos) {
-      if (spellId === "frost" && ch5Boss.active && !ch5Boss.defeated) {
+      if (spellId === "frost" && !rematch && ch5Boss.active && !ch5Boss.defeated) {
         placeBossIcePillar(targetPos);
       }
     };

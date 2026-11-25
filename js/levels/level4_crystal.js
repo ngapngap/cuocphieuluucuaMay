@@ -432,6 +432,43 @@
     var echoRound = ch4St.steps.echoRound === 1 ? 1 : 0;
     var echoProgress = Math.max(0, Math.min(2, Number(ch4St.steps.echoProgress) || 0));
     var practiceActive = false, practiceProgress = 0;
+    // Encore lives in the existing challenges map, so saves without it remain valid.
+    var encoreActive = false, encoreProgress = 0, encoreMistakes = 0, encorePattern = [];
+    var encoreWarmups = [[0,2,1], [1,0,2,0], [2,1,0,1,2]];
+    var motifs = [[0,1,2], [1,2,0], [2,0,1], [0,2,1], [1,0,2], [2,1,0]];
+    function encoreNotes(wins) {
+      if (wins < encoreWarmups.length) return encoreWarmups[wins].slice();
+      // Pair a three-note call with an answering phrase. The same round survives a reload.
+      var round = wins - encoreWarmups.length;
+      var call = round % motifs.length;
+      var answer = (Math.floor(round / motifs.length) + call * 2 + 1) % motifs.length;
+      return motifs[call].concat(motifs[answer]);
+    }
+    function encoreRecord() {
+      var rec = ctx.save.challenges.crystalEncore;
+      if (!rec || typeof rec !== "object" || Array.isArray(rec)) {
+        rec = ctx.save.challenges.crystalEncore = { wins: 0, bestLength: 0, attempts: 0, perfects: 0 };
+      }
+      ["wins", "bestLength", "attempts", "perfects"].forEach(function (k) {
+        rec[k] = Math.max(0, Math.floor(Number(rec[k]) || 0));
+      });
+      return rec;
+    }
+    function startEncore() {
+      var rec = encoreRecord();
+      if (ctx.raceCh) ctx.raceCh.cancel();
+      ctx.crystalEncoreActive = true;
+      if (!encoreActive) {
+        practiceActive = false;
+        encorePattern = encoreNotes(rec.wins);
+        encoreProgress = 0; encoreMistakes = 0; played = []; encoreActive = true;
+        rec.attempts++; MAY.persist();
+      }
+      expandMusic(true); musicPanel.classList.remove("hidden");
+      musicStatus.textContent = "Lượt diễn " + (rec.wins + 1) + " · " + encoreProgress + "/" + encorePattern.length + " nốt. Nghe mẫu rồi gõ lại nhé!";
+      MAY.toast("🎵 Lượt diễn " + (rec.wins + 1) + ": nghe mẫu rồi gõ lại. Sai thì thử lại nốt đó nhé!");
+      replayNotes(encorePattern);
+    }
     var noteNames = ["● ĐÔ", "▲ MI", "◆ SON"], replayToken = 0;
     var played = echoPatterns[echoRound].slice(0, echoProgress);
     var musicPanel = document.getElementById("crystal-music");
@@ -475,7 +512,7 @@
         }, i * 600);
       });
     }
-    document.getElementById("crystal-replay-target").onclick = function () { replayNotes(practiceActive ? [1, 2, 0] : echoPatterns[echoRound]); };
+    document.getElementById("crystal-replay-target").onclick = function () { replayNotes(encorePattern.length && ctx.save.gem ? encorePattern : practiceActive ? [1, 2, 0] : echoPatterns[echoRound]); };
     document.getElementById("crystal-replay-played").onclick = function () { if (played.length) replayNotes(played); else musicStatus.textContent = "Mây chưa gõ nốt nào."; };
     noteButtons.forEach(function (b, i) { b.onclick = function () { if (MAY.currentCtx === ctx && echoTargets[i] && echoTargets[i].isActive()) echoTargets[i].onHit(); }; });
     function echoLesson() {
@@ -585,7 +622,8 @@
     function updateCh4Story() {
       if (ch4St.rewarded || ctx.save.gem) {
         ch4Npc.setMarker("♥");
-        ctx.setObjective("🟣", "HANG PHA LÊ ĐÃ NGÂN VANG — SANG CHƯƠNG 5 XỨ TUYẾT (PHÍM M)", null);
+        if (ctx.save.gem) ctx.setObjective("🎵", "CHẠM ĐÀN PHA LÊ ĐỂ CHƠI BẢN NHẠC MỚI · HOẶC SANG CHƯƠNG 5 (M)", echoCoords[0].pos);
+        else ctx.setObjective("🟣", "HANG PHA LÊ ĐÃ NGÂN VANG — SANG CHƯƠNG 5 XỨ TUYẾT (PHÍM M)", null);
         return;
       }
       if (ch4St.bossDown) {
@@ -674,16 +712,40 @@
       echoTargets[idx] = ctx.addSkillTarget({
         id: "l4_echo_" + idx, pos: ec.pos, radius: 9.0, reqSpell: "crystal",
         hint: "💎 " + ["● ĐÔ", "▲ MI", "◆ SON"][idx], hintY: 4.1, done: false,
-        isActive: function () { return practiceActive || (ch4St.stage >= 2 && !!ch4St.steps.wallBroken && !ch4St.steps.echoDone); },
+        isActive: function () { return encoreActive || practiceActive || (ch4St.stage >= 2 && !!ch4St.steps.wallBroken && !ch4St.steps.echoDone); },
         onHit: function () {
           ++replayToken;
           noteButtons.forEach(function (b) { b.classList.remove("flash"); });
-          played = played.slice(0, practiceActive ? practiceProgress : echoProgress);
+          played = played.slice(0, encoreActive ? encoreProgress : practiceActive ? practiceProgress : echoProgress);
           played.push(idx);
           musicStatus.textContent = "Đã gõ: " + played.map(function (n) { return noteNames[n]; }).join(" → ");
           MAY.sndChime(ec.noteIdx);
           MAY.burstAt(ec.pos.clone().add(new THREE.Vector3(0, 2, 0)), ec.col, 22);
           pulseEcho(idx);
+          if (encoreActive) {
+            if (encorePattern[encoreProgress] !== idx) {
+              encoreMistakes++;
+              musicStatus.textContent = "Chưa đúng nốt " + (encoreProgress + 1) + ". Nghe lại mẫu và thử tiếp nhé!";
+              MAY.toast("🎵 Chưa đúng nốt " + (encoreProgress + 1) + ". Thử lại nốt này nhé!");
+              return;
+            }
+            encoreProgress++;
+            if (encoreProgress < encorePattern.length) {
+              musicStatus.textContent = "Đúng " + encoreProgress + "/" + encorePattern.length + " nốt · Kỷ lục: " + encoreRecord().bestLength;
+              return;
+            }
+            var rec = encoreRecord(), perfect = encoreMistakes === 0;
+            encoreActive = false; ctx.crystalEncoreActive = false; rec.wins++;
+            rec.bestLength = Math.max(rec.bestLength, encorePattern.length);
+            if (perfect) rec.perfects++;
+            MAY.persist();
+            musicStatus.textContent = "Hoàn thành " + encorePattern.length + " nốt" + (perfect ? " không sai!" : "!") + " Kỷ lục: " + rec.bestLength + ". Chạm đàn để chơi bài mới.";
+            MAY.sndStar(); MAY.burstAt(MAY.player.pos.clone(), 0xffd93d, 28);
+            MAY.toast(rec.wins === 1 && MAY.save.gems.length >= 6 ?
+              "🦉 Cú Mèo cất đàn: Mình tập xong rồi. Hẹn gặp Mây bên hải đăng!" :
+              "⭐ Hay lắm! Kỷ lục " + rec.bestLength + " nốt. Chạm đàn để chơi bài mới nhé!");
+            return;
+          }
           if (practiceActive) {
             if ([1, 2, 0][practiceProgress] !== idx) {
               MAY.toast("🎵 Thử lại nốt " + (practiceProgress + 1) + ": ▲ MI → ◆ SON → ● ĐÔ");
@@ -721,8 +783,9 @@
 
     ctx.interactives.push({
       obj: echoMeshes[0], label: "🎵 Mở đàn pha lê / luyện nhạc",
-      isActive: function () { return (ch4St.stage >= 2 && ch4St.steps.wallBroken && !ch4St.steps.echoDone) || !!ch4St.bossDown; },
+      isActive: function () { return !!ctx.save.gem || (ch4St.stage >= 2 && ch4St.steps.wallBroken && !ch4St.steps.echoDone) || !!ch4St.bossDown; },
       onInteract: function () {
+        if (ctx.save.gem) { startEncore(); return; }
         if (ch4St.stage >= 2 && ch4St.steps.wallBroken && !ch4St.steps.echoDone) { echoLesson(); return; }
         if (!ch4St.bossDown) return;
         expandMusic(true);
@@ -732,6 +795,24 @@
         replayNotes([1, 2, 0]);
       }
     });
+
+    // Album / festival entry point: resume an unfinished tune without resetting it.
+    ctx.startCrystalEncore = function () {
+      if (!ctx.save.gem || MAY.currentCtx !== ctx) return false;
+      var x = -13, z = 13;
+      MAY.player.spawnAt(x, ctx.groundH(x, z) + 1.05, z, 0, false);
+      startEncore();
+      return true;
+    };
+    ctx.leaveCrystalEncore = function () {
+      if (!ctx.save.gem) return;
+      ++replayToken;
+      ctx.crystalEncoreActive = false;
+      encoreActive = false; encoreProgress = 0; encoreMistakes = 0; played = [];
+      noteButtons.forEach(function (b) { b.classList.remove("flash"); });
+      musicPanel.classList.add("hidden");
+      expandMusic(true);
+    };
 
     ch4Npc = ctx.addQuestNPC({
       kind: "owl", name: ch4Sc.npcName, icon: ch4Sc.npcIcon,

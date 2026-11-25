@@ -184,6 +184,12 @@
 <div class="overlay hidden" id="ov-album">
   <div class="panel wide">
     <h1>📖 SỔ TAY &amp; TỦ ĐỒ CỦA MÂY</h1>
+    <section id="festival-invites" hidden aria-labelledby="festival-title">
+      <h2 id="festival-title">Buổi hòa nhạc bên hải đăng</h2>
+      <p id="festival-progress"></p>
+      <div id="festival-guests"></div>
+      <button class="btn small" id="festival-conduct" type="button" hidden>🎶 Về đảo dẫn nhịp</button>
+    </section>
     <details class="settings"><summary>&#9881; C&#224;i &#273;&#7863;t &#273;&#7891; h&#7885;a</summary>    <div class="qrow">✨ Chất lượng đồ họa PBR &amp; Hậu kỳ:
       <button class="qbtn" data-q="low" aria-label="Chọn chất lượng đồ họa Nhẹ">Nhẹ</button>
       <button class="qbtn sel" data-q="mid" aria-label="Chọn chất lượng đồ họa Đẹp Vừa">Đẹp (Vừa)</button>
@@ -202,6 +208,10 @@
       <span class="pill" id="pill-ch" title="Thử thách hoàn thành">🏆 <span id="ch-n">0</span>/3</span>
     </div>
     <p id="alb-stats" style="font-weight:800;color:#ffd93d"></p>
+    <section id="album-replays" hidden aria-labelledby="replay-title">
+      <h2 class="alb-sec" id="replay-title">Chơi lại cùng bạn</h2>
+      <div id="replay-list" class="alb-grid"></div>
+    </section>
     <div class="alb-sec">🌈 6 Viên Ngọc Cầu Vồng</div>
     <div id="alb-gems" class="alb-grid"></div>
     <div class="alb-sec">✨ 6 Phép Thuật Nguyên Tố (mở khóa dần theo cốt truyện)</div>
@@ -227,9 +237,11 @@
     <p id="win-rank" style="font-size:19px;font-weight:800;color:#ffd93d"></p>
     <p id="win-side" style="font-size:15px"></p>
     <div style="margin-top:14px;display:flex;flex-wrap:wrap;gap:8px;justify-content:center">
-      <button class="btn" id="btn-win-next" aria-label="Chuyển sang màn tiếp theo">▶ Sang màn tiếp theo</button>
+      <button class="btn" id="btn-win-quest" type="button"></button>
+      <button class="btn blue small" id="btn-win-next" aria-label="Chuyển sang màn tiếp theo">▶ Sang màn tiếp theo</button>
       <button class="btn blue small" id="btn-win-hub" aria-label="Quay về Đảo Mây">🏝️ Về Đảo Mây</button>
       <button class="btn blue small" id="btn-win-stay" aria-label="Ở lại màn hiện tại chơi tiếp">Ở lại chơi tiếp</button>
+      <button class="btn blue small" id="btn-win-activity" type="button"></button>
     </div>
   </div>
 </div>
@@ -243,7 +255,8 @@
       <div class="finale-desc">Đủ <b>6 Viên Ngọc</b> &amp; mở khóa 🪽 <b>Cánh Mây Vĩnh Viễn</b> + 👑 <b>Váy Công Chúa Mây</b>!</div>
     </div>
     <div class="finale-acts">
-      <button class="btn small" id="btn-finale-replay" aria-label="Xem lại phim 3D Lễ Hội Cầu Vồng">🎬 Xem lại 3D</button>
+      <button class="btn small" id="btn-finale-activities" type="button">🎶 Chuẩn bị buổi hòa nhạc</button>
+      <button class="btn blue small" id="btn-finale-replay" aria-label="Xem lại phim 3D Lễ Hội Cầu Vồng">🎬 Xem lại 3D</button>
       <button class="btn blue small" id="btn-finale-hub" aria-label="Về Đảo Mây dự Lễ Hội Cầu Vồng">🏝️ Đảo Mây</button>
       <button class="btn blue small" id="btn-finale-map" aria-label="Mở Bản Đồ 6 Vùng Đất">🗺️ Bản Đồ</button>
       <button class="btn blue small" id="btn-finale-stay" aria-label="Ẩn thanh lễ hội để tự do khám phá">✕ Ẩn</button>
@@ -307,6 +320,7 @@
 <script src="js/outfit-color.js"></script>
 <script src="js/player.js"></script>
 <script src="js/systems.js"></script>
+<script src="js/replays.js"></script>
 <script src="js/story.js"></script>
 <script src="js/cutscene.js"></script>
 <script src="js/levels/hub.js"></script>

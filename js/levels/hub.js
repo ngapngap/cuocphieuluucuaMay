@@ -379,6 +379,108 @@
       });
     }
 
+    // Invited friends gather on the lighthouse clearing. The concert is an
+    // explicit three-person interaction; simply arriving never records a win.
+    var festivalGuestsInHub = [], festivalConcert = null, festivalLeader = null;
+    if (festivalActive) {
+      var stageX = -12, stageZ = -5;
+      var stage = new THREE.Group(); stage.position.set(stageX, ctx.groundH(stageX, stageZ), stageZ);
+      var stageMat = new THREE.MeshStandardMaterial({ color: 0x60432e, roughness: 0.9 });
+      var stageFloor = new THREE.Mesh(new THREE.CylinderGeometry(4.6, 4.9, 0.28, 24), stageMat);
+      stageFloor.position.y = 0.14; stage.add(stageFloor);
+      var seamMat = new THREE.MeshBasicMaterial({ color: 0x352318 });
+      [-2.4, -1.2, 0, 1.2, 2.4].forEach(function (z) {
+        var seam = new THREE.Mesh(new THREE.BoxGeometry(7.0, 0.025, 0.035), seamMat);
+        seam.position.set(0, 0.29, z); stage.add(seam);
+      });
+      ctx.add(stage);
+      var leaderPos = new THREE.Vector3(stageX - 5.5, ctx.groundH(stageX - 5.5, stageZ + 2.8), stageZ + 2.8);
+      festivalLeader = MAY.makeAnimal("windspirit", { scale: 0.8 });
+      festivalLeader.position.copy(leaderPos); festivalLeader.position.y += 1.0; ctx.add(festivalLeader);
+      var leaderLabel = MAY.makeLabel("🎵 Nhạc trưởng Gió", { sx: 3.2, sy: 0.75, bg: "rgba(38,16,68,.88)", color: "#ffe991" });
+      leaderLabel.position.copy(leaderPos).add(new THREE.Vector3(0, 3.2, 0)); ctx.add(leaderLabel); ctx.trackLabel(leaderLabel, 23, 2);
+      var specs = [
+        { id: "level1", kind: "dolphin", name: "🐬 Bubi", x: -3.0, color: 0x50d7ee, cue: "Bubi hát tiếng sóng" },
+        { id: "level2", kind: "forestrabbit", name: "🐇 Thỏ Bông", x: 0, color: 0xffa8ca, cue: "Thỏ Bông gõ nhịp hoa" },
+        { id: "level4", kind: "owl", name: "🦉 Cú Mèo", x: 3.0, color: 0xffd867, cue: "Cú Mèo ngân nốt sao" }
+      ];
+      specs.forEach(function (spec, idx) {
+        var actor = MAY.makeAnimal(spec.kind, { scale: idx === 0 ? 0.95 : 0.9 });
+        var x = stageX + spec.x, z = stageZ - 0.8, y = ctx.groundH(stageX, stageZ) + 0.3;
+        actor.position.set(x, y + (idx === 0 ? 0.75 : 0), z); actor.rotation.y = Math.PI;
+        if (idx === 0) {
+          var pool = new THREE.Mesh(new THREE.CylinderGeometry(1.3, 1.35, 0.18, 16), new THREE.MeshStandardMaterial({ color: 0x11759e, roughness: 0.35 }));
+          pool.position.set(x, y + 0.08, z); ctx.add(pool);
+          spec.pool = pool;
+        }
+        ctx.add(actor);
+        var nameLabel = MAY.makeLabel(spec.name, { sx: 2.2, sy: 0.65, bg: "rgba(10,32,56,.88)" });
+        nameLabel.position.set(x, y + (idx === 2 ? 2.7 : 2.4), z); ctx.add(nameLabel); ctx.trackLabel(nameLabel, 19, 1);
+        var note = MAY.makeLabel("🎵 " + spec.cue, { sx: 3.2, sy: 0.72, bg: "rgba(38,16,68,.9)", color: "#ffe991" });
+        note.position.set(x, y + 3.35, z); ctx.add(note); ctx.trackLabel(note, 23, 3);
+        // A generous transparent hit area makes the small guests selectable
+        // from the camera centre and the same on-screen touch button.
+        var hit = new THREE.Mesh(new THREE.SphereGeometry(1.0, 8, 6), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false }));
+        hit.position.set(x, actor.position.y + 1.0, z); ctx.add(hit);
+        var entry = { spec: spec, actor: actor, hit: hit, label: nameLabel, note: note, baseY: actor.position.y, ready: false, pulse: 0 };
+        festivalGuestsInHub.push(entry);
+        ctx.interactives.push({
+          obj: hit, label: spec.cue + " (T / Enter)",
+          isActive: function () { return !!festivalConcert && festivalConcert.step === idx && entry.ready; },
+          onInteract: function () {
+            if (!festivalConcert || festivalConcert.step !== idx || !entry.ready) return;
+            entry.pulse = 1.1;
+            if (MAY.sndChime) MAY.sndChime(idx);
+            MAY.burstAt(actor.position.clone().add(new THREE.Vector3(0, 1.1, 0)), spec.color, 16);
+            festivalConcert.step++;
+            if (festivalConcert.step < specs.length) {
+              var next = festivalGuestsInHub[festivalConcert.step];
+              ctx.setObjective("🎵", "ĐẾN GẦN " + next.spec.name + " VÀ CHẠM / BẤM T ĐỂ CÙNG CHƠI", next.actor.position);
+              refreshFestivalGuests();
+              MAY.toast("🎵 " + spec.cue + "! Tiếp theo là " + next.spec.name + ".");
+            } else {
+              festivalConcert = null;
+              MAY.save.festivalConcerts = Math.max(0, Number(MAY.save.festivalConcerts) || 0) + 1; MAY.persist();
+              festivalGuestsInHub.forEach(function (guest) { guest.pulse = 1.6; });
+              MAY.burstAt(new THREE.Vector3(stageX, ctx.groundH(stageX, stageZ) + 4, stageZ), 0xffd93d, 32);
+              if (MAY.sndGem) MAY.sndGem();
+              MAY.toast("🎉 Bản hòa nhạc Sóng – Hoa – Sao đã hoàn thành! Các bạn cùng reo vui.");
+              ctx.setObjective("🎉", "LỄ HỘI CẦU VỒNG — GẶP NHẠC TRƯỞNG ĐỂ CHƠI LẠI", leaderPos);
+              refreshFestivalGuests();
+            }
+          }
+        });
+      });
+      function refreshFestivalGuests() {
+        var states = MAY.festivalGuests ? MAY.festivalGuests() : [];
+        festivalGuestsInHub.forEach(function (entry, idx) {
+          var found = states.find(function (item) { return item.id === entry.spec.id; });
+          entry.ready = !!(found && found.ready);
+          entry.actor.visible = entry.ready; entry.hit.visible = entry.ready; entry.label.visible = entry.ready;
+          if (entry.spec.pool) entry.spec.pool.visible = entry.ready;
+          entry.note.visible = entry.ready && !!festivalConcert && festivalConcert.step === idx;
+        });
+      }
+      ctx.startFestivalConcert = function () {
+        refreshFestivalGuests();
+        if (!festivalGuestsInHub.every(function (entry) { return entry.ready; })) return false;
+        if (!festivalConcert) festivalConcert = { step: 0 };
+        var first = festivalGuestsInHub[festivalConcert.step];
+        MAY.player.spawnAt(stageX, ctx.groundH(stageX, stageZ + 9.5) + 1.05, stageZ + 9.5, 0, false);
+        ctx.setObjective("🎵", "ĐẾN GẦN " + first.spec.name + " VÀ CHẠM / BẤM T ĐỂ CÙNG CHƠI", first.actor.position);
+        refreshFestivalGuests();
+        MAY.toast("🎵 Cùng biểu diễn ba nhịp Sóng – Hoa – Sao! Chạm từng bạn khi tên bạn ấy sáng lên.");
+        return true;
+      };
+      ctx.interactives.push({
+        obj: festivalLeader, label: "🎵 Gặp nhạc trưởng Gió (T / Enter)",
+        onInteract: function () {
+          if (!ctx.startFestivalConcert() && MAY.openFestivalInvites) MAY.openFestivalInvites();
+        }
+      });
+      refreshFestivalGuests();
+    }
+
     /* ---- Nhiệm Vụ Phụ Tương Tác Đảo Mây: Ngọn Đèn Bến Cảng & Chai Thư Biển ---- */
     ctx.setupSideQuest({
       npcPos: [6.2, 20.5], npcRotY: -0.45, npcScale: 1.15, labelY: 2.1,
@@ -425,6 +527,7 @@
 
     /* Cây dừa chân thực + Cây tán lá + 360 bụi cỏ gió thổi + Đá bờ biển */
     [[-14, 12, 1.15], [16, 10, 1.05], [-16, -9, 1.1], [14, -15, 1.0], [-5, 18, 0.95], [7, 17, 1.05]].forEach(function (p) {
+      if (festivalActive && p[0] === -16 && p[1] === -9) return;
       var pm = MAY.makeRealisticPalm(p[2]);
       pm.position.set(p[0], ctx.groundH(p[0], p[1]) - 0.15, p[1]);
       pm.rotation.y = p[0] * 0.7;
@@ -439,7 +542,8 @@
     });
     MAY.scatterLushMeadow(ctx, 900, function (x, z) {
       var d = Math.hypot(x, z);
-      return d > 5.8 && d < 22 && ctx.groundH(x, z) > 1.75 && pathDistance(x, z) > 1.75;
+      return d > 5.8 && d < 22 && ctx.groundH(x, z) > 1.75 && pathDistance(x, z) > 1.75 &&
+        (!festivalActive || Math.hypot(x + 12, z + 5) > 5.8);
     }, { spread: 25, color: 0xc0d5a6, w: 0.74, h: 0.55, flowers: true });
 
     /* Sỏi đá nhỏ ven bãi cát, đá vụn ôm quanh Hải Đăng/Nhà gỗ & Quần đảo mờ xa ngoài khơi */
@@ -541,6 +645,13 @@
       });
 
       if (festivalActive) {
+        festivalGuestsInHub.forEach(function (guest, i) {
+          if (!guest.ready) return;
+          guest.pulse = Math.max(0, guest.pulse - dt);
+          guest.actor.position.y = guest.baseY + Math.sin(t * 2 + i) * 0.06 + (guest.pulse > 0 ? Math.abs(Math.sin(t * 8)) * 0.32 : 0);
+          guest.hit.position.y = guest.actor.position.y + 1.0;
+          if (guest.actor.userData.mixer) guest.actor.userData.mixer.update(dt);
+        });
         fireworkTimer -= dt;
         if (fireworkTimer <= 0) {
           fireworkTimer = 2.4;

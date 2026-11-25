@@ -33,7 +33,10 @@
     var ls = MAY.getLevelSave(meta.id);
 
     setText("obj-sub", meta.title.toUpperCase());
-    if (ctx && ctx.storyObjective) {
+    if (ls.gem && ctx && ctx.storyObjective && !ctx.storyObjective.targetPos) {
+      setText("obj-icon", meta.gemIcon);
+      setText("obj-word", ls.sideQuest.done ? "Chơi lại cùng bạn trong Sổ tay (J)" : MAY.SIDE_QUESTS[meta.id].title);
+    } else if (ctx && ctx.storyObjective) {
       setText("obj-icon", ctx.storyObjective.icon || "✨");
       setText("obj-word", ctx.storyObjective.text);
     } else {
@@ -89,7 +92,7 @@
     }
     var pillCh = document.getElementById("pill-ch");
     if (pillCh) {
-      var doneCh = Object.keys(ls.challenges).filter(function (k) { return ls.challenges[k]; }).length;
+      var doneCh = MAY.badgeCount(ls);
       pillCh.style.display = meta.id === "hub" ? "none" : "inline-block";
       setText("ch-n", doneCh);
     }
@@ -144,6 +147,11 @@
     for (var h = 0; h < hits.length; h++) {
       var it = findInteractive(hits[h].object, ctx.interactives);
       if (it && isInteractiveActive(it)) { found = it; break; }
+    }
+    // At hand-in range, the return prompt wins over props behind the quest giver.
+    var side = ctx.sideQuest;
+    if (side && side.save.stage === 2 && !side.save.done && side.npcPos.distanceTo(MAY.player.pos) < 3.2) {
+      found = side.interaction;
     }
     /* Nếu đứng gần NPC Giao Nhiệm Vụ trong 5.6m thì luôn hiện nút trò chuyện tiện lợi! */
     if (!found && MAY.player) {
@@ -1397,6 +1405,7 @@
         rList.push(m);
       });
       ctx.raceCh = { startRing: startRing, rings: rList, active: false, t: 0, idx: 0, limit: opts.time || 55, title: opts.title || "Đua tốc độ" };
+      MAY.bindRace(ctx, ctx.raceCh);
     };
 
     /* 12. Thử thách 3: Trạm câu đố giáo dục */
@@ -1670,6 +1679,7 @@
 
       /* Bạn thú */
       ctx.friends.forEach(function (f) {
+        if (!f.group.visible) return;
         var jy = 0, moving = false;
         if (f.jump < 1) {
           f.jump += dt * 1.5;
@@ -1859,50 +1869,7 @@
         }
       }
 
-      /* Thử thách 2: Đua tính giờ */
-      if (ctx.raceCh) {
-        var ra = ctx.raceCh;
-        if (!ra.active) {
-          if (ra.startRing.userData.rune) ra.startRing.userData.rune.rotation.z += dt * 1.4;
-          if (ra.startRing.position.distanceTo(pPos) < 3.1) {
-            ra.active = true; ra.t = ra.limit; ra.idx = 0;
-            MAY.sndFriend();
-            MAY.toast("🏁 Bắt đầu " + ra.title + "! Qua " + ra.rings.length + " vòng xanh trong " + ra.limit + " giây!", "Bắt đầu đua nào!");
-          }
-        } else {
-          if (!MAY.modalOpen) ra.t -= dt;
-          var hintEl = document.getElementById("hint");
-          if (hintEl) {
-            hintEl.style.display = "block";
-            hintEl.textContent = "🏁 " + ra.title + ": còn " + Math.ceil(ra.t) + "s — vòng " + (ra.idx + 1) + "/" + ra.rings.length + "!";
-          }
-          if (ra.t <= 0) {
-            ra.active = false;
-            if (hintEl) hintEl.style.display = "";
-            MAY.toast("⏱️ Hết giờ rồi, Mây thử đua lại nhé!", "Hết giờ rồi, thử lại nhé!");
-            MAY.updateHintText(ctx);
-          } else if (ra.idx < ra.rings.length) {
-            var rr = ra.rings[ra.idx];
-            if (rr.userData.rimMat) rr.userData.rimMat.emissiveIntensity = 1.2 + Math.sin(t * 5) * 0.45;
-            if (rr.userData.rune) rr.userData.rune.rotation.z -= dt * 2.2;
-            rr.scale.setScalar(1.1 + Math.sin(t * 5) * 0.06);
-            if (rr.position.distanceTo(pPos) < 3.2) {
-              ra.idx++;
-              MAY.sndStar();
-              MAY.burstAt(rr.position.clone(), 0x4dd0ff, 14);
-              if (ra.idx >= ra.rings.length) {
-                ra.active = false;
-                if (hintEl) hintEl.style.display = "";
-                MAY.updateHintText(ctx);
-                if (MAY.VFX) MAY.VFX.spawnTornado(pPos.clone(), true);
-                ctx.challengeDone("race", "🏅 Huy hiệu tốc độ! Mây thắng " + ra.title + "!", "Mây nhận huy hiệu tốc độ!");
-              } else {
-                MAY.toast("🏁 Qua vòng đua " + ra.idx + "/" + ra.rings.length + "!", "Tiếp tục nào!");
-              }
-            }
-          }
-        }
-      }
+      if (ctx.raceCh) ctx.raceCh.update(dt, t);
 
       /* Thử thách 3: Trạm câu đố (CHỈ mở khi bấm/tương tác — không tự bật ngang màn hình khi chạy qua!) */
       if (ctx.quizStation) {
@@ -2025,6 +1992,10 @@
     });
     var p = MAY.player.pos;
     var near = [];
+    if (ctx.raceCh && ctx.raceCh.active) {
+      var goal = ctx.raceCh.rings[ctx.raceCh.idx].position;
+      near.push({ pos: goal, d: goal.distanceTo(p), icon: "🏁" });
+    }
     if (ctx.storyObjective && ctx.storyObjective.targetPos) {
       near.push({ pos: ctx.storyObjective.targetPos, d: ctx.storyObjective.targetPos.distanceTo(p), icon: ctx.storyObjective.icon || "❗" });
     }
@@ -2073,12 +2044,16 @@
 
     ctx.portals.forEach(function (pt) { dot(pt.pos.x, pt.pos.z, "#7fe3ff", 4); });
     ctx.chests.forEach(function (ch) { if (!ch.opened) dot(ch.group.position.x, ch.group.position.z, "#c98a2e", 3); });
-    ctx.friends.forEach(function (f) { if (!f.met) dot(f.group.position.x, f.group.position.z, "#ff8fb8", 3.2); });
+    ctx.friends.forEach(function (f) { if (!f.met && f.group.visible) dot(f.group.position.x, f.group.position.z, "#ff8fb8", 3.2); });
     ctx.collectibles.forEach(function (c) { if (!c.taken) dot(c.mesh.position.x, c.mesh.position.z, "#ffd93d", 3.0); });
     if (ctx.enemies) ctx.enemies.forEach(function (en) { if (en.state !== "purified") dot(en.mesh.position.x, en.mesh.position.z, "#ff3b5c", 3.4); });
     if (ctx.boss && ctx.boss.active && !ctx.boss.defeated) dot(ctx.boss.pos.x, ctx.boss.pos.z, "#ff0055", 5.5);
     if (ctx.storyObjective && ctx.storyObjective.targetPos) dot(ctx.storyObjective.targetPos.x, ctx.storyObjective.targetPos.z, "#4ade80", 4.8);
     if (ctx.sideQuestStatus && !ctx.sideQuestStatus.done && ctx.sideQuestStatus.targetPos) dot(ctx.sideQuestStatus.targetPos.x, ctx.sideQuestStatus.targetPos.z, "#22d3ee", 4.2);
+    if (ctx.raceCh && ctx.raceCh.active) {
+      var nextRing = ctx.raceCh.rings[ctx.raceCh.idx].position;
+      dot(nextRing.x, nextRing.z, "#ffee77", 5);
+    }
     if (ctx.gemAltar && !ctx.save.gem) dot(ctx.gemAltar.pos.x, ctx.gemAltar.pos.z, "#ffffff", 4.2);
 
     var p = MAY.player.pos;
@@ -2281,6 +2256,12 @@
           " • " + m.collectIcon + " " + ls.items.length + "/" + m.collectTarget + " hồi tim" +
           (m.num > 1 ? "; tìm 5 để nhận " + MAY.GEARS[m.num].name : "; kính lặn giúp bơi nhanh");
 
+      if (ls.gem) {
+        sub = m.id === "level1" ? "🐬 Cùng Bubi tìm lối thoát khác cho đàn cá" :
+          m.id === "level4" ? "🎵 Cú Mèo có giai điệu mới trong Sổ tay" :
+          m.id === "level5" ? "🐺 Sói Tuyết mời Mây đấu tập" :
+          (ls.raceRecord ? "🏁 Kỷ lục đường đua " + ls.raceRecord.best.toFixed(1).replace(".", ",") + " giây" : "🏁 Có thể lập kỷ lục đường đua trong Sổ tay");
+      }
       card.innerHTML = '<div class="mtop"><span class="mico">' + (unlocked ? m.icon : "🔒") + '</span><div><div class="mname">' + m.title + '</div><div class="msub">' + sub + "</div></div></div>" + badge;
       card.onclick = function () {
         if (!unlocked) {
@@ -2378,8 +2359,14 @@
         var done = !!(lss.sideQuest && lss.sideQuest.done);
         var prog = (lss.sideQuest && lss.sideQuest.doneIds) ? lss.sideQuest.doneIds.length : 0;
         if (done) totSQ++;
-        var d = document.createElement("div");
-        d.className = "alb-chip" + (done ? " got" : "");
+        var available = lss.gem && !done;
+        var d = document.createElement(available ? "button" : "div");
+        d.className = "alb-chip" + (done ? " got" : available ? " replay-choice" : "");
+        if (available) {
+          d.type = "button";
+          d.setAttribute("aria-label", "Gặp " + sqDef.npcName + " để chơi " + sqDef.title);
+          d.onclick = function () { MAY.visitReplay(m.id, "quest"); };
+        }
         d.innerHTML = '<span class="aico">' + (done ? "✅" : sqDef.icon) + "</span><b>" + sqDef.title + "</b><small>" + m.shortName + " • " + (done ? "Hoàn thành!" : (lss.sideQuest && lss.sideQuest.stage > 0 ? ("Đang làm (" + prog + ")") : ("Gặp " + sqDef.npcName))) + "</small>";
         sqEl.appendChild(d);
       });
@@ -2391,9 +2378,10 @@
       var ls = MAY.getLevelSave(m.id);
       if (ls.hidden) totHidden++;
       totFriends += ls.friends.length;
-      totCh += Object.keys(ls.challenges).filter(function (k) { return ls.challenges[k]; }).length;
+      totCh += MAY.badgeCount(ls);
     });
     setText("alb-stats", "🎖️ " + totFriends + "/35 bạn thú • 📜 " + totSQ + "/7 nhiệm vụ phụ • 🏆 " + totCh + "/18 thử thách • 👑 " + totHidden + "/6 bảo vật ẩn");
+    MAY.renderReplays();
     document.getElementById("ov-album").classList.remove("hidden");
   };
   MAY.renderAlbum = MAY.openAlbum;
@@ -2404,26 +2392,32 @@
     else MAY.openAlbum();
   };
 
-  MAY.showLevelWin = function (levelId, secs) {
+  var chapterEndings = {
+    level1: "Bubi đã tự do. Đàn cá có thể bơi qua vùng nước quanh tàu đắm.",
+    level2: "Cây Mẹ đã xanh trở lại. Sóc và thỏ lại có bóng mát dưới tán lá.",
+    level3: "Ánh sáng đã tới đỉnh kim tự tháp. Kiki có thể đưa bạn bè về ốc đảo.",
+    level4: "Hang đã sáng. Cú Mèo mời Mây ở lại chơi một bản nhạc mới.",
+    level5: "Ngôi làng đã yên bình. Sói Tuyết muốn thử tài phép băng và nắng của Mây.",
+    level6: "Bão đã tan. Bé Gió và các bạn lại được bay qua những cây cầu mây."
+  };
+
+  MAY.showLevelWin = function (levelId) {
     releasePointerLock();
     MAY.closeAllModals();
     MAY.modalOpen = true;
     var meta = MAY.getMeta(levelId);
     var ls = MAY.getLevelSave(levelId);
-    var mm = Math.floor((secs || 0) / 60), ss = (secs || 0) % 60;
-    var timeStr = mm + ":" + (ss < 10 ? "0" : "") + ss;
     var gear = MAY.GEARS[meta.num];
 
     setText("win-gem-icon", meta.gemIcon);
     setText("win-title", "MÂY ĐÃ NHẬN " + meta.gemName.toUpperCase() + "!");
-    setText("win-desc", "Hoàn thành " + meta.title + "! Trang bị: " + gear.icon + " " + gear.name + " (" + gear.desc + ").");
-    setText("win-rank", "⏱️ Thời gian khám phá " + timeStr + " • Tổng Ngọc: " + MAY.save.gems.length + "/6");
-    setText("win-side",
-      "💎 Rương " + ls.treasures.length + "/" + meta.treasureTarget +
-      " • " + meta.souvenirIcon + " " + ls.souvenirs.length + "/" + meta.souvenirTarget +
-      " • 🏆 Thử thách " + Object.keys(ls.challenges).filter(function (k) { return ls.challenges[k]; }).length + "/3" +
-      " • " + (ls.hidden ? "👑 Đã tìm " + meta.hiddenName : "🔎 Còn Bảo vật ẩn đang chờ!")
-    );
+    setText("win-desc", chapterEndings[levelId]);
+    setText("win-rank", gear.icon + " " + gear.name + " · " + MAY.save.gems.length + "/6 Ngọc");
+    setText("win-side", gear.desc);
+    var side = document.getElementById("btn-win-quest");
+    side.hidden = ls.sideQuest.done;
+    side.textContent = "📜 " + MAY.SIDE_QUESTS[levelId].title;
+    side.onclick = function () { MAY.visitReplay(levelId, "quest"); };
 
     var nextId = meta.num < 6 ? ("level" + (meta.num + 1)) : "hub";
     var nextMeta = MAY.getMeta(nextId);
@@ -2432,6 +2426,11 @@
       btnNext.textContent = "▶ Tới " + nextMeta.icon + " " + nextMeta.shortName;
       btnNext.onclick = function () { MAY.closeAllModals(); MAY.enterLevel(nextId); };
     }
+    var activity = document.getElementById("btn-win-activity");
+    var kind = levelId === "level1" ? "fish" : levelId === "level4" ? "music" : levelId === "level5" ? "rematch" : "race";
+    activity.textContent = kind === "fish" ? "🐬 Thử lối thoát khác cùng Bubi" : kind === "music" ? "🎵 Hòa tấu cùng Cú Mèo" :
+      kind === "rematch" ? "🐺 Đấu tập với Sói Tuyết" : "🏁 Đua ở " + meta.shortName;
+    activity.onclick = function () { MAY.visitReplay(levelId, kind); };
     var btnHub = document.getElementById("btn-win-hub");
     if (btnHub) btnHub.onclick = function () { MAY.closeAllModals(); MAY.enterLevel("hub"); };
 

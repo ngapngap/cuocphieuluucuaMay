@@ -1005,7 +1005,7 @@
         });
       });
 
-      ctx.interactives.push({
+      var questGiver = {
         obj: npcG, label: "📜 Nhiệm vụ phụ: " + def.npcName, isQuestNPC: true,
         onInteract: function () {
           if (sqSave.done) {
@@ -1032,7 +1032,8 @@
                 MAY.healPlayer(3);
                 if (MAY.sndGem) MAY.sndGem();
                 MAY.burstAt(sqObj.npcPos.clone().add(new THREE.Vector3(0, 1, 0)), 0x22d3ee, 28);
-                MAY.toast(def.rewardMsg, "Hoàn thành nhiệm vụ phụ rồi! Mây giỏi quá!");
+                MAY.toast(ctx.id === "level2" && MAY.save.gems.length >= 6 ?
+                  "🐇 Thỏ Bông đã xếp giỏ hạt dẻ. Hẹn Mây ở buổi hòa nhạc bên hải đăng!" : def.rewardMsg, "Hoàn thành nhiệm vụ phụ rồi! Mây giỏi quá!");
                 sqObj.syncState();
               }
             });
@@ -1043,8 +1044,10 @@
             });
           }
         }
-      });
-
+      };
+      ctx.interactives.push(questGiver);
+      sqObj.interaction = questGiver;
+      sqObj.talk = questGiver.onInteract;
       ctx.sideQuest = sqObj;
       sqObj.syncState();
       return sqObj;

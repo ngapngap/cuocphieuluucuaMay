@@ -341,8 +341,9 @@
       { name: "Cừu Bông Biết Bay", kind: "sheep",        pos: [-40, 12.0, 18], greet: "🐑 Cừu Bông mềm mịn nhảy tưng tưng chào Mây!" },
       { name: "Chim Cầu Vồng",     kind: "bird",         pos: [36, 19.5, -28], behavior: "fly", orbitR: 8, opts: { color: 0x38bdf8 }, greet: "🐦 Chim Cầu Vồng sải cánh xanh biếc chào Mây!" },
       { name: "Sao Băng Nhỏ",      kind: "shootingstar", pos: [-34, 18.5, -30],behavior: "fly", orbitR: 6, greet: "🌠 Sao Băng Nhỏ tặng Mây một điều ước lấp lánh!" },
-      { name: "Bé Gió Lốc Tí Hon", kind: "windspirit",   pos: [0, 19.8, -44],  behavior: "still", greet: "🌬️ Gió Lốc Tí Hon xin lỗi Mây và hóa thành Làn Gió Mát dễ thương!" }
+      { name: "Bé Gió Lốc Tí Hon", kind: "windspirit",   pos: [0, 19.8, -44],  behavior: "still", greet: "🌬️ Bé Gió lượn một vòng quanh Mây. Từ đây hai bạn lại có thể cùng bay!" }
     ]);
+    var windFriend = ctx.friends.find(function (friend) { return friend.kind === "windspirit"; });
     ctx.setCompanion("miloWinged", "🐶✨ Milo Có Cánh", { flying: true });
 
     /* ---- 3 Rương Bầu Trời, 5 Hũ Bụi Sao, 5 Quả Bóng Mây nổ mưa tim ---- */
@@ -515,9 +516,10 @@
       },
       onDefeat: function () {
         ch6St.stage = 4; MAY.persist();
+        syncBeacon();
         ch6Npc.setMarker("★");
         ctx.setObjective("★", "QUAY LẠI PHƯỢNG HOÀNG NHẬN 🌈 NGỌC CUỐI & MỞ ĐẠI TIỆC!", ch6Npc.pos);
-        MAY.toast("🌈 CHIẾN THẮNG! Bóng Xám tan biến, Bé Gió Lốc được giải cứu rồi! Về gặp Phượng Hoàng (★)!", "Hoan hô! Mây đã đánh bại Trùm và thanh tẩy Màn Sương Xám!");
+        MAY.toast("🌈 Bão đã tan! Bé Gió bay về trước lâu đài. Về gặp Phượng Hoàng (★)!", "Hoan hô! Mây đã đánh bại Trùm và thanh tẩy Màn Sương Xám!");
       }
     });
 
@@ -542,7 +544,69 @@
     }
     if (ch6St.stage === 3 && !ch6St.bossDown) spawnPhase1Minions();
 
+    // A final beacon turns the restored islands into a route to the storm.
+    // Saves that had already opened all locks keep their original boss state.
+    var beaconPos = new THREE.Vector3(0, ctx.groundH(0, -34), -34);
+    var beaconGroup = new THREE.Group(); beaconGroup.position.copy(beaconPos);
+    var beaconBase = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.6, 0.6, 12), new THREE.MeshStandardMaterial({ color: 0xd9c7ea, roughness: 0.7 }));
+    beaconBase.position.y = 0.3; beaconGroup.add(beaconBase);
+    var beaconCore = new THREE.Mesh(new THREE.OctahedronGeometry(0.9, 0), new THREE.MeshStandardMaterial({ color: 0x5a4775, emissive: 0x583399, emissiveIntensity: 0.7 }));
+    beaconCore.position.y = 1.6; beaconGroup.add(beaconCore); ctx.add(beaconGroup);
+    function beaconActive() { return ch6St.stage === 2 && !!ch6St.steps.beaconTrialStarted && !ch6St.steps.beaconTrialDone; }
+    var rescuePos = new THREE.Vector3(-12, ctx.groundH(-12, -51), -51);
+    var rescueGroup = new THREE.Group(); rescueGroup.position.copy(rescuePos);
+    var windFace = new THREE.Group(); rescueGroup.add(windFace);
+    var windBody = new THREE.Mesh(new THREE.SphereGeometry(0.75, 10, 8), new THREE.MeshStandardMaterial({ color: 0xa8eafa, roughness: 0.65 }));
+    windBody.scale.set(1.2, 0.8, 0.8); windBody.position.y = 1.1; windFace.add(windBody);
+    var windEyeMat = new THREE.MeshBasicMaterial({ color: 0x183e59 });
+    [-0.23, 0.23].forEach(function (x) {
+      var eye = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 6), windEyeMat);
+      eye.position.set(x, 1.2, 0.56); windFace.add(eye);
+    });
+    var windCage = new THREE.Mesh(new THREE.TorusGeometry(1.25, 0.08, 6, 24), new THREE.MeshBasicMaterial({ color: 0xffd86d }));
+    windCage.rotation.x = Math.PI / 2; windCage.position.y = 0.18; rescueGroup.add(windCage);
+    var rescueLabel = MAY.makeLabel("💨 Bé Gió đang chờ Mây!", { sx: 3.5, sy: 0.8, bg: "rgba(10,32,56,.88)" });
+    rescueLabel.position.y = 2.7; rescueGroup.add(rescueLabel); ctx.trackLabel(rescueLabel, 30, 3);
+    ctx.add(rescueGroup);
+    var rescueTrail = new THREE.Group();
+    for (var trailIndex = 1; trailIndex <= 5; trailIndex++) {
+      var trailPoint = new THREE.Mesh(new THREE.SphereGeometry(0.19, 8, 6), new THREE.MeshBasicMaterial({ color: 0xffef9a }));
+      var trailT = trailIndex / 6;
+      var trailX = beaconPos.x + (rescuePos.x - beaconPos.x) * trailT;
+      var trailZ = beaconPos.z + (rescuePos.z - beaconPos.z) * trailT;
+      trailPoint.position.set(trailX, ctx.groundH(trailX, trailZ) + 0.4, trailZ);
+      rescueTrail.add(trailPoint);
+    }
+    ctx.add(rescueTrail);
+    var beaconTarget = ctx.addSkillTarget({
+      id: "l6_beacon_trial", pos: beaconPos, radius: 8, reqSpell: "solar", done: !!ch6St.steps.beaconLit,
+      hint: "☀️ Chiếu đèn để tìm Bé Gió", ringColor: 0xfef08a,
+      isActive: beaconActive,
+      onHit: function (sp, tg) {
+        if (!ch6St.steps.beaconLit && sp === "solar") {
+          ch6St.steps.beaconLit = true; MAY.persist();
+          beaconCore.material.color.setHex(0xffdd73); beaconCore.material.emissive.setHex(0xa96b00);
+          MAY.VFX.spawnShatterBurst(beaconPos.clone().add(new THREE.Vector3(0, 1.6, 0)), 0xffe47a);
+          tg.markDone();
+          MAY.toast("☀️ Đèn đã sáng! Đi theo các đốm sáng đến gần Bé Gió để cứu bạn.");
+          updateCh6Story();
+        }
+      }
+    });
+    function syncBeacon() {
+      var active = beaconActive(); beaconGroup.visible = active;
+      beaconCore.material.color.setHex(ch6St.steps.beaconLit ? 0xffdd73 : 0x5a4775);
+      beaconCore.material.emissive.setHex(ch6St.steps.beaconLit ? 0xa96b00 : 0x583399);
+      if (beaconTarget.hintLb) beaconTarget.hintLb.visible = active && !ch6St.steps.beaconLit;
+      beaconTarget.ring.visible = active && !ch6St.steps.beaconLit;
+      rescueGroup.visible = !!ch6St.steps.beaconTrialStarted && !!ch6St.steps.beaconLit && !ch6St.bossDown;
+      windFriend.group.visible = windFriend.label.visible = !!(ch6St.bossDown || ctx.save.gem);
+      windCage.visible = active;
+      rescueTrail.visible = active && !!ch6St.steps.beaconLit;
+    }
+
     function updateCh6Story() {
+      syncBeacon();
       if (ch6St.rewarded || ctx.save.gem) {
         ch6Npc.setMarker("♥");
         ctx.setObjective("🎉", "VƯƠNG QUỐC MÂY ĐÃ HÒA BÌNH — VỀ ĐẢO MÂY DỰ LỄ HỘI!", null);
@@ -570,6 +634,11 @@
         var nextL = lockCoords[0];
         for (var j = 0; j < 3; j++) if (!ch6St.steps["lock" + j]) { nextL = lockCoords[j]; break; }
         ctx.setObjective("🌈", "DÙNG 🌈 LỐC CẦU VỒNG (6+R) HẤT QUÁI & PHÁ 3 Ổ KHÓA SÉT (" + lockDone + "/3)", nextL);
+      } else if (beaconActive()) {
+        ch6Npc.setMarker("?");
+        ctx.setObjective(ch6St.steps.beaconLit ? "💨" : "☀️", ch6St.steps.beaconLit
+          ? "ĐI THEO ĐỐM SÁNG ĐẾN GẦN BÉ GIÓ ĐỂ CỨU BẠN"
+          : "DÙNG ☀️ TIA NẮNG CHIẾU ĐÈN TÌM BÉ GIÓ (3+R)", ch6St.steps.beaconLit ? rescuePos : beaconPos);
       } else {
         ch6St.stage = 3; MAY.persist();
         ch6Npc.setMarker("?");
@@ -593,6 +662,9 @@
         isActive: function () { return ch6St.stage >= 2 && !ch6St.steps["lock" + idx]; },
         onHit: function (sp, tg) {
           ch6St.steps["lock" + idx] = true; MAY.persist();
+          if (lockCoords.every(function (_, i) { return !!ch6St.steps["lock" + i]; }) && ch6St.stage === 2) {
+            ch6St.steps.beaconTrialStarted = true; MAY.persist();
+          }
           lockMeshes[idx].visible = false;
           tg.markDone();
           MAY.sndShatter(lp);
@@ -645,6 +717,16 @@
     });
 
     ctx.onUpdate = function (dt, t) {
+      if (beaconActive() && ch6St.steps.beaconLit && MAY.player.pos.distanceTo(rescuePos) < 3.2) {
+        ch6St.steps.beaconTrialDone = true; MAY.persist();
+        windCage.visible = false; rescueTrail.visible = false;
+        MAY.burstAt(rescuePos.clone().add(new THREE.Vector3(0, 1.1, 0)), 0xa8eafa, 18);
+        MAY.toast("💨 Bé Gió được cứu rồi! Bạn ấy reo vui và chỉ đường đến Vua Mây Bão!");
+        updateCh6Story();
+      }
+      if (rescueGroup.visible) {
+        windFace.position.y = Math.sin(t * 2.6) * (ch6St.steps.beaconTrialDone ? 0.28 : 0.08);
+      }
       windRibbons.rotation.y += dt * 0.16;
       if (blades) blades.rotation.z -= dt * 0.9;
       sRune.rotation.z += dt * 1.4;

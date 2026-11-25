@@ -569,9 +569,10 @@
     var cageRocks = new THREE.Mesh(new THREE.DodecahedronGeometry(2.3, 1), new THREE.MeshStandardMaterial({ color: 0x261d38, roughness: 0.9, wireframe: true }));
     var cageShell = new THREE.Mesh(new THREE.IcosahedronGeometry(2.1, 0), new THREE.MeshStandardMaterial({ color: 0x1d132e, transparent: true, opacity: 0.58, flatShading: true }));
     bubiCage.add(cageRocks, cageShell);
-    bubiCage.visible = !ch1St.steps.bubiFree;
+    var bubiAlreadyFree = !!(ch1St.steps.bubiFree || ch1St.bossDown || ctx.save.gem);
+    bubiCage.visible = !bubiAlreadyFree;
     ctx.add(bubiCage);
-    if (!ch1St.steps.bubiFree) ctx.addSphereCollider(bubiCagePos.x, bubiCagePos.y, bubiCagePos.z, 2.2, "bubi_cage");
+    if (!bubiAlreadyFree) ctx.addSphereCollider(bubiCagePos.x, bubiCagePos.y, bubiCagePos.z, 2.2, "bubi_cage");
 
     var inkCloudPositions = [
       new THREE.Vector3(-24, 4.2, -14),
@@ -622,10 +623,136 @@
 
     /* Ẩn Cá heo Bubi tự do cho đến khi Mây thật sự phá lưới đá cứu Bubi (tránh trùng 2 Bubi cùng lúc!) */
     var bubiFriend = ctx.friends[3];
-    if (bubiFriend && !ch1St.steps.bubiFree) {
+    if (bubiFriend && !bubiAlreadyFree) {
       bubiFriend.group.visible = false;
       bubiFriend.label.visible = false;
     }
+
+    // Existing journeys already beyond the rescue must never be sent backwards.
+    if (ch1St.steps.bubiFree && !ch1St.steps.bubiRouteVersion) {
+      ch1St.steps.bubiRouteVersion = 1;
+      ch1St.steps.bubiRoute = 2;
+      MAY.persist();
+    }
+    // Preserve progress for journeys that had already reached the wreck before this chapter was extended.
+    if (!ch1St.steps.fishRescueVersion && (ch1St.steps.ink0 || ch1St.steps.ink1 || ch1St.steps.ink2 || ch1St.stage >= 2 || ch1St.bossDown)) {
+      ch1St.steps.fishRescueVersion = 1;
+      ch1St.steps.fishRescue = 3;
+      MAY.persist();
+    }
+    var currentStops = [new THREE.Vector3(30, 4.2, -20), new THREE.Vector3(-10, 4.2, -38)];
+    var currentRings = [], currentCalmUntil = [0, 0], currentStarted = [null, null], currentClock = 0;
+    var currentRingGeo = new THREE.TorusGeometry(3.3, 0.12, 6, 24);
+    currentStops.forEach(function (p, i) {
+      var g = new THREE.Group(); g.position.copy(p);
+      var mat = new THREE.MeshBasicMaterial({ color: 0x49d5e5, transparent: true, opacity: 0.65 });
+      var ring = new THREE.Mesh(currentRingGeo, mat);
+      ring.rotation.y = Math.PI / 2; g.add(ring);
+      // A shelter is visible beside each current, rather than another collectible.
+      var shelter = new THREE.Mesh(new THREE.DodecahedronGeometry(1.5, 0), new THREE.MeshStandardMaterial({ color: 0x6c7292, roughness: 0.9, flatShading: true }));
+      shelter.position.set(0, -1.8, 4.0); shelter.scale.set(1.35, 0.7, 1); g.add(shelter);
+      ctx.add(g); currentRings.push({ group: g, ring: ring, material: mat });
+    });
+    if (bubiFriend && bubiAlreadyFree) bubiFriend.following = true;
+    var rescueNest = new THREE.Vector3(-53, 4.1, -43);
+    var rescueExits = [new THREE.Vector3(-39, 4.1, -47), new THREE.Vector3(-58, 4.1, -27)];
+    var rescueHavens = [new THREE.Vector3(-22, 4.1, -49), new THREE.Vector3(-45, 4.1, -8)];
+    var rescueColors = [0x56dccb, 0xffbe70], rescueDoors = [];
+    var schoolLeader = rescueNest.clone();
+    var replayRescue = null;
+    var towardSchool = new THREE.Vector3();
+    var savedRescueStep = Number(ch1St.steps.fishRescue) || 0;
+    var savedExit = Number(ch1St.steps.fishRescueExit) === 1 ? 1 : 0;
+    if (savedRescueStep === 2) schoolLeader.copy(rescueExits[savedExit]);
+    if (savedRescueStep >= 3 && ch1St.steps.fishRescueChosen) schoolLeader.copy(rescueHavens[savedExit]);
+    function displayRescue() {
+      var log = ctx.save.challenges.fishRoutes;
+      return ctx.save.gem && log && log.home ? log.home : ch1St.steps;
+    }
+    if (ctx.save.gem && displayRescue().fishRescueChosen) schoolLeader.copy(rescueHavens[displayRescue().fishRescueExit === 1 ? 1 : 0]);
+    var rescueSchool = new THREE.InstancedMesh(tinyGeo, new THREE.MeshStandardMaterial({ color: 0xffcc79, roughness: 0.6 }), 9);
+    var rescueDummy = new THREE.Object3D(); ctx.add(rescueSchool);
+    var rescueCage = new THREE.Mesh(new THREE.IcosahedronGeometry(2.6, 1), new THREE.MeshStandardMaterial({ color: 0x6e6681, wireframe: true, transparent: true, opacity: 0.6 }));
+    rescueCage.position.copy(rescueNest); ctx.add(rescueCage);
+    rescueExits.forEach(function (pos, i) {
+      var g = new THREE.Group(); g.position.copy(pos);
+      var rim = new THREE.Mesh(new THREE.TorusGeometry(2.5, 0.16, 6, 20), new THREE.MeshBasicMaterial({ color: rescueColors[i] }));
+      g.add(rim);
+      var barrier = new THREE.Mesh(new THREE.DodecahedronGeometry(1.35, 0), new THREE.MeshStandardMaterial({ color: 0x4f5362, roughness: 0.9, flatShading: true }));
+      g.add(barrier); ctx.add(g); rescueDoors.push({ group: g, barrier: barrier });
+    });
+    var beforeCurrentUpdate = ctx.onUpdate;
+    ctx.onUpdate = function (dt, t) {
+      if (beforeCurrentUpdate) beforeCurrentUpdate(dt, t);
+      currentClock += dt;
+      var progress = Math.max(0, Math.min(2, Number(ch1St.steps.bubiRoute) || 0));
+      var routeActive = ch1St.stage === 1 && ch1St.steps.bubiFree && progress < 2;
+      ctx.oceanCurrentGoal = routeActive ? currentStops[progress] : null;
+      currentRings.forEach(function (visual, i) {
+        visual.group.visible = !!ch1St.steps.bubiFree && (i < progress || (routeActive && i === progress));
+        if (!visual.group.visible) return;
+        if (i < progress) { visual.material.color.setHex(0x65d6b0); return; }
+        if (currentStarted[i] === null) currentStarted[i] = currentClock;
+        var surging = currentClock - currentStarted[i] > (i ? 0.5 : 2.5) && Math.sin(currentClock * 1.15 + i) > (i ? -0.35 : 0.05) && currentClock > currentCalmUntil[i];
+        visual.material.color.setHex(surging ? 0xf6a769 : 0x62dfe5);
+        visual.ring.rotation.x += dt * (surging ? 1.5 : 0.25);
+        var p = MAY.player.pos, stop = currentStops[i];
+        var d = p.distanceTo(stop);
+        if (surging && d < 5.2 && Math.abs(p.z - stop.z) < 3.3) p.x += dt * (i ? 3.7 : -2.3);
+        if (d < 3.6 && (!bubiFriend || bubiFriend.group.position.distanceTo(p) < 7.0)) {
+          ch1St.steps.bubiRoute = i + 1; MAY.persist();
+          ctx.checkpoint.copy(stop);
+          MAY.sndStar(); MAY.burstAt(stop, 0x70e5dc, 18);
+          MAY.toast(i ? "🐬 Bubi đã tới rạn an toàn! Lối tới tàu đắm mở rồi." : "🐬 Cả hai đã qua luồng đầu! Tiếp tục tới luồng mạnh hơn.");
+          updateCh1Story();
+        }
+      });
+      var inksReady = ch1St.steps.ink0 && ch1St.steps.ink1 && ch1St.steps.ink2;
+      var route = replayRescue || displayRescue();
+      var rescueStep = Number(route.fishRescue) || 0;
+      var rescueActive = (!!replayRescue || (ch1St.stage === 1 && inksReady)) && rescueStep < 3;
+      var exit = Number(route.fishRescueExit) === 1 ? 1 : 0;
+      ctx.oceanRescueGoal = rescueActive && rescueStep === 0 ? rescueNest : rescueActive && rescueStep === 2 ? rescueHavens[exit] : null;
+      rescueSchool.visible = (rescueActive || (rescueStep >= 3 && !!route.fishRescueChosen));
+      rescueCage.visible = rescueActive && rescueStep < 2;
+      rescueDoors.forEach(function (door, i) {
+        door.group.visible = rescueActive && rescueStep === 1 || (!!route.fishRescueChosen && rescueStep >= 2 && i === exit);
+        door.barrier.visible = rescueStep === 1;
+      });
+      if (rescueActive && rescueStep === 0 && MAY.player.pos.distanceTo(rescueNest) < 4.5) {
+        route.fishRescue = 1; ctx.checkpoint.copy(rescueNest); MAY.persist();
+        MAY.toast("🐟 Bubi tìm thấy đàn cá mắc trong tàu! Chọn lối xanh tới rạn hoặc lối vàng về vịnh, dùng 🌊 mở lối.");
+        updateCh1Story();
+      }
+      if (rescueActive && rescueStep === 2) {
+        var toward = towardSchool.subVectors(MAY.player.pos, schoolLeader);
+        var distance = toward.length();
+        if (distance > 2.2) schoolLeader.addScaledVector(toward, Math.min(distance - 2.2, dt * 5.5) / distance);
+        if (MAY.player.pos.distanceTo(rescueHavens[exit]) < 4.5 && schoolLeader.distanceTo(rescueHavens[exit]) < 7.5) {
+          route.fishRescue = 3; schoolLeader.copy(rescueHavens[exit]); ctx.checkpoint.copy(schoolLeader);
+          MAY.sndStar(); MAY.burstAt(schoolLeader, rescueColors[exit], 20);
+          if (replayRescue) {
+            var firstVisit = !route.home;
+            route.paths |= 1 << exit;
+            route.home = { fishRescue: 3, fishRescueChosen: true, fishRescueExit: exit };
+            var result = route.paths === 3 ? "🐬 Mây đã dẫn đàn cá qua cả hai lối thoát!" :
+              "🐟 Đàn cá đã an toàn! Lần sau thử đưa chúng về " + (exit ? "rạn san hô." : "vịnh yên.");
+            MAY.toast(firstVisit && MAY.save.gems.length >= 6 ? "🐬 Bubi reo lên: Cá đã an toàn! Hẹn Mây bên hải đăng nhé!" : result);
+            ctx.leaveFishRescue();
+          } else MAY.toast(exit ? "🐟 Đàn cá đã về vịnh yên! Bubi cùng Mây tiếp tục tới Bạch Tuộc." : "🐟 Đàn cá đã trú an toàn ở rạn! Bubi cùng Mây tiếp tục tới Bạch Tuộc.");
+          MAY.persist();
+          updateCh1Story();
+        }
+      }
+      if (rescueSchool.visible) {
+        for (var fi = 0; fi < 9; fi++) {
+          var fa = fi * 2.399 + t * 0.7, fr = 0.7 + (fi % 3) * 0.45;
+          rescueDummy.position.set(schoolLeader.x + Math.cos(fa) * fr, schoolLeader.y + Math.sin(t * 1.6 + fi) * 0.35, schoolLeader.z + Math.sin(fa) * fr);
+          rescueDummy.rotation.set(0, -fa, 0); rescueDummy.scale.setScalar(1.5); rescueDummy.updateMatrix(); rescueSchool.setMatrixAt(fi, rescueDummy.matrix);
+        }
+        rescueSchool.instanceMatrix.needsUpdate = true;
+      }
+    };
 
     var ch1Npc;
     var ch1Boss = ctx.setBoss({
@@ -663,6 +790,11 @@
     });
 
     function updateCh1Story() {
+      if (replayRescue) {
+        var goal = replayRescue.fishRescue === 2 ? rescueHavens[replayRescue.fishRescueExit] : null;
+        ctx.setObjective("🐟", goal ? "Bơi cùng đàn cá đến nơi trú" : "Chọn cửa xanh tới rạn hoặc cửa vàng về vịnh, rồi dùng Sóng", goal || rescueNest);
+        return;
+      }
       if (ch1St.rewarded || ctx.save.gem) {
         ch1Npc.setMarker("♥");
         ctx.setObjective("🔵", "VỊNH SAN HÔ ĐÃ THANH TẨY — SANG CHƯƠNG 2 (PHÍM M)", null);
@@ -683,11 +815,22 @@
       if (!ch1St.steps.bubiFree) {
         ch1Npc.setMarker("?");
         ctx.setObjective("🌊", "DÙNG 🌊 SÓNG (1+R) PHÁ LƯỚI ĐÁ CỨU CÁ HEO BUBI", bubiCagePos);
+      } else if ((Number(ch1St.steps.bubiRoute) || 0) < 2) {
+        ch1Npc.setMarker("?");
+        var routeStep = Number(ch1St.steps.bubiRoute) || 0;
+        ctx.setObjective("🐬", "ĐƯA BUBI QUA LUỒNG NƯỚC " + (routeStep + 1) + "/2 — CHỜ YÊN HOẶC DÙNG 🌊 LÀM DỊU", currentStops[routeStep]);
       } else if (inksCleared < 3) {
         ch1Npc.setMarker("?");
         var nextInk = inkCloudPositions[0];
         for (var j = 0; j < 3; j++) if (!ch1St.steps["ink" + j]) { nextInk = inkCloudPositions[j]; break; }
         ctx.setObjective("🌊", "DÙNG 🌊 SÓNG THỔI TAN 3 ĐÁM MÂY MỰC (" + inksCleared + "/3)", nextInk);
+      } else if ((Number(ch1St.steps.fishRescue) || 0) < 3) {
+        ch1Npc.setMarker("?");
+        var rescueStep = Number(ch1St.steps.fishRescue) || 0;
+        var chosenExit = Number(ch1St.steps.fishRescueExit) === 1 ? 1 : 0;
+        if (rescueStep === 0) ctx.setObjective("🐟", "THEO BUBI TỚI KIỂM TRA ĐÀN CÁ Ở TÀU ĐẮM", rescueNest);
+        else if (rescueStep === 1) ctx.setObjective("🐟", "CHỌN LỐI XANH TỚI RẠN HOẶC LỐI VÀNG VỀ VỊNH — DÙNG 🌊 MỞ LỐI", null);
+        else ctx.setObjective("🐟", chosenExit ? "DẪN ĐÀN CÁ VỀ VỊNH YÊN" : "DẪN ĐÀN CÁ TỚI RẠN AN TOÀN", rescueHavens[chosenExit]);
       } else {
         ch1St.stage = 2;
         MAY.persist();
@@ -706,10 +849,15 @@
 
     ctx.addSkillTarget({
       id: "l1_bubi", pos: bubiCagePos, radius: 8.5, reqSpell: "wave",
-      hint: "🌊 Phá lưới đá cứu Bubi!", done: !!ch1St.steps.bubiFree,
-      isActive: function () { return ch1St.stage >= 1 && !ch1St.steps.bubiFree; },
+      hint: "🌊 Phá lưới đá cứu Bubi!", done: bubiAlreadyFree,
+      isActive: function () { return ch1St.stage === 1 && !ch1St.steps.bubiFree && !ctx.save.gem; },
       onHit: function (sp, tg) {
         ch1St.steps.bubiFree = true;
+        ch1St.steps.bubiRouteVersion = 1;
+        ch1St.steps.bubiRouteStarted = true;
+        ch1St.steps.bubiRoute = 0;
+        ch1St.steps.fishRescueVersion = 1;
+        ch1St.steps.fishRescue = 0;
         MAY.persist();
         bubiCage.visible = false;
         ctx.removeCollider("bubi_cage");
@@ -722,16 +870,29 @@
         tg.markDone();
         MAY.sndCoralRelease(bubiCagePos);
         MAY.VFX.spawnShatterBurst(bubiCagePos, 0x38bdf8);
-        MAY.toast("🐬 Tuyệt quá! Cá heo Bubi được giải cứu và bơi theo Mây rồi! Giờ hãy thổi tan 3 Đám Mây Mực quanh Tàu Đắm!");
+        MAY.toast("🐬 Bubi theo Mây! Đưa bạn qua hai luồng nước: màu cam đang chảy, xanh là yên. Dùng 🌊 để làm dịu nếu muốn.");
         updateCh1Story();
       }
+    });
+
+    currentStops.forEach(function (stop, idx) {
+      ctx.addSkillTarget({
+        id: "l1_current_" + idx, pos: stop, radius: 6.5, reqSpell: "wave",
+        hint: "🌊 Làm dịu luồng nước", hintY: 4.2,
+        isActive: function () { return ch1St.stage === 1 && ch1St.steps.bubiFree && (Number(ch1St.steps.bubiRoute) || 0) === idx; },
+        onHit: function () {
+          currentCalmUntil[idx] = currentClock + 5;
+          MAY.burstAt(stop, 0x70e5dc, 12);
+          MAY.toast("🌊 Dòng nước dịu lại! Bơi qua cùng Bubi nhé.");
+        }
+      });
     });
 
     inkCloudPositions.forEach(function (ip, idx) {
       ctx.addSkillTarget({
         id: "l1_ink_" + idx, pos: ip, radius: 8.5, reqSpell: "wave",
         hint: "🌊 Thổi tan Mây Mực (" + (idx + 1) + "/3)", done: !!ch1St.steps["ink" + idx],
-        isActive: function () { return ch1St.stage >= 1 && !!ch1St.steps.bubiFree && !ch1St.steps["ink" + idx]; },
+        isActive: function () { return ch1St.stage >= 1 && !!ch1St.steps.bubiFree && (Number(ch1St.steps.bubiRoute) || 0) >= 2 && !ch1St.steps["ink" + idx]; },
         onHit: function (sp, tg) {
           ch1St.steps["ink" + idx] = true;
           MAY.persist();
@@ -744,6 +905,60 @@
         }
       });
     });
+
+    rescueExits.forEach(function (pos, idx) {
+      ctx.addSkillTarget({
+        id: "l1_rescue_exit_" + idx, pos: pos, radius: 7.0, reqSpell: "wave",
+        hint: idx ? "🌊 Lối vàng: về vịnh" : "🌊 Lối xanh: tới rạn", hintY: 3.5,
+        isActive: function () { return replayRescue ? replayRescue.fishRescue === 1 :
+          ch1St.stage === 1 && ch1St.steps.ink0 && ch1St.steps.ink1 && ch1St.steps.ink2 && Number(ch1St.steps.fishRescue) === 1; },
+        onHit: function () {
+          var route = replayRescue || ch1St.steps;
+          route.fishRescueExit = idx; route.fishRescueChosen = true;
+          route.fishRescue = 2; ctx.checkpoint.copy(pos); MAY.persist();
+          MAY.sndShatter(pos); MAY.VFX.spawnShatterBurst(pos, rescueColors[idx]);
+          MAY.toast(idx ? "🐟 Lối vàng đã mở! Bơi về vịnh, đàn cá sẽ theo Mây." : "🐟 Lối xanh đã mở! Bơi tới rạn, đàn cá sẽ theo Mây.");
+          updateCh1Story();
+        }
+      });
+    });
+
+    ctx.startFishRescue = function () {
+      if (!ctx.save.gem || MAY.currentCtx !== ctx) return false;
+      if (replayRescue) return true;
+      var record = ctx.save.challenges.fishRoutes;
+      if (!record || typeof record !== "object") {
+        var storyExit = Number(ch1St.steps.fishRescueExit) === 1 ? 1 : 0;
+        record = ctx.save.challenges.fishRoutes = { paths: ch1St.steps.fishRescueChosen ? 1 << storyExit : 0 };
+      }
+      if (record.fishRescue !== 2 || (record.fishRescueExit !== 0 && record.fishRescueExit !== 1)) {
+        record.fishRescue = 1;
+        record.fishRescueChosen = false;
+      }
+      replayRescue = record;
+      ctx.fishRescueActive = true;
+      var pos = record.fishRescue === 2 ? rescueExits[record.fishRescueExit] : rescueNest;
+      schoolLeader.copy(pos);
+      MAY.player.spawnAt(pos.x, pos.y, pos.z + 2, 0, true);
+      if (bubiFriend) {
+        bubiFriend.group.position.set(pos.x + 1.5, pos.y, pos.z);
+        bubiFriend.following = true;
+      }
+      ctx.checkpoint.copy(pos);
+      MAY.VFX.syncSpellUI();
+      updateCh1Story();
+      MAY.persist();
+      return true;
+    };
+    ctx.leaveFishRescue = function () {
+      if (!replayRescue) return;
+      replayRescue = null;
+      ctx.fishRescueActive = false;
+      var home = displayRescue();
+      if (home.fishRescueChosen) schoolLeader.copy(rescueHavens[home.fishRescueExit === 1 ? 1 : 0]);
+      MAY.VFX.syncSpellUI();
+      updateCh1Story();
+    };
 
     ch1Npc = ctx.addQuestNPC({
       kind: "turtle", name: ch1Sc.npcName, icon: ch1Sc.npcIcon,
@@ -784,7 +999,13 @@
       ]
     });
 
-    MAY.player.spawnAt(0, 4.0, 10, 0, true);
+    var routeResume = ch1St.stage === 1 && ch1St.steps.bubiRouteStarted && Number(ch1St.steps.bubiRoute) > 0;
+    var resumePos = routeResume ? currentStops[Math.min(1, Number(ch1St.steps.bubiRoute) - 1)] : new THREE.Vector3(0, 4.0, 10);
+    if (ch1St.stage === 1 && ch1St.steps.fishRescueChosen && Number(ch1St.steps.fishRescue) === 2) resumePos = rescueExits[savedExit];
+    else if (ch1St.stage === 1 && Number(ch1St.steps.fishRescue) === 1) resumePos = rescueNest;
+    ctx.checkpoint.copy(resumePos);
+    MAY.player.spawnAt(resumePos.x, resumePos.y, resumePos.z, 0, true);
+    if (routeResume && bubiFriend) bubiFriend.group.position.copy(resumePos).add(new THREE.Vector3(1.5, 0, 0));
     return ctx;
   };
 

@@ -797,6 +797,7 @@
 
   MAY.loadWorldModels = function (id) {
     var names = MayPackages.models.common.concat(MayPackages.models[id]);
+    if (id === "hub" && MAY.save.gems.length >= 6) names = names.concat("cc0_dolphin", "polyfork_owl");
     return Promise.all(names.map(loadModel)).then(function () {
       MAY.modelsReady = true;
       if (MAY.RIGGED.may) MAY.player.attachRiggedMay();
