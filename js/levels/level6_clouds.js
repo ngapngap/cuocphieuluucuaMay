@@ -578,12 +578,122 @@
       rescueTrail.add(trailPoint);
     }
     ctx.add(rescueTrail);
+    // The evacuation route must be completed before the final beacon is lit.
+    var expedition = MAY.createChapterJourney(ctx, {
+      title: "Đợi đủ tiếng chuông", entry: [0, ctx.groundH(0, -28), -28], color: 0xffdd8b,
+      sections: [
+        { name: "Gầm cầu mây", brief: "Đọc chiều gió, phối hợp phép đã học để tới tháp chuông.", landmark: "Gầm cầu mây", length: 760, sky: 0xbba9db, ground: 0xf2e6f6, path: 0xd5c9ee, scenery: "bridge", companion: "wind", events: [
+          { at: 0.07, kind: "pass", lane: -1, cue: "Cờ bay sang phải: đi phía trái khuất gió", success: "Mây nép dưới vòm cầu" },
+          { at: 0.16, kind: "cast", spell: "wave", lane: 0, cue: "Dùng Sóng đẩy vật chắn dưới cầu", success: "Lối dưới cầu đã thông" },
+          { at: 0.25, kind: "pass", lane: 1, cue: "Gió đổi chiều: tìm phía phải vòm cầu", success: "Bé Gió chỉ chỗ khuất gió" },
+          { at: 0.34, kind: "cast", spell: "growth", lane: 0, cue: "Cho dây hoa mọc qua khoảng hở", success: "Dây hoa nối tới bậc mây" },
+          { at: 0.43, kind: "fork", choices: ["Dưới vòm", "Ngoài gió"], lane: -1, cue: "Chọn đường có vòm che gió", success: "Hai bạn qua dưới vòm cầu" },
+          { at: 0.52, kind: "cast", spell: "crystal", lane: 0, cue: "Cộng Hưởng phá đá chặn tháp", success: "Đá tách ra, đường mở" },
+          { at: 0.61, kind: "pass", lane: -1, cue: "Dải cờ chỉ gió mới: núp bên trái", success: "Hai bạn tránh cơn gió" },
+          { at: 0.70, kind: "cast", spell: "frost", lane: 0, cue: "Kết băng vệt nước tới bậc cầu", success: "Mặt băng nối đường tới tháp" },
+          { at: 0.79, kind: "pass", lane: 1, cue: "Đi bên phải cột khi gió thổi từ trái", success: "Cột cầu che gió cho Mây" },
+          { at: 0.89, kind: "cast", spell: "tornado", lane: 0, cue: "Lốc thổi tan mây xám che tháp", success: "Tháp chuông hiện ra" }
+        ] },
+        { name: "Tháp chuông", brief: "Bé Gió chỉ các khu sơ tán và tín hiệu chờ tớ.", landmark: "Tháp chuông", length: 770, sky: 0xcbb7df, ground: 0xf6eaf7, path: 0xe1d1ed, scenery: "bell", companion: "wind", events: [
+          { at: 0.07, kind: "echo", pattern: [0, 0, 2], cue: "Hai nhịp ngắn, một nhịp dài: chờ tớ", success: "Chuông đáp lại lời gọi" },
+          { at: 0.16, kind: "pass", lane: 1, cue: "Gió lùa bên trái tháp: theo lối phải", success: "Mây lên được bậc tháp" },
+          { at: 0.25, kind: "align", slots: 4, answer: 2, initial: 0, cue: "Xoay dấu chuông về khu sơ tán có cờ", success: "Ánh chuông chỉ khu trú cá" },
+          { at: 0.34, kind: "cast", spell: "solar", lane: 0, cue: "Chiếu Nắng vào cửa tháp để đọc bản đồ", success: "Ba khu sơ tán hiện trên bản đồ" },
+          { at: 0.43, kind: "echo", pattern: [0, 0, 2], cue: "Gửi lại hai ngắn, một dài cho Bé Gió", success: "Bé Gió đáp: các bạn còn đang đi" },
+          { at: 0.52, kind: "switch", choices: ["Đợi các bạn", "Bật đèn ngay"], answer: 0, cue: "Đèn sẽ dẫn bão đến đây: chờ đủ lời đáp", success: "Mây giữ đèn tắt và tìm các bạn" },
+          { at: 0.61, kind: "pass", lane: -1, cue: "Theo cờ sang phía trái tháp", success: "Lối tới Bubi đã mở" },
+          { at: 0.70, kind: "cast", spell: "tornado", lane: 0, cue: "Thổi mây xám khỏi chuông báo hiệu", success: "Chuông báo hiệu nhìn thấy từ xa" },
+          { at: 0.79, kind: "echo", pattern: [0, 0, 2], cue: "Gửi tín hiệu chờ tớ tới khu sơ tán", success: "Một tiếng đáp vọng từ phía cầu" },
+          { at: 0.89, kind: "pass", lane: 1, cue: "Theo cờ bên phải xuống lối sơ tán", success: "Mây tới lối sơ tán" }
+        ] },
+        { name: "Lối sơ tán", brief: "Tìm Bubi, Thỏ Bông và Cú Mèo, xác nhận từng bạn an toàn.", landmark: "Lối sơ tán", length: 790, sky: 0xd6bce4, ground: 0xf7e8f4, path: 0xead7ec, scenery: "shelter", companion: "bubi", events: [
+          { at: 0.07, kind: "pass", lane: -1, cue: "Theo dấu nước tới mái trú Bubi bên trái", success: "Bubi đưa đàn cá vào chỗ trú" },
+          { at: 0.16, kind: "echo", pattern: [0, 0, 2], cue: "Gửi Bubi hai nhịp ngắn, một nhịp dài", success: "Bubi đáp: đàn cá đã an toàn!" },
+          { at: 0.25, kind: "cast", spell: "wave", lane: 0, cue: "Đẩy vật cản khỏi cửa trú của Bubi", success: "Cửa trú cá rộng ra" },
+          { at: 0.34, kind: "pass", lane: 1, cue: "Theo dấu chân thỏ tới mái trú bên phải", success: "Thỏ Bông vẫy Mây" },
+          { at: 0.43, kind: "echo", pattern: [0, 0, 2], cue: "Gửi tín hiệu Thỏ Bông dạy trong rừng", success: "Thỏ Bông đáp: các bạn rừng an toàn!" },
+          { at: 0.52, kind: "cast", spell: "growth", lane: 0, cue: "Cho dây hoa giữ mái trú trước gió", success: "Mái trú của Thỏ Bông đã vững" },
+          { at: 0.61, kind: "pass", lane: -1, cue: "Theo hình nốt tới Cú Mèo bên trái", success: "Cú Mèo đang chờ lời đáp" },
+          { at: 0.70, kind: "echo", pattern: [0, 0, 2], cue: "Gõ hai ngắn, một dài cho Cú Mèo", success: "Cú Mèo đáp: mọi người ở hang an toàn!" },
+          { at: 0.79, kind: "cast", spell: "crystal", lane: 0, cue: "Mở lối về lâu đài bằng Cộng Hưởng", success: "Lối trở về lâu đài thông rồi" },
+          { at: 0.89, kind: "switch", choices: ["Kiểm tra đủ ba lời đáp", "Bật đèn ngay"], answer: 0, cue: "Bubi, Thỏ Bông và Cú Mèo đã đáp chưa?", success: "Đủ ba lời đáp; Mây có thể về đèn" }
+        ] },
+        { name: "Sân lâu đài", brief: "Cùng Bé Gió đưa tín hiệu về hải đăng.", landmark: "Sân lâu đài", length: 780, sky: 0xf0c8e2, ground: 0xffedf7, path: 0xf6dfed, scenery: "bell", companion: "wind", events: [
+          { at: 0.07, kind: "escort", lane: -1, cue: "Đợi Bé Gió ở phía trái khuất gió", success: "Bé Gió theo kịp Mây" },
+          { at: 0.16, kind: "pass", lane: 1, cue: "Cờ đổi chiều: hai bạn sang phía phải", success: "Hai bạn qua cơn gió" },
+          { at: 0.25, kind: "cast", spell: "frost", lane: 0, cue: "Kết băng chỗ hở trên lối về sân", success: "Lối tới sân được nối lại" },
+          { at: 0.34, kind: "escort", lane: 0, cue: "Chờ Bé Gió qua giữa nhịp cầu", success: "Bé Gió đã tới bên Mây" },
+          { at: 0.43, kind: "align", slots: 4, answer: 2, initial: 0, cue: "Xoay tín hiệu về sân đèn, tránh khu trú", success: "Tín hiệu hướng về sân trống" },
+          { at: 0.52, kind: "echo", pattern: [0, 0, 2], cue: "Chuyển tín hiệu an toàn tới sân đèn", success: "Chuông sân nhắc lại tín hiệu an toàn" },
+          { at: 0.61, kind: "cast", spell: "tornado", lane: 0, cue: "Thổi tan mây xám che đường tới đèn", success: "Hải đăng hiện rõ phía trước" },
+          { at: 0.70, kind: "escort", lane: 1, cue: "Đưa Bé Gió tới mái che bên phải", success: "Bé Gió đã an toàn bên sân" },
+          { at: 0.79, kind: "switch", choices: ["Hướng về sân đèn", "Hướng về khu trú"], answer: 0, cue: "Chọn hướng đưa tín hiệu tới sân đèn", success: "Tín hiệu chỉ về sân trống" },
+          { at: 0.89, kind: "cast", spell: "solar", lane: 0, cue: "Dùng Nắng thắp đèn chỉ đường về hải đăng", success: "Đèn chỉ đường sáng; hãy tự tay bật hải đăng ở sân lâu đài" }
+        ] }
+      ],
+      clearing: {
+        section: 2, name: "Đợi đủ tiếng chuông", brief: "Tìm lời đáp của Bubi, Thỏ Bông và Cú Mèo, rồi thắp đèn tín hiệu.",
+        devices: [
+          { id: "bubi", name: "Bubi bên mái trú cá", x: -18, z: -10, form: "bubi", color: 0x64d7ff },
+          { id: "rabbit", name: "Thỏ Bông bên vườn", x: 17, z: -12, form: "rabbit", color: 0xffa9ce },
+          { id: "owl", name: "Cú Mèo bên tháp", x: -15, z: -27, form: "owl", color: 0xffd671 },
+          { id: "bell", name: "Chuông báo an toàn", x: 13, z: -28, form: "bell", color: 0xffd56c },
+          { id: "lamp", name: "Đèn tín hiệu", x: 0, z: -33, form: "lamp", color: 0xffef9a, spell: "solar" }
+        ],
+        hint: function (v) { return !v.bubi ? "Tìm Bubi phía trái ở mái trú cá." : !v.rabbit ? "Tìm Thỏ Bông phía phải bên vườn." : !v.owl ? "Tìm Cú Mèo phía trái, gần tháp." : !v.bell ? "Gõ chuông phía phải báo cả ba đã an toàn." : "Dùng Nắng bật đèn tín hiệu phía trước."; },
+        action: function (id, v) {
+          if (id === "bubi" || id === "rabbit" || id === "owl") { v[id] = true; return { text: ({ bubi: "Bubi đáp: đàn cá đã an toàn!", rabbit: "Thỏ Bông đáp: các bạn rừng đã an toàn!", owl: "Cú Mèo đáp: mọi người ở hang đã an toàn!" })[id], done: false }; }
+          if (!v.bubi || !v.rabbit || !v.owl) return { text: "Chưa đủ ba lời đáp; hãy tìm người bạn còn thiếu trước khi bật đèn.", done: false };
+          if (id === "bell") { v.bell = true; return { text: "Chuông vang lên: cả ba nơi trú đã an toàn!", done: false }; }
+          if (!v.bell) return { text: "Hãy gõ chuông báo an toàn trước khi bật đèn tín hiệu.", done: false };
+          v.lamp = true; return { text: "Đèn tín hiệu sáng sau lời đáp cuối. Bé Gió dẫn Mây tới hải đăng!", done: true };
+        },
+        look: function (id, v) { return { lit: !!v[id], angle: 0 }; },
+        links: function (v) { return v.bell ? [["bell", "lamp", 0xffe58b]] : []; },
+        followers: function () { return []; }
+      },
+      makeVista: function (index) {
+        var group = new THREE.Group(), lights = [];
+        var colors = [0x5fd2ff, 0xffa8d6, 0xffdd76];
+        for (var i = 0; i < 3; i++) {
+          var post = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 3, 6), new THREE.MeshStandardMaterial({ color: 0xc5b1d9 })); post.position.set((i - 1) * 6, 1.5, -18); group.add(post);
+          var light = new THREE.Mesh(new THREE.SphereGeometry(0.55, 10, 8), new THREE.MeshStandardMaterial({ color: colors[i], emissive: colors[i], emissiveIntensity: 0.2 })); light.position.set((i - 1) * 6, 3.3, -18); group.add(light); lights.push(light);
+        }
+        var wind = new THREE.Mesh(new THREE.TorusGeometry(0.9, 0.12, 6, 20), new THREE.MeshStandardMaterial({ color: 0xb3eeff, emissive: 0x50badd, emissiveIntensity: 0.4 })); wind.position.set(3, 2, 3); group.add(wind);
+        return { group: group, tick: function (distance, lateral, eventIndex, time) {
+          wind.rotation.z = time * 1.4; wind.position.x += (lateral + 3 - wind.position.x) * 0.04;
+          lights.forEach(function (light, i) { light.material.emissiveIntensity = index >= 2 && eventIndex >= (i + 1) * 3 ? 1.1 : 0.2 + 0.1 * Math.sin(time * 2 + i); });
+        } };
+      },
+      makeLandmark: function (index) {
+        var g = new THREE.Group();
+        var stone = new THREE.MeshStandardMaterial({ color: 0xe9d7f0, roughness: 0.7 });
+        var gold = new THREE.MeshStandardMaterial({ color: 0xffd781, emissive: 0x80500f, emissiveIntensity: 0.25 });
+        if (index === 0) {
+          var arch = new THREE.Mesh(new THREE.TorusGeometry(4.4, 0.9, 8, 20, Math.PI), stone); arch.position.y = 0.7; g.add(arch);
+        } else if (index === 1) {
+          var tower = new THREE.Mesh(new THREE.CylinderGeometry(1.9, 2.5, 6, 8), stone); tower.position.y = 3; g.add(tower);
+          [-2.6, 0, 2.6].forEach(function (x) { var bell = new THREE.Mesh(new THREE.ConeGeometry(0.9, 1.6, 10), gold); bell.position.set(x, 6.3, 0); g.add(bell); });
+        } else if (index === 2) {
+          [-3.5, 0, 3.5].forEach(function (x) { var shelter = new THREE.Mesh(new THREE.ConeGeometry(2.2, 3.3, 4), stone); shelter.rotation.y = Math.PI / 4; shelter.position.set(x, 1.65, 0); g.add(shelter); });
+        } else {
+          var lighthouse = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 2.5, 6.5, 10), stone); lighthouse.position.y = 3.25; g.add(lighthouse);
+          var lamp = new THREE.Mesh(new THREE.SphereGeometry(1.3, 10, 8), gold); lamp.position.y = 7.1; g.add(lamp);
+        }
+        return g;
+      }, onComplete: function () { updateCh6Story(); }
+    });
+
     var beaconTarget = ctx.addSkillTarget({
       id: "l6_beacon_trial", pos: beaconPos, radius: 8, reqSpell: "solar", done: !!ch6St.steps.beaconLit,
       hint: "☀️ Chiếu đèn để tìm Bé Gió", ringColor: 0xfef08a,
       isActive: beaconActive,
       onHit: function (sp, tg) {
         if (!ch6St.steps.beaconLit && sp === "solar") {
+          if (ch6St.stage < 3 && expedition.block()) {
+            MAY.toast("Chưa đủ lời đáp! Hãy tìm Bubi, Thỏ Bông và Cú Mèo trước khi bật đèn.");
+            return;
+          }
           ch6St.steps.beaconLit = true; MAY.persist();
           beaconCore.material.color.setHex(0xffdd73); beaconCore.material.emissive.setHex(0xa96b00);
           MAY.VFX.spawnShatterBurst(beaconPos.clone().add(new THREE.Vector3(0, 1.6, 0)), 0xffe47a);
@@ -634,6 +744,9 @@
         var nextL = lockCoords[0];
         for (var j = 0; j < 3; j++) if (!ch6St.steps["lock" + j]) { nextL = lockCoords[j]; break; }
         ctx.setObjective("🌈", "DÙNG 🌈 LỐC CẦU VỒNG (6+R) HẤT QUÁI & PHÁ 3 Ổ KHÓA SÉT (" + lockDone + "/3)", nextL);
+      } else if (ch6St.stage < 3 && expedition.block()) {
+        ch6Npc.setMarker("?");
+        return;
       } else if (beaconActive()) {
         ch6Npc.setMarker("?");
         ctx.setObjective(ch6St.steps.beaconLit ? "💨" : "☀️", ch6St.steps.beaconLit
