@@ -273,7 +273,9 @@
     playGrandFinale: function (onDone) {
       /* Nếu đang ở màn khác, đưa Mây về Đảo Mây trước để quay Đại Tiệc Cầu Vồng 3D thật với Hải Đăng & 6 Viên Ngọc! */
       if (MAY.currentLevelId !== "hub") {
-        MAY.enterLevel("hub", true);
+        return MAY.enterLevel("hub", true).then(function (entered) {
+          if (entered) MAY.Cutscene.playGrandFinale(onDone);
+        });
       }
       var ctx = MAY.currentCtx;
       if (!ctx) { if (onDone) onDone(); return; }

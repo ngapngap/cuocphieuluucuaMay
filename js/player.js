@@ -401,6 +401,8 @@
 
   function syncRiggedOutfit(name, inWater) {
     if (!rigMay) return;
+    if (name === "rungxanh" && !inWater && !rigMay.forestColor && MAY.prepareForestOutfit) rigMay.forestColor = MAY.prepareForestOutfit(rigMay.root);
+    if (rigMay.forestColor) rigMay.forestColor(name === "rungxanh" && !inWater);
     var targetOutfit = inWater ? "Outfit_BoiBien" : (
       name === "haibim" ? "Outfit_HaiBim" :
       name === "muvang" ? "Outfit_MuVang" :
@@ -466,7 +468,8 @@
       curAction: null, curName: null, oneShotName: null, oneShotT: 0,
       outfits: outfits, hairBui: hairBui, hairHaiBim: hairHaiBim,
       faceMesh: faceMesh, staffNode: staffNode, staffGemNode: staffGemNode, staffGemMat: staffGemRigMat,
-      socketBack: socketBack, blinkT: 2.5, smileT: 0, hurtFaceT: 0
+      socketBack: socketBack, forestColor: null,
+      blinkT: 2.5, smileT: 0, hurtFaceT: 0
     };
     syncRiggedOutfit(MAY.save.outfit || "vayhong", !P.onLand);
     playMayClip("Idle", 0.01, false);
@@ -647,6 +650,11 @@
   var DIGIT_CODES = { Digit1: 0, Digit2: 1, Digit3: 2, Digit4: 3, Digit5: 4, Digit6: 5 };
 
   window.addEventListener("keydown", function (e) {
+    // Let focused controls receive Space/Enter and their native keyboard behavior.
+    // Escape still closes the active overlay below.
+    if (e.code !== "Escape" && e.target && e.target.closest &&
+        (e.target.closest("input, select, textarea, [contenteditable='true']") ||
+         ((e.code === "Space" || e.code === "Enter") && e.target.closest("button, summary, [role='button']")))) return;
     if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space"].indexOf(e.code) !== -1) e.preventDefault();
     if (e.code === "Escape") {
       P.clearKeys();

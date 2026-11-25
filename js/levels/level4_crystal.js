@@ -24,7 +24,7 @@
     MAY.diveLight.intensity = 2.6;
     MAY.diveLight.color.setHex(0xf6eeff);
     MAY.diveLight.distance = 65;
-    MAY.diveLight.castShadow = (MAY.quality !== "low");
+    MAY.diveLight.castShadow = (MAY.quality === "high");
     if (MAY.diveLight.shadow) { MAY.diveLight.shadow.mapSize.set(1024, 1024); MAY.diveLight.shadow.bias = -0.0008; }
     MAY.setAmbientTone(260, 0.042, "level4");
     MAY.setPostGrade({ tint: 0xf6f0ff, vignette: 0.34, bloom: 0.44, ssao: 0.65, godRay: 0.40, godRayColor: 0xc4b5fd, godRaySourcePos: new THREE.Vector3(0, 32, -8) });

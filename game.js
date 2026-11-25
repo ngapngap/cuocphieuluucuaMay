@@ -5,7 +5,6 @@
 (function (MAY) {
 
   var bootPct = 0;
-  var bootDone = false;
 
   function setBoot(msg, pct) {
     if (pct > bootPct) bootPct = pct;
@@ -15,28 +14,32 @@
     if (bf) bf.style.width = bootPct + "%";
   }
 
-  function maybeEnablePlay() {
-    var btn = document.getElementById("btn-play");
-    if (btn && bootDone && MAY.modelsReady) {
-      btn.disabled = false;
-      setBoot("Sẵn sàng khám phá 6 vùng đất kỳ diệu!", 100);
-    }
-  }
-
   /* ---- Chuyển màn chơi mượt mà, chống gọi trùng & dọn sạch trạng thái màn cũ ---- */
-  var _enteringLevel = false;
+  var pendingLevel = null;
   var clock = new THREE.Clock();
 
   MAY.enterLevel = function (levelId, silent) {
-    if (_enteringLevel) return;
-    _enteringLevel = true;
-    try {
-      if (!MAY.LEVELS || !MAY.LEVELS[levelId]) levelId = "hub";
+    if (!MAY.LEVELS[levelId]) levelId = "hub";
+    if (MAY.isLevelUnlocked && !MAY.isLevelUnlocked(levelId)) {
+      if (!MAY.started && silent) levelId = "hub";
+      else {
+        if (MAY.started) MAY.toast("🔒 Nhận Ngọc của chương trước để mở vùng đất này nhé!");
+        return Promise.resolve(false);
+      }
+    }
+    if (pendingLevel && pendingLevel.id === levelId) return pendingLevel.promise;
+    var entry = { id: levelId };
+    pendingLevel = entry;
+    if (MAY.started) MAY.toast("Đang tới " + MAY.getMeta(levelId).shortName + "…");
+    entry.promise = MAY.loadWorldModels(levelId).then(function () {
+      if (pendingLevel !== entry) return false;
       if (MAY.Cutscene && MAY.Cutscene.cancelSilent) MAY.Cutscene.cancelSilent();
       if (MAY.closeAllModals) MAY.closeAllModals();
       if (MAY.closeDialogue) MAY.closeDialogue(false);
       if (MAY.stopSpeech) MAY.stopSpeech();
       if (MAY.resetInteractTarget) MAY.resetInteractTarget();
+      var hintEl = document.getElementById("hint");
+      if (hintEl) hintEl.style.display = "";
       if (MAY.player && MAY.player.clearKeys) MAY.player.clearKeys();
       var sbEl = document.getElementById("skill-banner");
       if (sbEl) sbEl.classList.add("hidden");
@@ -91,9 +94,11 @@
           MAY.toast(m.icon + " " + m.title, m.intro);
         }
       }
-    } finally {
-      _enteringLevel = false;
-    }
+      return true;
+    }).finally(function () {
+      if (pendingLevel === entry) pendingLevel = null;
+    });
+    return entry.promise;
   };
 
   /* ---- Gắn sự kiện UI ---- */
@@ -182,13 +187,17 @@
     btn.onclick = function () {
       var idx = parseInt(btn.dataset.idx, 10);
       if (MAY.selectSpell) MAY.selectSpell(idx);
-      if (MAY.started && MAY.castActiveSpell) MAY.castActiveSpell();
     };
   });
   var btnCast = document.getElementById("btn-cast");
   if (btnCast) btnCast.onclick = function () { if (MAY.castActiveSpell) MAY.castActiveSpell(); };
   var intEl = document.getElementById("interact");
-  if (intEl) intEl.onclick = function () { if (MAY.doInteract) MAY.doInteract(); };
+  if (intEl) {
+    intEl.onclick = function () { if (MAY.doInteract) MAY.doInteract(); };
+    intEl.onkeydown = function (e) {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); intEl.click(); }
+    };
+  }
   var freeBtn = document.getElementById("btn-free-spells");
   if (freeBtn) freeBtn.onclick = function () { if (MAY.toggleFreeSpells) MAY.toggleFreeSpells(); };
   document.getElementById("btn-voice").onclick = function () {
@@ -250,45 +259,36 @@
   MAY.applyQuality(MAY.save.quality || "mid");
   var initLv = MAY.save.currentLevel || "hub";
   if (MAY.isLevelUnlocked && !MAY.isLevelUnlocked(initLv)) initLv = "hub";
-  MAY.enterLevel(initLv, true);
+  setBoot("Đang chuẩn bị " + MAY.getMeta(initLv).shortName + "…", 20);
+  MAY.enterLevel(initLv, true).then(function () {
+    document.getElementById("btn-play").disabled = false;
+    setBoot("Sẵn sàng khám phá!", 100);
+    startOfflineDownload();
+  }).catch(function (error) { MAY.reportError(error, "startup", { pause: true }); });
 
-  var BOOT_STEPS = [
-    ["Đang tổng hợp vật liệu PBR & Normal Map…", 20],
-    ["Đang dựng sóng biển Gerstner & bầu trời…", 44],
-    ["Đang gọi Cá heo Bubi & Cún Milo…", 68],
-    ["Đang thắp sáng 6 Vùng Đất Kỳ Diệu…", 84]
-  ];
-  BOOT_STEPS.forEach(function (b, i) {
-    setTimeout(function () {
-      setBoot(b[0], b[1]);
-      if (i === BOOT_STEPS.length - 1) { bootDone = true; maybeEnablePlay(); }
-    }, 180 + i * 260);
-  });
-
-  MAY.loadAllModels(
-    function (done, total) {
-      setBoot("Đang tải mô hình 3D (" + done + "/" + total + ")…", 84 + Math.round(16 * done / total));
-    },
-    function () {
-      if (!MAY.started) {
-        try { MAY.enterLevel(MAY.currentLevelId, true); } catch (e) {}
-      } else {
-        if (MAY.currentCtx && MAY.currentCtx.upgradeRiggedCompanion) {
-          try { MAY.currentCtx.upgradeRiggedCompanion(); } catch (e) {}
-        }
-        if (MAY.currentCtx && MAY.currentCtx.onModelsReady) {
-          try { MAY.currentCtx.onModelsReady(); } catch (e) {}
-        }
-      }
-      maybeEnablePlay();
-    }
-  );
+  function startOfflineDownload() {
+    if (!("serviceWorker" in navigator) || !MAY.currentCtx) return;
+    navigator.serviceWorker.ready.then(function (registration) {
+      if (registration.active) registration.active.postMessage({ type: "cache-worlds", first: MAY.currentLevelId });
+    });
+  }
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("online", startOfflineDownload);
+    document.getElementById("offline-retry").onclick = startOfflineDownload;
+    navigator.serviceWorker.addEventListener("controllerchange", startOfflineDownload);
+    navigator.serviceWorker.addEventListener("message", function (event) {
+      if (!event.data || event.data.type !== "offline-progress") return;
+      var status = document.getElementById("offline-status");
+      if (status) status.textContent = event.data.text;
+      document.getElementById("offline-retry").hidden = !event.data.paused;
+    });
+  }
 
   /* ---- Vòng lặp chính (được bọc Error Boundary chống treo toàn cục) ---- */
   var frames = 0;
 
   MAY.renderer.setAnimationLoop(function () {
-    if (MAY.ErrorBoundary && MAY.ErrorBoundary.paused) return;
+    if (!MAY.currentCtx || pendingLevel || (MAY.ErrorBoundary && MAY.ErrorBoundary.paused)) return;
     try {
       var dt = Math.min(clock.getDelta(), 0.05);
       var t = clock.elapsedTime;

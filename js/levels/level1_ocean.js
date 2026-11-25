@@ -226,10 +226,8 @@
 
     /* ---- San hô, Rong biển & Vật thể GLB ---- */
     var coralCols = [0xff7fa5, 0xff9f43, 0xc77dff, 0x2ee6a8, 0xff6b6b, 0xffd166];
-    var branchCoralGroups = [];
     function makeBranchCoral(color) {
       var g = new THREE.Group();
-      g.userData.coralTint = color;
       if (MAY.modelsReady && MAY.MODEL_T.coral) {
         var c = MAY.cloneProp("coral", color, 1.15);
         if (c) { g.add(c); return g; }
@@ -256,7 +254,6 @@
       cg.scale.setScalar(0.95 + (ci % 4) * 0.35);
       cg.position.set(cx, ctx.groundH(cx, cz), cz);
       cg.rotation.y = ci * 0.9;
-      branchCoralGroups.push(cg);
       if (ci < 14) {
         interactCoralDefs.push({
           id: "c" + ci, obj: cg, label: "Chạm vào san hô",
@@ -430,7 +427,6 @@
       } else {
         m.add(new THREE.Mesh(new THREE.SphereGeometry(0.45, 10, 8), new THREE.MeshStandardMaterial({ color: 0xffd1a9, roughness: 0.4 })));
       }
-      m.userData.propKind = d[0];
       return { id: "sh" + idx, pos: [d[1], d[2]], mesh: m, color: 0xffd9a0, msg: "Nhặt được vỏ sò đẹp quá" };
     });
     ctx.addSouvenirs(shellDefs);
@@ -453,55 +449,6 @@
     ctx.addRingsChallenge([[-50, 4.2, -30], [-35, 5.2, -45], [-20, 4.2, -58], [-5, 5.2, -48], [10, 4.2, -34]], { title: "5 vòng san hô vàng" });
     ctx.addRaceChallenge([6, 3.2, 2], [[18, 3.4, -8], [34, 4.2, -24], [52, 3.4, -38]], { title: "Đua cùng Cá heo Bubi", time: 60 });
     ctx.addQuizStation([-18, 3.0, 18], { label: "Phao Câu Đố" });
-
-    /* Callback đổi sang mô hình GLB thật nếu GLB tải xong sau khi vào màn */
-    ctx.onModelsReady = function () {
-      populateManta();
-      populateStaticProps();
-      school.forEach(function (f) {
-        var c = MAY.cloneFish(f.g.userData.fishColor, f.g.userData.fishLen, f.g.userData.fishSpecies);
-        if (!c) return;
-        while (f.g.children.length) f.g.remove(f.g.children[0]);
-        f.g.add(c);
-      });
-      ctx.friends.forEach(function (fr) {
-        if (fr.group.userData && fr.group.userData.mixer) return;
-        if (fr.kind === "turtle" && MAY.MODEL_T.turtle) {
-          while (fr.group.children.length) fr.group.remove(fr.group.children[0]);
-          fr.group.add(MAY.MODEL_T.turtle.group.clone(true));
-        } else if (fr.kind === "dolphin" || fr.kind === "clownfish") {
-          var c = MAY.cloneFish(fr.group.userData.fishColor, fr.group.userData.fishLen, fr.group.userData.fishSpecies);
-          if (c) { while (fr.group.children.length) fr.group.remove(fr.group.children[0]); fr.group.add(c); }
-        }
-      });
-      branchCoralGroups.forEach(function (cg) {
-        var c = MAY.cloneProp("coral", cg.userData.coralTint, 1.15);
-        if (c) { while (cg.children.length) cg.remove(cg.children[0]); cg.add(c); }
-      });
-      jellies.forEach(function (j) {
-        if (MAY.MODEL_T.jelly) { while (j.g.children.length) j.g.remove(j.g.children[0]); j.g.add(MAY.MODEL_T.jelly.group.clone(true)); }
-      });
-      ctx.chests.forEach(function (ch) {
-        if (ch.usingGLB || !MAY.MODEL_T.chest) return;
-        var made = MAY.makeChestGLB(ch.tint);
-        if (!made) return;
-        var toDel = ch.group.children.filter(function (c) { return c !== ch.gold && c !== ch.glow; });
-        toDel.forEach(function (c) { ch.group.remove(c); });
-        ch.group.add(made.wrap);
-        ch.lid = made.pivot;
-        if (ch.opened) ch.lid.rotation.x = -1.9;
-        ch.usingGLB = true;
-      });
-      ctx.souvenirs.forEach(function (sv) {
-        var holder = sv.wrap.children[0];
-        if (!holder || !holder.userData.propKind) return;
-        var glb = MAY.cloneProp(holder.userData.propKind, null, 1.1);
-        if (!glb) return;
-        while (holder.children.length) holder.remove(holder.children[0]);
-        if (holder.userData.propKind === "starfish") { glb.rotation.x = -Math.PI / 2; glb.position.y = 0.15; }
-        holder.add(glb);
-      });
-    };
 
     ctx.minimapDrawExtra = function (mm, C, K) {
       mm.fillStyle = "#5cb85c";

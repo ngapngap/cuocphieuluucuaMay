@@ -1,0 +1,11 @@
+<!doctype html><meta charset="utf-8"><body><script src="../three.min.js"></script><script src="../js/outfit-color.js"></script><script>
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0xdceefa);
+const camera = new THREE.PerspectiveCamera(28, 2 / 3, .1, 100);
+camera.position.set(0, 1.05, -4.9); camera.lookAt(0, 0.95, 0);
+scene.add(new THREE.HemisphereLight(0xffffff, 0x778ca4, 1.3));
+const key = new THREE.DirectionalLight(0xffffff, 1.5); key.position.set(-3, 5, -5); scene.add(key);
+const fill = new THREE.DirectionalLight(0xd7e8ff, .6); fill.position.set(3, 2, 3); scene.add(fill);
+const renderer = new THREE.WebGLRenderer({antialias:true, preserveDrawingBuffer:true}); renderer.setSize(240,360); renderer.setPixelRatio(1); renderer.outputEncoding=THREE.sRGBEncoding; document.body.appendChild(renderer.domElement);
+let model, forestColor; new THREE.GLTFLoader().load('../assets/models/may_rigged.glb',g=>{ model=g.scene; model.rotation.y=Math.PI; scene.add(model); forestColor=MAY.prepareForestOutfit(model); window.ready=true; },undefined,e=>window.error=String(e));
+window.captureOutfit = function(id) { let target={vayhong:'Outfit_VayHong',haibim:'Outfit_HaiBim',muvang:'Outfit_MuVang',rungxanh:'Outfit_VayHong',tuyetbong:'Outfit_AoAm',cauvong:'Outfit_CongChua'}[id]; model.traverse(o=>{if(o.name.startsWith('Outfit_'))o.visible=o.name===target; if(o.name==='Hair_Bui')o.visible=id!=='haibim'; if(o.name==='Hair_HaiBim')o.visible=id==='haibim';}); forestColor(id==='rungxanh'); renderer.render(scene,camera);return renderer.domElement.toDataURL('image/webp',.85);};
+</script>

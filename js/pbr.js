@@ -13,15 +13,26 @@
     var n = Math.sin(ix * 127.1 + iy * 311.7 + seed * 74.7) * 43758.5453123;
     return n - Math.floor(n);
   }
+  // A whole texture interpolates the same small periodic noise lattice.
+  var noiseGrids = new Map();
   function tileNoise(u, v, period, seed) {
+    var key = period * 1024 + seed;
+    var grid = noiseGrids.get(key);
+    if (!grid) {
+      grid = new Float64Array(period * period);
+      for (var row = 0; row < period; row++) {
+        for (var col = 0; col < period; col++) grid[row * period + col] = hash2(col, row, seed);
+      }
+      noiseGrids.set(key, grid);
+    }
     var x = u * period, y = v * period;
     var ix = Math.floor(x), iy = Math.floor(y);
     var fx = x - ix, fy = y - iy;
     fx = fx * fx * (3 - 2 * fx); fy = fy * fy * (3 - 2 * fy);
     var x0 = ((ix % period) + period) % period, x1 = (x0 + 1) % period;
     var y0 = ((iy % period) + period) % period, y1 = (y0 + 1) % period;
-    var a = hash2(x0, y0, seed), b = hash2(x1, y0, seed);
-    var c = hash2(x0, y1, seed), d = hash2(x1, y1, seed);
+    var a = grid[y0 * period + x0], b = grid[y0 * period + x1];
+    var c = grid[y1 * period + x0], d = grid[y1 * period + x1];
     return (a + (b - a) * fx) + ((c + (d - c) * fx) - (a + (b - a) * fx)) * fy;
   }
   function tileFBM(u, v, basePeriod, octaves, seed) {
@@ -359,6 +370,7 @@
     })();
   })();
 
+  noiseGrids.clear();
   MAY.PBR = PBR;
   MAY.photoPBR = {};
 
@@ -480,7 +492,8 @@
   var _reflTarget = new THREE.Vector3();
   var _reflLook = new THREE.Vector3();
   var _clipNormal = new THREE.Vector3(0, 1, 0);
-  var _clipPlane = new THREE.Plane(_clipNormal, 0);
+  var _clipPlane = new THREE.Plane();
+  var _clipEquation = new THREE.Vector4(), _farCorner = new THREE.Vector4();
 
   var _offscreenFrame = 0;
   MAY.PlanarReflector = {
@@ -518,7 +531,7 @@
         return;
       }
       /* Trên chất lượng 'mid', xen kẽ khung hình chẵn (Reflection) / lẻ (Refraction) để giữ FPS mượt mà! */
-      if (MAY.quality === "mid" && this.hasValidFrame && (_offscreenFrame % 2 === 1)) {
+      if (MAY.quality === "mid" && (_offscreenFrame % 2 === 1)) {
         return;
       }
       /* Phản chiếu camera thật qua mặt phẳng y = py */
@@ -537,6 +550,21 @@
 
       this.matrix.copy(_biasMat).multiply(_reflCam.projectionMatrix).multiply(_reflCam.matrixWorldInverse);
 
+      // Use the water plane as the mirror camera's near plane. This clips the
+      // reflection without compiling a second clipped program for every material.
+      _clipPlane.set(_clipNormal, -py + 0.12).applyMatrix4(_reflCam.matrixWorldInverse);
+      var normal = _clipPlane.normal;
+      _clipEquation.set(normal.x, normal.y, normal.z, _clipPlane.constant);
+      _farCorner.set(Math.sign(normal.x), Math.sign(normal.y), 1, 1)
+        .applyMatrix4(_reflCam.projectionMatrixInverse);
+      _clipEquation.multiplyScalar(2 / _clipEquation.dot(_farCorner));
+      var projection = _reflCam.projectionMatrix.elements;
+      projection[2] = _clipEquation.x;
+      projection[6] = _clipEquation.y;
+      projection[10] = _clipEquation.z + 1;
+      projection[14] = _clipEquation.w;
+      _reflCam.projectionMatrixInverse.copy(_reflCam.projectionMatrix).invert();
+
       /* Ẩn mặt phẳng phản chiếu và cắt các vật thể nằm dưới y = py */
       var prevVis = [];
       for (var i = 0; i < this.hideMeshes.length; i++) {
@@ -544,18 +572,12 @@
         this.hideMeshes[i].visible = false;
       }
       var r = MAY.renderer;
-      var prevClip = r.localClippingEnabled;
-      _clipPlane.set(_clipNormal, -py + 0.12);
-      r.localClippingEnabled = true;
-      r.clippingPlanes = [_clipPlane];
 
       r.setRenderTarget(this.rt);
       r.clear();
       r.render(MAY.scene, _reflCam);
       r.setRenderTarget(null);
 
-      r.clippingPlanes = [];
-      r.localClippingEnabled = prevClip;
       for (var j = 0; j < this.hideMeshes.length; j++) this.hideMeshes[j].visible = prevVis[j];
       this.hasValidFrame = true;
     }
@@ -606,7 +628,7 @@
         return;
       }
       /* Trên 'mid', cập nhật Refraction ở khung hình lẻ (xen kẽ Planar Reflection khung chẵn) */
-      if (MAY.quality === "mid" && this.hasValidFrame && (_offscreenFrame % 2 === 0)) {
+      if (MAY.quality === "mid" && (_offscreenFrame % 2 === 0)) {
         return;
       }
       var prevVis = [];

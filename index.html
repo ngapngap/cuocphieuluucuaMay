@@ -31,7 +31,7 @@
     <div class="obj-substep" id="obj-substep">📜 Nhiệm vụ phụ: Gặp NPC (?)</div>
   </div>
 
-  <div id="spellbar">
+  <div id="spellbar" hidden>
     <div class="spell-row" id="spell-row">
       <button class="spell-slot locked" data-idx="0" title="Phím 1: Sóng Xung Kích (Chương 1)" aria-label="Phím 1: Sóng Xung Kích">🌊<kbd>1</kbd></button>
       <button class="spell-slot locked" data-idx="1" title="Phím 2: Nở Hoa Hồi Sinh (Chương 2)" aria-label="Phím 2: Nở Hoa Hồi Sinh">🌿<kbd>2</kbd></button>
@@ -98,26 +98,18 @@
       <button class="hbtn" id="btn-cam" title="Đổi góc nhìn gần / vừa / xa (F)" aria-label="Đổi góc nhìn camera (phím F)">📷</button>
       <button class="hbtn" id="btn-restart" title="Chơi lại từ đầu" aria-label="Chơi lại từ đầu">↺</button>
     </div>
-    <div id="fr-pills">
-      <span class="pill gem-pill" title="6 Viên Ngọc Cầu Vồng">🌈 <span id="gem-n">0</span>/6</span>
-      <span class="pill" id="pill-col" title="Vật phẩm sưu tầm của vùng đất"><span id="col-icon">🥥</span> <span id="col-n">0</span>/<span id="col-max">3</span></span>
-      <span class="pill" title="Bạn thú kết thân">🎖️ <span id="fr-n">0</span>/<span id="fr-max">4</span></span>
-      <span class="pill" id="pill-tr" title="Rương báu">💎 <span id="tr-n">0</span>/<span id="tr-max">3</span></span>
-      <span class="pill" id="pill-sh" title="Kỷ vật"><span id="sh-icon">🐚</span> <span id="sh-n">0</span>/<span id="sh-max">3</span></span>
-      <span class="pill" id="pill-co" title="Tương tác thiên nhiên"><span id="co-icon">🪸</span> <span id="co-n">0</span>/<span id="co-max">5</span></span>
-      <span class="pill" id="pill-ch" title="Thử thách hoàn thành">🏆 <span id="ch-n">0</span>/3</span>
-    </div>
+
   </div>
   <div id="minimap-wrap"><canvas id="minimap" width="132" height="132"></canvas></div>
 </div>
 
 <!-- Ảnh đại diện bé Mây góc dưới trái -->
-<div id="diver-id"><img id="diver-img" src="assets/img/outfit-vayhong.jpg" alt="Mây"><div id="diver-role">MÂY KHÁM PHÁ</div></div>
+<div id="diver-id"><img id="diver-img" src="assets/img/outfit-preview-vayhong.webp" alt="Mây"><div id="diver-role">MÂY KHÁM PHÁ</div></div>
 
 <!-- Số vật phẩm lớn góc dưới phải -->
 <div class="hud" id="big"><div class="n"><span id="big-icon">⭐</span><span id="star-n2">0</span></div><div class="l" id="big-label">SAO BIỂN</div></div>
 
-<div id="interact">👆</div>
+<div id="interact" role="button" tabindex="0" aria-label="T&#432;&#417;ng t&#225;c">👆</div>
 <div id="toast"></div>
 <div id="hint">Giữ chuột kéo để xoay • W A S D di chuyển • Space nhảy/lên • M Bản đồ</div>
 
@@ -130,16 +122,19 @@
   <div class="panel wide">
     <img class="hero-img" src="assets/img/hero.jpg" alt="Mây">
     <h1>CUỘC PHIÊU LƯU CỦA MÂY <span class="ver-tag">v13.5 GI PBR + SKINNED 3D</span></h1>
-    <p class="story-lead">
+    <div class="boot-bar"><i id="boot-fill"></i></div>
+    <div id="boot-msg">Đang tổng hợp vật liệu PBR…</div>
+    <div style="margin-top:12px"><button class="btn" id="btn-play" disabled aria-label="Bắt đầu cuộc phiêu lưu của Mây">▶ Bắt Đầu Phiêu Lưu!</button></div>
+    <details class="start-details"><summary>&#128214; C&#226;u chuy&#7879;n</summary><p class="story-lead">
       <b>Vua Mây Bão (Bóng Xám)</b> đã cướp <b>6 Viên Ngọc Cầu Vồng</b> 🌈, bắt cóc <b>Bé Gió Lốc Tí Hon</b> và phủ Sương Xám lên 6 vùng đất!
       Hãy trò chuyện với các <b>NPC Giao Nhiệm Vụ (!)</b>, thức tỉnh lần lượt <b>6 Phép Nguyên Tố thực chiến</b> (hồi sinh cây chết, chiếu gương laser, xây cầu băng, <b>hất văng quái vật lên trời bằng Lốc Cầu Vồng</b>) và đánh bại <b>6 Trùm Sương Xám</b>!
-    </p>
+    </p></details>
 
     <p class="outfit-label">👗 Chọn đồ cho Mây trước khi lên đường nhé!</p>
     <div class="outfits" id="outfits">
-      <button class="outfit sel" data-outfit="vayhong" aria-label="Chọn trang phục Váy hồng"><img src="assets/img/outfit-vayhong.jpg" alt="Váy hồng"><span>Váy hồng</span></button>
-      <button class="outfit" data-outfit="haibim" aria-label="Chọn trang phục Hai bím"><img src="assets/img/outfit-haibim.jpg" alt="Hai bím"><span>Hai bím</span></button>
-      <button class="outfit" data-outfit="muvang" aria-label="Chọn trang phục Mũ vàng"><img src="assets/img/outfit-muvang.jpg" alt="Mũ vàng"><span>Mũ vàng</span></button>
+      <button class="outfit sel" data-outfit="vayhong" aria-label="Chọn trang phục Váy hồng"><img src="assets/img/outfit-preview-vayhong.webp" alt="Váy hồng"><span>Váy hồng</span></button>
+      <button class="outfit" data-outfit="haibim" aria-label="Chọn trang phục Hai bím"><img src="assets/img/outfit-preview-haibim.webp" alt="Hai bím"><span>Hai bím</span></button>
+      <button class="outfit" data-outfit="muvang" aria-label="Chọn trang phục Mũ vàng"><img src="assets/img/outfit-preview-muvang.webp" alt="Mũ vàng"><span>Mũ vàng</span></button>
     </div>
 
     <div style="margin:6px 0 4px">
@@ -155,20 +150,14 @@
       <button class="qworld start-jump" data-level="level6" aria-label="Nhảy tới Chương 6 Vương Quốc Mây">☁️ Vương Quốc Mây</button>
     </div>
 
-    <div class="keys">
-      🖥️ <b>Máy tính</b>: <b>Giữ chuột trái/phải kéo</b> để xoay nhìn • <b>Cuộn chuột</b> zoom • <b>W A S D</b> đi/bơi • <b>1–6</b> chọn phép &amp; <b>R</b> tung phép Gậy Cầu Vồng! • <b>Space</b> nhảy/lên/lướt Cánh Mây • <b>M</b> Bản đồ • <b>J</b> Sổ tay<br>
-      📱 <b>Điện thoại</b>: Kéo nút tròn vàng để đi/bơi • Vuốt phải để nhìn • Chạm nhanh vào bạn thú, rương, hoa, pha lê để tương tác!
-    </div>
+    <details class="start-details"><summary>&#127918; C&#225;ch &#273;i&#7873;u khi&#7875;n</summary><div class="keys">
+      <div class="desktop-instructions">🖥️ <b>Máy tính</b>: <b>Giữ chuột trái/phải kéo</b> để xoay nhìn • <b>Cuộn chuột</b> zoom • <b>W A S D</b> đi/bơi • <b>1–6</b> chọn phép &amp; <b>R</b> tung phép Gậy Cầu Vồng! • <b>Space</b> nhảy/lên/lướt Cánh Mây • <b>M</b> Bản đồ • <b>J</b> Sổ tay</div>
+      <div class="touch-instructions">📱 <b>Điện thoại</b>: Kéo nút tròn vàng để đi/bơi • Vuốt phải để nhìn • Chạm nhanh vào bạn thú, rương, hoa, pha lê để tương tác!</div>
+    </div></details>
 
-    <div class="qrow">✨ Chất lượng đồ họa PBR &amp; Hậu kỳ:
-      <button class="qbtn" data-q="low" aria-label="Chọn chất lượng đồ họa Nhẹ">Nhẹ</button>
-      <button class="qbtn sel" data-q="mid" aria-label="Chọn chất lượng đồ họa Đẹp Vừa">Đẹp (Vừa)</button>
-      <button class="qbtn" data-q="high" aria-label="Chọn chất lượng đồ họa Siêu Thực Cao">Siêu Thực (Cao)</button>
-    </div>
 
-    <div class="boot-bar"><i id="boot-fill"></i></div>
-    <div id="boot-msg">Đang tổng hợp vật liệu PBR…</div>
-    <div style="margin-top:12px"><button class="btn" id="btn-play" disabled aria-label="Bắt đầu cuộc phiêu lưu của Mây">▶ Bắt Đầu Phiêu Lưu!</button></div>
+
+
   </div>
 </div>
 
@@ -189,6 +178,23 @@
 <div class="overlay hidden" id="ov-album">
   <div class="panel wide">
     <h1>📖 SỔ TAY &amp; TỦ ĐỒ CỦA MÂY</h1>
+    <details class="settings"><summary>&#9881; C&#224;i &#273;&#7863;t &#273;&#7891; h&#7885;a</summary>    <div class="qrow">✨ Chất lượng đồ họa PBR &amp; Hậu kỳ:
+      <button class="qbtn" data-q="low" aria-label="Chọn chất lượng đồ họa Nhẹ">Nhẹ</button>
+      <button class="qbtn sel" data-q="mid" aria-label="Chọn chất lượng đồ họa Đẹp Vừa">Đẹp (Vừa)</button>
+      <button class="qbtn" data-q="high" aria-label="Chọn chất lượng đồ họa Siêu Thực Cao">Siêu Thực (Cao)</button>
+    </div></details>
+    <p id="offline-status" role="status">Đang kiểm tra nội dung ngoại tuyến…</p>
+    <button id="offline-retry" class="btn small" hidden>Tiếp tục tải ngoại tuyến</button>
+    <div class="alb-sec">&#128230; B&#7897; s&#432;u t&#7853;p v&#249;ng hi&#7879;n t&#7841;i</div>
+    <div id="fr-pills">
+      <span class="pill gem-pill" title="6 Viên Ngọc Cầu Vồng">🌈 <span id="gem-n">0</span>/6</span>
+      <span class="pill" id="pill-col" title="Vật phẩm sưu tầm của vùng đất"><span id="col-icon">🥥</span> <span id="col-n">0</span>/<span id="col-max">3</span></span>
+      <span class="pill" title="Bạn thú kết thân">🎖️ <span id="fr-n">0</span>/<span id="fr-max">4</span></span>
+      <span class="pill" id="pill-tr" title="Rương báu">💎 <span id="tr-n">0</span>/<span id="tr-max">3</span></span>
+      <span class="pill" id="pill-sh" title="Kỷ vật"><span id="sh-icon">🐚</span> <span id="sh-n">0</span>/<span id="sh-max">3</span></span>
+      <span class="pill" id="pill-co" title="Tương tác thiên nhiên"><span id="co-icon">🪸</span> <span id="co-n">0</span>/<span id="co-max">5</span></span>
+      <span class="pill" id="pill-ch" title="Thử thách hoàn thành">🏆 <span id="ch-n">0</span>/3</span>
+    </div>
     <p id="alb-stats" style="font-weight:800;color:#ffd93d"></p>
     <div class="alb-sec">🌈 6 Viên Ngọc Cầu Vồng</div>
     <div id="alb-gems" class="alb-grid"></div>
@@ -254,11 +260,12 @@
 </div>
 
 <!-- Trạm Câu Đố Giáo Dục -->
-<div class="overlay hidden" id="quiz-ov">
+<div class="overlay hidden" id="quiz-ov" role="dialog" aria-modal="true" aria-labelledby="quiz-q">
   <div class="panel">
     <div class="big">❓</div>
     <h1 id="quiz-q" style="font-size:28px">?</h1>
     <p id="quiz-prog" style="color:#ffd93d;font-weight:700"></p>
+    <div id="quiz-feedback" role="status" aria-live="polite"></div>
     <div id="quiz-ans" style="display:grid;gap:10px;margin:12px 0"></div>
     <button class="btn blue small" id="quiz-close" aria-label="Đóng câu đố để trả lời sau">Để sau</button>
   </div>
@@ -287,9 +294,11 @@
 <script src="three.min.js"></script>
 <script src="js/data.js"></script>
 <script src="js/audio.js"></script>
+<script src="js/packages.js"></script>
 <script src="js/core.js"></script>
 <script src="js/pbr.js"></script>
 <script src="js/vfx.js"></script>
+<script src="js/outfit-color.js"></script>
 <script src="js/player.js"></script>
 <script src="js/systems.js"></script>
 <script src="js/story.js"></script>

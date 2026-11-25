@@ -23,12 +23,12 @@ window.MAY = window.MAY || {};
   };
 
   MAY.OUTFITS = {
-    vayhong:  { id: "vayhong",  name: "Váy hồng",        img: "assets/img/outfit-vayhong.jpg",  body: 0xff8fb8, accent: 0xffd93d, unlockedBy: null, desc: "Bộ váy hồng xinh xắn của Mây" },
-    haibim:   { id: "haibim",   name: "Hai bím",         img: "assets/img/outfit-haibim.jpg",   body: 0xffd93d, accent: 0xff7fa5, unlockedBy: null, desc: "Tóc hai bím năng động đáng yêu" },
-    muvang:   { id: "muvang",   name: "Mũ vàng",         img: "assets/img/outfit-muvang.jpg",   body: 0x7fe3ff, accent: 0xffd93d, unlockedBy: null, desc: "Chiếc mũ vàng rực rỡ ánh nắng" },
-    rungxanh: { id: "rungxanh", name: "Khám phá Rừng",   img: "assets/img/hero.jpg",            body: 0x43b581, accent: 0xffe066, unlockedBy: 2,    desc: "Mở khóa khi cứu sống Rừng Nấm Xanh" },
-    tuyetbong:{ id: "tuyetbong",name: "Áo Tuyết Bông",   img: "assets/img/hero.jpg",            body: 0x8ad8ff, accent: 0xffffff, unlockedBy: 5,    desc: "Mở khóa khi giải cứu Thung Lũng Tuyết" },
-    cauvong:  { id: "cauvong",  name: "Công chúa Mây",   img: "assets/img/hero.jpg",            body: 0xd980fa, accent: 0xffd93d, unlockedBy: 6,    desc: "Mở khóa khi đánh bại Vua Mây Bão" }
+    vayhong:  { id: "vayhong",  name: "Váy hồng",        img: "assets/img/outfit-preview-vayhong.webp",  body: 0xff8fb8, accent: 0xffd93d, unlockedBy: null, desc: "Bộ váy hồng xinh xắn của Mây" },
+    haibim:   { id: "haibim",   name: "Hai bím",         img: "assets/img/outfit-preview-haibim.webp",   body: 0xffd93d, accent: 0xff7fa5, unlockedBy: null, desc: "Tóc hai bím năng động đáng yêu" },
+    muvang:   { id: "muvang",   name: "Mũ vàng",         img: "assets/img/outfit-preview-muvang.webp",   body: 0x7fe3ff, accent: 0xffd93d, unlockedBy: null, desc: "Chiếc mũ vàng rực rỡ ánh nắng" },
+    rungxanh: { id: "rungxanh", name: "Khám phá Rừng",   img: "assets/img/outfit-preview-rungxanh.webp", body: 0x43b581, accent: 0xffe066, unlockedBy: 2,    desc: "Mở khóa khi cứu sống Rừng Nấm Xanh" },
+    tuyetbong:{ id: "tuyetbong",name: "Áo Tuyết Bông",   img: "assets/img/outfit-preview-tuyetbong.webp",body: 0x8ad8ff, accent: 0xffffff, unlockedBy: 5,    desc: "Mở khóa khi giải cứu Thung Lũng Tuyết" },
+    cauvong:  { id: "cauvong",  name: "Công chúa Mây",   img: "assets/img/outfit-preview-cauvong.webp",  body: 0xd980fa, accent: 0xffd93d, unlockedBy: 6,    desc: "Mở khóa khi đánh bại Vua Mây Bão" }
   };
 
   MAY.GEARS = {
@@ -500,6 +500,7 @@ window.MAY = window.MAY || {};
       hidden: false,
       challenges: {},
       quizDone: 0,
+      quizLearning: { firstRight: 0, afterHint: 0, recent: [], pending: null },
       gem: false,
       bestTime: 0,
       playSecs: 0,
@@ -514,6 +515,8 @@ window.MAY = window.MAY || {};
     MAY.LEVEL_META.forEach(function (m) { lvls[m.id] = freshLevelSave(); });
     return {
       version: 10,
+      progressionVersion: 1,
+      legacyAccess: [],
       outfit: "vayhong",
       currentLevel: "hub",
       storySeen: false,
@@ -547,7 +550,9 @@ window.MAY = window.MAY || {};
         s.unlockedSpells = Array.isArray(raw.unlockedSpells) ? raw.unlockedSpells : [];
         s.gems = Array.isArray(raw.gems) ? raw.gems : [];
         s.gears = Array.isArray(raw.gears) ? raw.gears : [1];
+        s.legacyAccess = Array.isArray(raw.legacyAccess) ? raw.legacyAccess : [];
         if (s.gears.indexOf(1) === -1) s.gears.push(1);
+        var progressionChanged = false;
         MAY.LEVEL_META.forEach(function (m) {
           var src = (raw.levels && raw.levels[m.id]) || {};
           var dst = freshLevelSave();
@@ -559,6 +564,13 @@ window.MAY = window.MAY || {};
           dst.hidden = !!src.hidden;
           dst.challenges = src.challenges || {};
           dst.quizDone = src.quizDone || 0;
+          var learning = src.quizLearning || {};
+          dst.quizLearning = {
+            firstRight: Number(learning.firstRight) || 0,
+            afterHint: Number(learning.afterHint) || 0,
+            recent: Array.isArray(learning.recent) ? learning.recent.slice(-3) : [],
+            pending: learning.pending && typeof learning.pending === "object" ? learning.pending : null
+          };
           dst.gem = !!src.gem;
           dst.bestTime = src.bestTime || 0;
           dst.playSecs = src.playSecs || 0;
@@ -570,7 +582,26 @@ window.MAY = window.MAY || {};
             ? { stage: src.story.stage || 0, steps: src.story.steps || {}, bossDown: !!src.story.bossDown, rewarded: !!src.story.rewarded }
             : { stage: 0, steps: {}, bossDown: false, rewarded: false };
           s.levels[m.id] = dst;
+          // Existing collectors may already have passed the new reward threshold.
+          if (m.num > 1 && dst.items.length >= 5 && s.gears.indexOf(m.num) === -1) {
+            s.gears.push(m.num);
+            progressionChanged = true;
+          }
         });
+        // Preserve both representations of previously awarded gems. The marker
+        // makes the one-time reconciliation explicit without inventing boss wins.
+        if (!raw.progressionVersion) {
+          MAY.LEVEL_META.forEach(function (m) {
+            if (m.num <= 0) return;
+            var level = s.levels[m.id];
+            if (level.gem && s.gems.indexOf(m.num) === -1) s.gems.push(m.num);
+            if (s.gems.indexOf(m.num) !== -1) level.gem = true;
+            if (level.story.bossDown && m.num < 6 && s.legacyAccess.indexOf(m.num + 1) === -1) s.legacyAccess.push(m.num + 1);
+          });
+        }
+        if (!raw.progressionVersion || progressionChanged) {
+          try { localStorage.setItem(MAY.SAVE_KEY, JSON.stringify(s)); } catch (e) {}
+        }
       } else {
         /* Bảo toàn trang phục nếu người chơi nâng cấp từ v8/v9 lên v10 */
         var old8 = JSON.parse(localStorage.getItem(MAY.V8_KEY) || "null");
@@ -605,8 +636,7 @@ window.MAY = window.MAY || {};
     var meta = MAY.getMeta(levelId);
     if (!meta || meta.num <= 1) return true;
     var prevNum = meta.num - 1;
-    var prevLs = MAY.getLevelSave("level" + prevNum);
-    return MAY.save.gems.indexOf(prevNum) !== -1 || !!(prevLs && prevLs.story && prevLs.story.bossDown);
+    return MAY.save.gems.indexOf(prevNum) !== -1 || (MAY.save.legacyAccess || []).indexOf(meta.num) !== -1;
   };
 
   MAY.isOutfitUnlocked = function (id) {
@@ -707,6 +737,8 @@ window.MAY = window.MAY || {};
       { q: "Chữ cái đầu của từ 'nấm xanh' là gì?", ans: "N", opts: ["N", "M", "L"] },
       { q: "Chữ cái đầu của từ 'gấu trúc' là gì?", ans: "G", opts: ["G", "C", "T"] },
       { q: "Trong hai số 14 và 9, số nào LỚN hơn?", ans: "14", opts: ["14", "9", "Bằng nhau"] },
+      { q: "Trong hai số 6 và 11, số nào LỚN hơn?", ans: "11", opts: ["6", "11", "Bằng nhau"] },
+      { q: "Trong hai số 8 và 3, số nào BÉ hơn?", ans: "3", opts: ["8", "3", "Bằng nhau"] },
       { q: "Trong hai số 7 và 12, số nào BÉ hơn?", ans: "7", opts: ["7", "12", "Bằng nhau"] }
     ],
     level3: [
@@ -719,6 +751,8 @@ window.MAY = window.MAY || {};
     level4: [
       { q: "Hình Tam Giác có mấy cạnh?", ans: "3 cạnh", opts: ["3 cạnh", "4 cạnh", "5 cạnh"] },
       { q: "Hình Vuông có mấy cạnh bằng nhau?", ans: "4 cạnh", opts: ["4 cạnh", "3 cạnh", "2 cạnh"] },
+      { q: "Hình chữ nhật có mấy cạnh?", ans: "4 cạnh", opts: ["4 cạnh", "5 cạnh", "6 cạnh"] },
+      { q: "Pha màu Vàng và màu Đỏ ra màu gì?", ans: "Màu Cam", opts: ["Màu Cam", "Màu Tím", "Xanh lá"] },
       { q: "Pha màu Đỏ và màu Vàng ra màu gì?", ans: "Màu Cam", opts: ["Màu Cam", "Màu Xanh lá", "Màu Tím"] },
       { q: "Pha màu Xanh dương và màu Vàng ra màu gì?", ans: "Xanh lá", opts: ["Xanh lá", "Màu Hồng", "Màu Đỏ"] },
       { q: "Pha màu Đỏ và Xanh dương ra màu gì?", ans: "Màu Tím", opts: ["Màu Tím", "Màu Vàng", "Màu Trắng"] },
@@ -727,6 +761,10 @@ window.MAY = window.MAY || {};
     level5: [
       { q: "Số tiếp theo của dãy: 2, 4, 6, ... là số nào?", ans: "8", opts: ["8", "7", "9"] },
       { q: "Số tiếp theo của dãy: 1, 3, 5, ... là số nào?", ans: "7", opts: ["7", "6", "8"] },
+      { q: "Số tiếp theo của dãy: 3, 6, 9, ... là số nào?", ans: "12", opts: ["10", "11", "12"] },
+      { q: "Hình tiếp theo: ◆ ● ◆ ● ... là gì?", ans: "◆", opts: ["◆", "●", "▲"] },
+      { q: "Hình tiếp theo: ▲ ◆ ▲ ◆ ... là gì?", ans: "▲", opts: ["◆", "▲", "●"] },
+      { q: "Hình tiếp theo: ☀️ ❄️ ☀️ ❄️ ☀️ ... là gì?", ans: "❄️", opts: ["⭐", "❄️", "☀️"] },
       { q: "Hình tiếp theo: ❄️ ⭐ ❄️ ⭐ ❄️ ... là gì?", ans: "⭐", opts: ["⭐", "❄️", "☀️"] },
       { q: "Số tiếp theo của dãy: 5, 10, 15, ... là số nào?", ans: "20", opts: ["20", "16", "18"] },
       { q: "Bạn chim nào biết bơi giỏi ở xứ tuyết?", ans: "Cánh cụt", opts: ["Cánh cụt", "Vẹt đỏ", "Đại bàng"] },
@@ -736,16 +774,20 @@ window.MAY = window.MAY || {};
       { q: "Cá heo Bubi sống ở vùng đất nào?", ans: "Vịnh San Hô", opts: ["Vịnh San Hô", "Sa Mạc", "Xứ Tuyết"] },
       { q: "Lạc đà nhí Kiki sống ở đâu nhỉ?", ans: "Sa Mạc", opts: ["Sa Mạc", "Hang Pha Lê", "Rừng Nấm"] },
       { q: "Con cá trong tiếng Anh đọc là gì?", ans: "Fish", opts: ["Fish", "Cat", "Bird"] },
+      { q: "Con mèo trong tiếng Anh là từ nào?", ans: "Cat", opts: ["Cat", "Cloud", "Fish"] },
+      { q: "Con chim trong tiếng Anh là từ nào?", ans: "Bird", opts: ["Bird", "Tree", "Sun"] },
       { q: "Đám mây trong tiếng Anh là từ nào?", ans: "Cloud", opts: ["Cloud", "Sun", "Tree"] },
+      { q: "Nếu đã tô 6 trong 7 màu cầu vồng, Mây còn cần mấy màu?", ans: "1 màu", opts: ["1 màu", "2 màu", "3 màu"] },
+      { q: "Mây tô 5 màu cầu vồng. Cần thêm mấy màu cho đủ 7?", ans: "2 màu", opts: ["1 màu", "2 màu", "4 màu"] },
+      { q: "Đã tô 4 màu cầu vồng, còn mấy màu mới đủ 7?", ans: "3 màu", opts: ["2 màu", "3 màu", "4 màu"] },
       { q: "Cầu vồng rực rỡ có mấy sắc màu chính?", ans: "7 màu", opts: ["7 màu", "3 màu", "2 màu"] },
       { q: "Chim cánh cụt Bông sống ở vùng nào?", ans: "Thung Lũng Tuyết", opts: ["Thung Lũng Tuyết", "Sa Mạc", "Vịnh San Hô"] }
     ]
   };
 
-  MAY.makeQuizForLevel = function (levelId) {
-    var r = Math.random();
-    if (levelId === "level1" && r < 0.65) {
-      if (Math.random() < 0.5) {
+  function generatedQuiz(levelId, skill) {
+    if (levelId === "level1") {
+      if (skill === "addition" || (skill !== "subtraction" && Math.random() < 0.5)) {
         var a = 1 + Math.floor(Math.random() * 9), b = 1 + Math.floor(Math.random() * (20 - a));
         var s = a + b;
         return { q: a + " + " + b + " = ?", ans: String(s), opts: uniqueNumOpts(s, 1) };
@@ -755,29 +797,75 @@ window.MAY = window.MAY || {};
         return { q: a2 + " - " + b2 + " = ?", ans: String(d), opts: uniqueNumOpts(d, 0) };
       }
     }
-    if (levelId === "level2" && r < 0.55) {
+    if (levelId === "level2") {
       var x = 2 + Math.floor(Math.random() * 8), y = 1 + Math.floor(Math.random() * 8);
       return { q: "Mây có " + x + " cây nấm, nhặt thêm " + y + " cây. Hỏi có tất cả mấy cây?", ans: String(x + y), opts: uniqueNumOpts(x + y, 1) };
     }
-    if (levelId === "level3" && r < 0.55) {
+    if (levelId === "level3") {
       var m1 = 2 + Math.floor(Math.random() * 7), m2 = 2 + Math.floor(Math.random() * 8);
       var tot = m1 + m2;
       return { q: "? + " + m2 + " = " + tot + " (Số còn thiếu là mấy?)", ans: String(m1), opts: uniqueNumOpts(m1, 1) };
     }
-    if (levelId === "level4" && r < 0.35) {
+    if (levelId === "level4") {
       var c1 = 3 + Math.floor(Math.random() * 7), c2 = 2 + Math.floor(Math.random() * 6);
       return { q: "Có " + c1 + " tinh thể tím và " + c2 + " tinh thể xanh. Tổng cộng mấy tinh thể?", ans: String(c1 + c2), opts: uniqueNumOpts(c1 + c2, 1) };
     }
-    if (levelId === "level5" && r < 0.35) {
+    if (levelId === "level5") {
       var s1 = 10 + Math.floor(Math.random() * 9), s2 = 2 + Math.floor(Math.random() * 7);
       return { q: "Có " + s1 + " bông tuyết, gió thổi đi " + s2 + " bông. Còn lại mấy bông?", ans: String(s1 - s2), opts: uniqueNumOpts(s1 - s2, 0) };
     }
-    if (levelId === "level6" && r < 0.35) {
+    if (levelId === "level6") {
       var k1 = 4 + Math.floor(Math.random() * 8), k2 = 3 + Math.floor(Math.random() * 8);
       return { q: k1 + " + " + k2 + " = ?", ans: String(k1 + k2), opts: uniqueNumOpts(k1 + k2, 1) };
     }
-    var list = STATIC_QUIZZES[levelId] || STATIC_QUIZZES.level1;
-    var pick = list[Math.floor(Math.random() * list.length)];
+  }
+
+  MAY.quizKind = function (q) {
+    if (/Chữ cái đầu/.test(q.q)) return "letter";
+    if (/^\? \+/.test(q.q)) return "missing";
+    if (/\+|nhặt thêm|tổng cộng/i.test(q.q)) return "addition";
+    if (/ - |thổi đi/.test(q.q)) return "subtraction";
+    if (/Hình tiếp theo/.test(q.q)) return "symbolPattern";
+    if (/dãy/.test(q.q)) return "pattern";
+    if (/lớn hơn|bé hơn/i.test(q.q)) return "compare";
+    if (/cạnh|cánh nhọn/.test(q.q)) return "shape";
+    if (/Pha màu/.test(q.q)) return "colour";
+    if (/tiếng Anh/.test(q.q)) return "english";
+    if (/sống ở|bướu|bơi giỏi|sa mạc/.test(q.q)) return "habitat";
+    return "rainbow";
+  };
+
+  MAY.makeQuizForLevel = function (levelId, recent, skill) {
+    recent = recent || [];
+    var bank = STATIC_QUIZZES[levelId] || STATIC_QUIZZES.level1;
+    var choices = bank.filter(function (q) {
+      return !recent.includes(q.q) && (!skill || MAY.quizKind(q) === skill);
+    });
+    var chance = levelId === "level1" ? 0.65 : levelId === "level2" || levelId === "level3" ? 0.55 : 0.35;
+    if (!choices.length || Math.random() < chance) {
+      var generated = generatedQuiz(levelId, skill);
+      if (generated && (!skill || MAY.quizKind(generated) === skill) && !recent.includes(generated.q)) return generated;
+    }
+    if (!choices.length && skill) {
+      choices = Object.values(STATIC_QUIZZES).flat().filter(function (q) {
+        return MAY.quizKind(q) === skill && !recent.includes(q.q);
+      });
+    }
+    if (!choices.length && skill) {
+      // Arithmetic banks have many valid pairs. Move the first operand on a repeat.
+      var q = generatedQuiz(levelId, skill);
+      if (q && MAY.quizKind(q) === skill) {
+        var nums = q.q.match(/\d+/g).map(Number);
+        for (var delta = 1; delta <= recent.length + 1; delta++) {
+          var answer = Number(q.ans) + delta;
+          var prompt = skill === "missing" ? "? + " + nums[0] + " = " + (nums[1] + delta)
+            : (nums[0] + delta) + (skill === "subtraction" ? " - " : " + ") + nums[1] + " = ?";
+          if (!recent.includes(prompt)) return { q: prompt, ans: String(answer), opts: uniqueNumOpts(answer, 0) };
+        }
+      }
+    }
+    if (!choices.length) choices = bank.filter(function (q) { return !recent.includes(q.q); });
+    var pick = choices[Math.floor(Math.random() * choices.length)];
     return { q: pick.q, ans: pick.ans, opts: shuffle(pick.opts) };
   };
 

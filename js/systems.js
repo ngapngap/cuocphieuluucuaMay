@@ -237,9 +237,6 @@
 
   MAY.fishBody = function (color, len, species) {
     var g = new THREE.Group();
-    g.userData.fishColor = color;
-    g.userData.fishLen = len || 1.6;
-    g.userData.fishSpecies = species || 0;
     if (MAY.modelsReady) {
       var glb = MAY.cloneFish(color, len || 1.6, species || 0);
       if (glb) { g.add(glb); return g; }
@@ -731,7 +728,6 @@
       quizStation: null,
       beacon: null,
       onUpdate: null,
-      onModelsReady: null,
       playSecs: ls.gem ? 0 : (ls.playSecs || 0),
       portalCooldown: 1.5,
       gemAwardedThisVisit: ls.gem
@@ -958,23 +954,6 @@
           MAY.toast("💗 " + name + " vẫy đuôi thích Mây quá trời!", name + " thích Mây lắm!");
         }
       });
-      /* Khi companion_milo.glb tải xong sau khi màn đã mở, tự nâng cấp bạn đồng hành Milo sang bản có xương! */
-      ctx.upgradeRiggedCompanion = function () {
-        if (!ctx.companion || (ctx.companion.kind !== "milo" && ctx.companion.kind !== "miloWinged")) return;
-        if (ctx.companion.group.userData && ctx.companion.group.userData.mixer) return;
-        if (!MAY.RIGGED || !MAY.RIGGED.milo) return;
-        var oldG = ctx.companion.group;
-        var pos = oldG.position.clone(), rotY = oldG.rotation.y;
-        MAY.worldRoot.remove(oldG);
-        var newG = MAY.makeAnimal(ctx.companion.kind, opts);
-        if (!ctx.companion.flying) newG.add(MAY.makeContactShadow(0.6, 0.5));
-        newG.position.copy(pos); newG.rotation.y = rotY;
-        ctx.add(newG);
-        ctx.companion.group = newG;
-        for (var ii = 0; ii < ctx.interactives.length; ii++) {
-          if (ctx.interactives[ii].obj === oldG) ctx.interactives[ii].obj = newG;
-        }
-      };
       return ctx.companion;
     };
 
@@ -1011,7 +990,7 @@
         g.add(MAY.makeContactShadow(1.15, 0.6));
 
         ctx.add(g);
-        var ch = { idx: ci, group: g, lid: lidPivot, gold: gold, glow: glow, opened: opened, tint: tint, usingGLB: !!glb };
+        var ch = { idx: ci, group: g, lid: lidPivot, gold: gold, glow: glow, opened: opened };
         ctx.chests.push(ch);
         ctx.interactives.push({
           obj: g, label: "Mở rương kho báu",
@@ -1274,15 +1253,13 @@
       MAY.toast(msg, say || msg);
     };
 
-    /* Kiểm tra điều kiện nhận Viên Ngọc của màn (Hoàn thành cốt truyện/Boss HOẶC thu thập đủ đồ) */
+    /* Mọi lối nhận Ngọc đều dùng cùng điều kiện hoàn thành trận trùm. */
     ctx.isGemReady = function () {
-      if (meta.num <= 0) return false;
-      if (ls.story && ls.story.bossDown) return true;
-      return ls.items.length >= meta.collectTarget && ls.friends.length >= meta.friendTarget;
+      return meta.num > 0 && !!(ls.story && ls.story.bossDown);
     };
 
     ctx.awardGem = function () {
-      if (meta.num <= 0 || ls.gem) return;
+      if (ls.gem || !ctx.isGemReady()) return;
       ls.gem = true;
       ctx.gemAwardedThisVisit = true;
       if (MAY.save.gems.indexOf(meta.num) === -1) MAY.save.gems.push(meta.num);
@@ -1385,12 +1362,22 @@
           c.taken = true;
           c.mesh.visible = false; c.label.visible = false; c.glow.visible = false;
           ls.items.push(c.idx);
+          var healed = MAY.hearts < MAY.maxHearts;
+          if (healed && MAY.healPlayer) MAY.healPlayer(1);
+          // Optional exploration unlocks the equipment suited to this region.
+          var gearReward = meta.num > 1 && ls.items.length >= 5 && MAY.save.gears.indexOf(meta.num) === -1;
+          if (gearReward) MAY.save.gears.push(meta.num);
           MAY.persist();
           MAY.refreshHUD();
           MAY.sndStar();
           MAY.burstAt(c.mesh.position.clone(), c.color, 14);
           var left = meta.collectTarget - ls.items.length;
-          if (left > 0) {
+          if (gearReward) {
+            var gear = MAY.GEARS[meta.num];
+            MAY.toast(meta.collectIcon + " Đã tìm 5 " + meta.collectName + "! Nhận " + gear.icon + " " + gear.name + ": " + gear.desc);
+          } else if (healed) {
+            MAY.toast(meta.collectIcon + " " + meta.collectName + " hồi phục một trái tim!");
+          } else if (left > 0) {
             MAY.toast(meta.collectIcon + " Nhặt được " + meta.collectName + "! Còn " + left + " nữa!", "Nhặt được rồi! Còn " + left + " nữa!");
           } else {
             MAY.toast(meta.collectIcon + " Đủ " + meta.collectTarget + " " + meta.collectName + " rồi! Mây giỏi quá!", "Đủ hết rồi! Mây giỏi quá!");
@@ -1616,9 +1603,13 @@
         } else {
           if (!MAY.modalOpen) ra.t -= dt;
           var hintEl = document.getElementById("hint");
-          if (hintEl) hintEl.textContent = "🏁 " + ra.title + ": còn " + Math.ceil(ra.t) + "s — vòng " + (ra.idx + 1) + "/" + ra.rings.length + "!";
+          if (hintEl) {
+            hintEl.style.display = "block";
+            hintEl.textContent = "🏁 " + ra.title + ": còn " + Math.ceil(ra.t) + "s — vòng " + (ra.idx + 1) + "/" + ra.rings.length + "!";
+          }
           if (ra.t <= 0) {
             ra.active = false;
+            if (hintEl) hintEl.style.display = "";
             MAY.toast("⏱️ Hết giờ rồi, Mây thử đua lại nhé!", "Hết giờ rồi, thử lại nhé!");
             MAY.updateHintText(ctx);
           } else if (ra.idx < ra.rings.length) {
@@ -1632,9 +1623,10 @@
               MAY.burstAt(rr.position.clone(), 0x4dd0ff, 14);
               if (ra.idx >= ra.rings.length) {
                 ra.active = false;
+                if (hintEl) hintEl.style.display = "";
                 MAY.updateHintText(ctx);
                 if (MAY.VFX) MAY.VFX.spawnTornado(pPos.clone(), true);
-                ctx.challengeDone("race", "🏁 Mây thắng " + ra.title + "! Nhanh như gió luôn!", "Mây thắng cuộc đua rồi!");
+                ctx.challengeDone("race", "🏅 Huy hiệu tốc độ! Mây thắng " + ra.title + "!", "Mây nhận huy hiệu tốc độ!");
               } else {
                 MAY.toast("🏁 Qua vòng đua " + ra.idx + "/" + ra.rings.length + "!", "Tiếp tục nào!");
               }
@@ -1871,42 +1863,123 @@
     if (MAY.player && MAY.player.clearKeys) MAY.player.clearKeys();
   };
 
+  // Keep an unfinished question in the save so closing or reloading cannot reset its attempt.
+  function quizHint(q, feedback) {
+    var kind = MAY.quizKind(q), match, text = "";
+    feedback.textContent = "";
+    if (kind === "letter") {
+      match = q.q.match(/'([^']+)'/);
+      if (match) {
+        feedback.appendChild(document.createTextNode("Nhìn chữ đầu trong từ: "));
+        var strong = document.createElement("strong");
+        strong.textContent = match[1].charAt(0);
+        feedback.appendChild(strong);
+        feedback.appendChild(document.createTextNode(match[1].slice(1) + ". Hãy chọn chữ ấy nhé!"));
+        return;
+      }
+    }
+    if (kind === "addition") {
+      var nums = q.q.match(/\d+/g);
+      if (nums && nums.length >= 2) text = "Gộp hai nhóm: " + "● ".repeat(+nums[0]) + "+ " + "● ".repeat(+nums[1]) + ". Đếm tất cả các chấm nhé!";
+    } else if (kind === "missing") {
+      text = "Bắt đầu từ " + q.q.match(/\d+/)[0] + ", đếm thêm đến " + q.q.match(/\d+/g)[1] + ". Số bước đếm là số còn thiếu.";
+    } else if (kind === "subtraction") {
+      var ns = q.q.match(/\d+/g);
+      text = "Có " + ns[0] + ", bớt " + ns[1] + ". Hãy đếm lùi " + ns[1] + " bước từ " + ns[0] + ".";
+    } else if (kind === "symbolPattern") {
+      text = "Hai hình đầu lần lượt lặp lại. Hãy ghép từng cặp để tìm hình còn thiếu.";
+    } else if (kind === "pattern") {
+      text = "Quan sát khoảng cách giữa hai số liên tiếp rồi thêm cùng khoảng đó vào số cuối.";
+    } else if (kind === "compare") {
+      text = "Đếm theo thứ tự các số: số xuất hiện sau lớn hơn, số xuất hiện trước bé hơn.";
+    } else if (kind === "shape") {
+      text = "Hãy tưởng tượng hình và dùng ngón tay lần lượt đếm từng cạnh hoặc cánh nhọn.";
+    } else if (kind === "colour") {
+      text = q.ans === "Màu Cam" ? "Hai màu ấm này tạo ra màu của quả cam." : /Xanh dương và màu Vàng/.test(q.q) ? "Hãy nghĩ đến màu của lá cây." : "Hai màu này tạo ra màu của quả nho chín.";
+    } else {
+      var clues = { "Ốc đảo": "Giữa sa mạc có một nơi xanh mát với nước và cây.", "Lạc đà": "Bạn ấy có bướu và đi trên cát.", "Cánh cụt": "Bạn ấy mặc bộ lông như áo đen trắng và bơi rất giỏi.", "Vịnh San Hô": "Cá heo bơi ở vùng biển có nhiều san hô.", "Sa Mạc": "Nơi ấy có nhiều cát và lạc đà.", "Cat": "Tên bạn mèo bắt đầu bằng Ca.", "Bird": "Tên bạn chim bắt đầu bằng chữ B.", "Fish": "Từ tiếng Anh này bắt đầu bằng chữ F.", "Cloud": "Từ tiếng Anh này bắt đầu bằng chữ C.", "1 màu": "Đếm tiếp từ sáu đến bảy. Con đã đếm thêm mấy bước?", "2 màu": "Đếm tiếp từ năm đến bảy và giơ một ngón tay cho mỗi màu thêm.", "3 màu": "Đếm tiếp từ bốn đến bảy. Mỗi bước là một màu còn thiếu.", "7 màu": "Hãy đếm các màu cầu vồng từ đỏ đến tím.", "Thung Lũng Tuyết": "Chim cánh cụt Bông sống ở vùng lạnh phủ tuyết." };
+      text = clues[q.ans] || "Hãy đọc lại câu hỏi và tìm chi tiết giúp con chọn nhé!";
+    }
+    feedback.textContent = text || "Hãy đọc lại câu hỏi và thử đếm nhé!";
+  }
+
   MAY.openQuiz = function (levelId) {
     var ctx = MAY.currentCtx;
     if (!ctx) return;
     releasePointerLock();
     MAY.modalOpen = true;
-    var q = MAY.makeQuizForLevel(levelId);
-    setText("quiz-q", q.q);
     var ls = MAY.getLevelSave(levelId);
-    setText("quiz-prog", "Đã đúng " + Math.min(3, ls.quizDone) + "/3 câu của màn này");
+    var learning = ls.quizLearning || (ls.quizLearning = { firstRight: 0, afterHint: 0, recent: [], pending: null });
+    var feedback = document.getElementById("quiz-feedback");
     var box = document.getElementById("quiz-ans");
-    box.innerHTML = "";
-    q.opts.forEach(function (op) {
-      var b = document.createElement("button");
-      b.textContent = op;
-      b.setAttribute("aria-label", "Đáp án: " + op);
-      b.onclick = function () {
-        if (op === q.ans) {
-          ls.quizDone++;
+    var panel = document.getElementById("quiz-ov");
+    if (!learning.pending) learning.pending = { question: MAY.makeQuizForLevel(levelId, learning.recent), hinted: false, answered: false };
+
+    function render() {
+      var pending = learning.pending, q = pending.question;
+      setText("quiz-q", q.q);
+      setText("quiz-prog", "Đã đúng " + Math.min(3, ls.quizDone) + "/3 câu của màn này");
+      box.innerHTML = "";
+      feedback.textContent = "";
+      if (pending.answered) {
+        feedback.textContent = pending.revealed ? "Đáp án là " + q.ans + ". Hãy thử áp dụng vào câu khác nhé!" : "✅ Đúng rồi! Hãy thử một câu khác nhé.";
+        var next = document.createElement("button");
+        next.textContent = "Câu tiếp theo";
+        next.onclick = function () {
+          learning.pending = { question: MAY.makeQuizForLevel(levelId, learning.recent, pending.hinted ? MAY.quizKind(q) : null), hinted: false, answered: false };
           MAY.persist();
-          MAY.sndStar();
-          MAY.burstAt(MAY.player.pos.clone(), 0xffd93d, 14);
-          if (ls.quizDone >= 3) {
-            ctx.challengeDone("quiz", "❓ Trả lời đúng 3 câu đố! Mây thông minh quá!", "Mây trả lời đúng 3 câu đố rồi!");
-          } else {
-            MAY.toast("✅ Đúng rồi! Mây trả lời đúng " + ls.quizDone + "/3 câu!", "Đúng rồi! Giỏi quá!");
-          }
-          MAY.closeQuiz();
-        } else {
-          MAY.toast("🤔 Chưa đúng rồi, Mây thử lại nhé!", "Chưa đúng, Mây thử lại nhé!");
-          MAY.beep(220, 0.22);
-        }
-      };
-      box.appendChild(b);
-    });
-    document.getElementById("quiz-ov").classList.remove("hidden");
-    MAY.speak("Câu đố nè! " + q.q);
+          render();
+          var firstAnswer = box.querySelector("button");
+          if (firstAnswer) firstAnswer.focus();
+        };
+        box.appendChild(next);
+      } else {
+        if (pending.hinted) quizHint(q, feedback);
+        q.opts.forEach(function (op) {
+          var button = document.createElement("button");
+          button.textContent = op;
+          button.setAttribute("aria-label", "Đáp án: " + op);
+          button.onclick = function () {
+            if (pending.answered) return;
+            if (op !== q.ans) {
+              if (pending.hinted) {
+                pending.answered = true;
+                pending.revealed = true;
+                learning.recent.push(q.q);
+                learning.recent = learning.recent.slice(-3);
+                render();
+                box.querySelector("button").focus();
+                return;
+              }
+              pending.hinted = true;
+              MAY.persist();
+              quizHint(q, feedback);
+              MAY.beep(220, 0.22);
+              return;
+            }
+            pending.answered = true;
+            if (pending.hinted) learning.afterHint++; else learning.firstRight++;
+            learning.recent.push(q.q);
+            learning.recent = learning.recent.slice(-3);
+            ls.quizDone++;
+            MAY.persist();
+            MAY.sndStar();
+            MAY.burstAt(MAY.player.pos.clone(), 0xffd93d, 14);
+            if (ls.quizDone >= 3) ctx.challengeDone("quiz", "❓ Trả lời đúng 3 câu đố! Mây thông minh quá!", "Mây trả lời đúng 3 câu đố rồi!");
+            render();
+            var nextButton = box.querySelector("button");
+            if (nextButton) nextButton.focus();
+          };
+          box.appendChild(button);
+        });
+      }
+      MAY.persist();
+    }
+    render();
+    panel.classList.remove("hidden");
+    MAY.speak("Câu đố nè! " + learning.pending.question.q);
+    var first = box.querySelector("button");
+    if (first) first.focus();
   };
 
   MAY.closeQuiz = function () {
@@ -1948,7 +2021,9 @@
 
       var sub = m.id === "hub"
         ? "🌈 " + MAY.save.gems.length + "/6 Ngọc • 🐾 " + ls.friends.length + "/4 Bạn đảo"
-        : m.collectIcon + " " + ls.items.length + "/" + m.collectTarget + " • 🎖️ " + ls.friends.length + "/" + m.friendTarget + " • 🏆 " + Object.keys(ls.challenges).filter(function (k) { return ls.challenges[k]; }).length + "/3";
+        : (ls.story && ls.story.bossDown ? "Đã hạ trùm — nhận Ngọc" : "Vận dụng phép và hạ trùm để nhận Ngọc") +
+          " • " + m.collectIcon + " " + ls.items.length + "/" + m.collectTarget + " hồi tim" +
+          (m.num > 1 ? "; tìm 5 để nhận " + MAY.GEARS[m.num].name : "; kính lặn giúp bơi nhanh");
 
       card.innerHTML = '<div class="mtop"><span class="mico">' + (unlocked ? m.icon : "🔒") + '</span><div><div class="mname">' + m.title + '</div><div class="msub">' + sub + "</div></div></div>" + badge;
       card.onclick = function () {
@@ -2081,13 +2156,12 @@
     var ls = MAY.getLevelSave(levelId);
     var mm = Math.floor((secs || 0) / 60), ss = (secs || 0) % 60;
     var timeStr = mm + ":" + (ss < 10 ? "0" : "") + ss;
-    var rank = secs > 0 && secs < 240 ? "🥇 Huy hiệu Vàng" : secs > 0 && secs < 480 ? "🥈 Huy hiệu Bạc" : "🥉 Huy hiệu Đồng";
     var gear = MAY.GEARS[meta.num];
 
     setText("win-gem-icon", meta.gemIcon);
     setText("win-title", "MÂY ĐÃ NHẬN " + meta.gemName.toUpperCase() + "!");
-    setText("win-desc", "Hoàn thành " + meta.title + "! Mở khóa trang bị: " + gear.icon + " " + gear.name + " (" + gear.desc + ").");
-    setText("win-rank", rank + " • Thời gian " + timeStr + " • Tổng Ngọc: " + MAY.save.gems.length + "/6");
+    setText("win-desc", "Hoàn thành " + meta.title + "! Trang bị: " + gear.icon + " " + gear.name + " (" + gear.desc + ").");
+    setText("win-rank", "⏱️ Thời gian khám phá " + timeStr + " • Tổng Ngọc: " + MAY.save.gems.length + "/6");
     setText("win-side",
       "💎 Rương " + ls.treasures.length + "/" + meta.treasureTarget +
       " • " + meta.souvenirIcon + " " + ls.souvenirs.length + "/" + meta.souvenirTarget +

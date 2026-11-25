@@ -691,9 +691,13 @@
       var sItem = MAY.SPELLS[idx];
       var unl = sItem && MAY.isSpellUnlocked(sItem.id);
       el.classList.toggle("locked", !unl);
+      el.hidden = !unl;
+      el.setAttribute("aria-pressed", String(!!unl && idx === activeSpellIdx));
       el.classList.toggle("active", unl && idx === activeSpellIdx);
     });
 
+    var bar = document.getElementById("spellbar");
+    if (bar) bar.hidden = unlockedAny === -1;
     var lbl = document.getElementById("spell-name");
     if (lbl) {
       lbl.textContent = isCurUnlocked

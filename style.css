@@ -222,10 +222,10 @@ body.touch #big { display: none; }
   padding: 6px 4px; cursor: pointer; color: #fff; font-family: inherit; transition: transform .12s ease;
 }
 .outfit:hover { transform: translateY(-2px); }
-.outfit img { width: 100%; height: 76px; object-fit: cover; object-position: top center; border-radius: 10px; display: block; }
+.outfit img { width: 100%; height: 112px; object-fit: contain; object-position: center; border-radius: 10px; display: block; background: #dceefa; }
 .outfit span { display: block; font-size: 12px; font-weight: 800; margin-top: 5px; }
 .outfit.sel { border-color: #ffd93d; background: rgba(255,217,61,.24); box-shadow: 0 0 0 2px #ffd93d; }
-.outfit.locked { opacity: .55; filter: grayscale(.6); }
+.outfit.locked { border-style: dashed; }
 .outfit-label { font-size: 14px; font-weight: 800; margin: 10px 0 0; }
 
 .hidden { display: none !important; }
@@ -493,3 +493,56 @@ body.in-cutscene #toast { opacity: 0 !important; pointer-events: none !important
   #minimap { width: 78px; height: 78px; }
   .alb-grid { grid-template-columns: repeat(2, 1fr); }
 }
+
+/* Compact, contextual interface */
+[hidden] { display: none !important; }
+#minimap-wrap, #compass, #big, #diver-id, #zone-pill, #hint { display: none; }
+#fr-pills { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+#fr-pills .pill { background: rgba(255,255,255,.1); border-radius: 999px; padding: 6px 10px; }
+.settings, .start-details { margin: 8px 0; text-align: left; background: rgba(255,255,255,.08); border-radius: 12px; padding: 8px 12px; }
+.settings summary, .start-details summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; font-weight: 800; }
+.touch-instructions { display: none; }
+body.touch .desktop-instructions { display: none; }
+body.touch .touch-instructions { display: block; }
+#ov-start .panel { max-height: calc(100dvh - 24px); }
+#ov-start .hero-img { width: 56px; height: 56px; }
+#ov-start .boot-bar { margin-top: 8px; }
+#ov-start .outfit img { height: 100px; }
+button, #interact { touch-action: manipulation; }
+button:focus-visible, summary:focus-visible, #interact:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+.hbtn, #fr .hbtn, .spell-slot, .spell-cast, .qbtn, .qworld, #cs-skip, #interact { min-width: 44px; min-height: 44px; }
+.spell-row { flex-wrap: wrap; }
+.spell-slot { width: 44px; height: 44px; }
+.spell-cast { height: 44px; }
+@media (max-width: 720px) {
+  #hud-left { max-width: calc(100vw - 20px); }
+  #obj { max-width: 52vw; }
+  #hud-right { max-width: 44vw; }
+  #fr-top { justify-content: flex-end; }
+  #fr .hbtn { width: 44px; height: 44px; }
+  #spellbar { position: fixed; left: 10px; top: 125px; max-width: calc(100vw - 20px); }
+  .spell-slot { width: 44px; height: 44px; }
+  .spell-cast { height: 44px; }
+  #boss-hud { top: 205px; }
+  #spell-name { max-width: 90vw; }
+  #ov-start .panel { padding: 10px 14px; }
+  #ov-start .panel h1 { font-size: 21px; }
+  #ov-start .ver-tag { display: none; }
+}
+@media (max-height: 500px) and (orientation: landscape) {
+  #ov-start .panel { max-height: calc(100dvh - 12px); }
+  #ov-start .hero-img { display: none; }
+  #ov-start .panel h1 { font-size: 20px; }
+  #ov-start .boot-bar { margin: 4px auto; }
+  #ov-start #btn-play { padding: 8px 22px; min-height: 44px; }
+  #joy { width: 90px; height: 90px; bottom: 8px; }
+  #vert { flex-direction: row; bottom: 8px; right: 8px; gap: 4px; }
+  #vert button { width: 44px; height: 44px; font-size: 18px; }
+  #boss-hud { top: 160px; }
+}
+#fr #zone-pill { display: none !important; }
+@media (max-height: 500px) and (orientation: landscape) {
+  #spellbar { position: fixed; left: 10px; top: 90px; max-width: calc(100vw - 20px); }
+  #spell-row { flex-wrap: nowrap; }
+}
+@media (max-width: 720px) { #obj { max-width: 48vw; } }

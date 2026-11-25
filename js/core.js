@@ -413,33 +413,23 @@
   MAY.MODEL_T = {};
   MAY.RIGGED = {};
   MAY.modelsReady = false;
-  var MODEL_FILES = [
-    "assets/models/fish.glb", "assets/models/coral.glb", "assets/models/turtle.glb",
-    "assets/models/jelly.glb", "assets/models/chest.glb", "assets/models/tang-blue.glb",
-    "assets/models/tang-yellow.glb", "assets/models/manta.glb", "assets/models/barrel.glb",
-    "assets/models/amphora.glb", "assets/models/clam.glb", "assets/models/sanddollar.glb",
-    "assets/models/starfish.glb", "assets/models/seaweed.glb", "assets/models/kelp.glb",
-    "assets/models/hero_lighthouse.glb", "assets/models/hero_castle.glb",
-    "assets/models/cc0_cabin.glb", "assets/models/cc0_windmill.glb",
-    "assets/models/cc0_shipwreck.glb", "assets/models/cc0_boat.glb"
-  ];
-  var RIGGED_FILES = [
-    { key: "may",          url: "assets/models/may_rigged.glb" },
-    { key: "milo",         url: "assets/models/companion_milo.glb" },
-    { key: "tortoise",     url: "assets/models/npc_tortoise_elder.glb" },
-    { key: "mushroomking", url: "assets/models/boss_mushroom_king.glb" },
-    { key: "golem",        url: "assets/models/boss_crystal_golem.glb" },
-    { key: "stormking",    url: "assets/models/boss_storm_king.glb" },
-    { key: "fox",          url: "assets/models/cc0_fox.glb" },
-    { key: "deer",         url: "assets/models/cc0_deer.glb" },
-    { key: "reindeer",     url: "assets/models/cc0_reindeer.glb" },
-    { key: "unicorn",      url: "assets/models/cc0_unicorn.glb" },
-    { key: "alpaca",       url: "assets/models/cc0_alpaca.glb" },
-    { key: "crab",         url: "assets/models/cc0_crab.glb" },
-    { key: "dolphin",      url: "assets/models/cc0_dolphin.glb" },
-    { key: "whale",        url: "assets/models/cc0_whale.glb" },
-    { key: "clownfish",    url: "assets/models/cc0_clownfish.glb" }
-  ];
+  var rigKeys = {
+    may_rigged: "may",
+    companion_milo: "milo",
+    npc_tortoise_elder: "tortoise",
+    boss_mushroom_king: "mushroomking",
+    boss_crystal_golem: "golem",
+    boss_storm_king: "stormking",
+    cc0_fox: "fox",
+    cc0_deer: "deer",
+    cc0_reindeer: "reindeer",
+    cc0_unicorn: "unicorn",
+    cc0_alpaca: "alpaca",
+    cc0_crab: "crab",
+    cc0_dolphin: "dolphin",
+    cc0_whale: "whale",
+    cc0_clownfish: "clownfish"
+  };
 
   function bakeModel(sc) {
     var out = new THREE.Group();
@@ -508,17 +498,6 @@
     });
   }
 
-  function registerAllTemplates() {
-    var T = MAY.MODEL_T;
-    Object.keys(T).forEach(function (k) {
-      var entry = T[k];
-      if (!entry) return;
-      if (entry.group) protectTemplateObj(entry.group);
-      if (entry.base) protectTemplateObj(entry.base);
-      if (entry.lid) protectTemplateObj(entry.lid);
-    });
-  }
-
   function buildTemplates(res) {
     var T = MAY.MODEL_T;
     function fishTemplate(sc) {
@@ -531,8 +510,8 @@
       var g = new THREE.Group(); g.add(normBake(sc, axis, target, true));
       return { group: g };
     }
-    if (res[0]) {
-      var fb = normBake(res[0], "z", 1, false);
+    if (res["fish"]) {
+      var fb = normBake(res["fish"], "z", 1, false);
       var fg = new THREE.Group(), fin = new THREE.Group();
       fin.rotation.y = Math.PI / 2; fin.add(fb);
       var eyeM = new THREE.MeshBasicMaterial({ color: 0x1a1a2e });
@@ -542,38 +521,38 @@
       });
       fg.add(fin); T.fish = { group: fg };
     }
-    if (res[1]) T.coral = propTemplate(res[1], "y", 1);
-    if (res[2]) {
-      var tb = normBake(res[2], "z", 2.4, true);
+    if (res["coral"]) T.coral = propTemplate(res["coral"], "y", 1);
+    if (res["turtle"]) {
+      var tb = normBake(res["turtle"], "z", 2.4, true);
       var tg = new THREE.Group(), tin = new THREE.Group();
       tin.rotation.y = Math.PI / 2; tin.add(tb); tg.add(tin);
       T.turtle = { group: tg };
     }
-    if (res[3]) {
-      var jb = normBake(res[3], "y", 1.4, false);
+    if (res["jelly"]) {
+      var jb = normBake(res["jelly"], "y", 1.4, false);
       jb.traverse(function (o) { if (o.isMesh) { o.material = o.material.clone(); o.material.transparent = true; o.material.opacity = 0.85; } });
       var jg = new THREE.Group(); jg.add(jb); T.jelly = { group: jg };
     }
-    if (res[4]) {
-      var base = res[4].getObjectByName("Chest_Base");
-      var lid = res[4].getObjectByName("Chest_Top");
+    if (res["chest"]) {
+      var base = res["chest"].getObjectByName("Chest_Base");
+      var lid = res["chest"].getObjectByName("Chest_Top");
       if (base && lid) T.chest = { base: base, lid: lid };
     }
-    if (res[5]) T.tangBlue = fishTemplate(res[5]);
-    if (res[6]) T.tangYellow = fishTemplate(res[6]);
-    if (res[7]) {
-      var mb = normBake(res[7], "x", 6, false);
+    if (res["tang-blue"]) T.tangBlue = fishTemplate(res["tang-blue"]);
+    if (res["tang-yellow"]) T.tangYellow = fishTemplate(res["tang-yellow"]);
+    if (res["manta"]) {
+      var mb = normBake(res["manta"], "x", 6, false);
       var mg = new THREE.Group(), min = new THREE.Group();
       min.rotation.y = Math.PI / 2; min.add(mb); mg.add(min);
       T.manta = { group: mg };
     }
-    if (res[8]) T.prop_barrel = propTemplate(res[8], "y", 1.2);
-    if (res[9]) T.prop_amphora = propTemplate(res[9], "y", 1.2);
-    if (res[10]) T.prop_clam = propTemplate(res[10], "x", 1.2);
-    if (res[11]) T.prop_sanddollar = propTemplate(res[11], "x", 1.0);
-    if (res[12]) T.prop_starfish = propTemplate(res[12], "x", 1.2);
-    if (res[13]) T.prop_seaweed = propTemplate(res[13], "y", 2.5);
-    if (res[14]) T.prop_kelp = propTemplate(res[14], "y", 3.5);
+    if (res["barrel"]) T.prop_barrel = propTemplate(res["barrel"], "y", 1.2);
+    if (res["amphora"]) T.prop_amphora = propTemplate(res["amphora"], "y", 1.2);
+    if (res["clam"]) T.prop_clam = propTemplate(res["clam"], "x", 1.2);
+    if (res["sanddollar"]) T.prop_sanddollar = propTemplate(res["sanddollar"], "x", 1.0);
+    if (res["starfish"]) T.prop_starfish = propTemplate(res["starfish"], "x", 1.2);
+    if (res["seaweed"]) T.prop_seaweed = propTemplate(res["seaweed"], "y", 2.5);
+    if (res["kelp"]) T.prop_kelp = propTemplate(res["kelp"], "y", 3.5);
     function landmarkTemplate(sc) {
       var g = new THREE.Group();
       sc.traverse(function (o) {
@@ -586,13 +565,18 @@
       g.add(sc);
       return { group: g };
     }
-    if (res[15]) T.hero_lighthouse = landmarkTemplate(res[15]);
-    if (res[16]) T.hero_castle     = landmarkTemplate(res[16]);
-    if (res[17]) T.cc0_cabin       = landmarkTemplate(res[17]);
-    if (res[18]) T.cc0_windmill    = landmarkTemplate(res[18]);
-    if (res[19]) T.cc0_shipwreck   = landmarkTemplate(res[19]);
-    if (res[20]) T.cc0_boat        = landmarkTemplate(res[20]);
-    registerAllTemplates();
+    if (res["hero_lighthouse"]) T.hero_lighthouse = landmarkTemplate(res["hero_lighthouse"]);
+    if (res["hero_castle"]) T.hero_castle     = landmarkTemplate(res["hero_castle"]);
+    if (res["cc0_cabin"]) T.cc0_cabin       = landmarkTemplate(res["cc0_cabin"]);
+    if (res["cc0_windmill"]) T.cc0_windmill    = landmarkTemplate(res["cc0_windmill"]);
+    if (res["cc0_shipwreck"]) T.cc0_shipwreck   = landmarkTemplate(res["cc0_shipwreck"]);
+    if (res["cc0_boat"]) T.cc0_boat        = landmarkTemplate(res["cc0_boat"]);
+    Object.keys(T).forEach(function (key) {
+      var entry = T[key];
+      if (entry.protected) return;
+      [entry.group, entry.base, entry.lid].forEach(protectTemplateObj);
+      entry.protected = true;
+    });
   }
 
   MAY.cloneLandmark = function (key, scale) {
@@ -692,6 +676,7 @@
         var newBones = s.skeleton.bones.map(function (b) { return map.get(b) || b; });
         var newInverses = s.skeleton.boneInverses.map(function (m) { return m.clone(); });
         d.bind(new THREE.Skeleton(newBones, newInverses), s.bindMatrix.clone());
+        d.userData.ownsSkeleton = true;
       }
       if (d.isMesh) {
         d.userData.sharedGeo = true;
@@ -774,45 +759,37 @@
     return wrap;
   };
 
-  var modelsLoadedCount = 0;
-  MAY.loadAllModels = function (onProgress, onDone) {
-    var loader = new THREE.GLTFLoader();
-    var totalCount = MODEL_FILES.length + RIGGED_FILES.length;
-    var staticProm = Promise.all(MODEL_FILES.map(function (url) {
-      return new Promise(function (res) {
-        function finish(sc) {
-          modelsLoadedCount++;
-          if (onProgress) onProgress(modelsLoadedCount, totalCount);
-          res(sc);
+  var modelLoads = new Map();
+  var modelLoader = new THREE.GLTFLoader();
+  function loadModel(name) {
+    if (!modelLoads.has(name)) {
+      var request = new Promise(function (resolve, reject) {
+        modelLoader.load(MayPackages.modelURL(name), resolve, undefined, reject);
+      }).then(function (gltf) {
+        var key = rigKeys[name];
+        if (key) {
+          protectTemplateObj(gltf.scene);
+          MAY.RIGGED[key] = { scene: gltf.scene, animations: gltf.animations || [] };
+        } else {
+          var scenes = {};
+          scenes[name] = gltf.scene;
+          buildTemplates(scenes);
         }
-        try {
-          loader.load(url, function (g) { finish(g.scene); }, undefined, function () { finish(null); });
-        } catch (e) { finish(null); }
+      }).catch(function (error) {
+        // The procedural fallback can be used for this visit. Retry on the next one.
+        modelLoads.delete(name);
+        console.warn("GLB " + name, error);
       });
-    }));
-    var riggedProm = Promise.all(RIGGED_FILES.map(function (rf) {
-      return new Promise(function (res) {
-        function finish(gltf) {
-          modelsLoadedCount++;
-          if (onProgress) onProgress(modelsLoadedCount, totalCount);
-          if (gltf && gltf.scene) {
-            protectTemplateObj(gltf.scene);
-            MAY.RIGGED[rf.key] = { scene: gltf.scene, animations: gltf.animations || [] };
-          }
-          res(gltf);
-        }
-        try {
-          loader.load(rf.url, function (g) { finish(g); }, undefined, function () { finish(null); });
-        } catch (e) { finish(null); }
-      });
-    }));
-    Promise.all([staticProm, riggedProm]).then(function (all) {
-      try { buildTemplates(all[0]); } catch (e) { if (window.console) console.error("buildTemplates err", e); }
+      modelLoads.set(name, request);
+    }
+    return modelLoads.get(name);
+  }
+
+  MAY.loadWorldModels = function (id) {
+    var names = MayPackages.models.common.concat(MayPackages.models[id]);
+    return Promise.all(names.map(loadModel)).then(function () {
       MAY.modelsReady = true;
-      if (MAY.player && MAY.player.attachRiggedMay && MAY.RIGGED.may) {
-        try { MAY.player.attachRiggedMay(); } catch (e) { if (window.console) console.error("attachRiggedMay err", e); }
-      }
-      if (onDone) onDone();
+      if (MAY.RIGGED.may) MAY.player.attachRiggedMay();
     });
   };
 
@@ -917,6 +894,8 @@
       var ch = worldRoot.children[0];
       worldRoot.remove(ch);
       ch.traverse(function (o) {
+        // Cloned rigs own their skeletons, including the GPU bone texture.
+        if (o.userData.ownsSkeleton) o.skeleton.dispose();
         if (o.isLight && o.shadow && o.shadow.map) {
           try { o.shadow.map.dispose(); o.shadow.map = null; } catch (e) {}
         }
@@ -955,6 +934,7 @@
   }
   MAY.applyQuality = function (q) {
     MAY.quality = q;
+    diveLight.castShadow = MAY.currentLevelId === "level4" && q === "high";
     document.querySelectorAll(".qbtn").forEach(function (b) { b.classList.toggle("sel", b.dataset.q === q); });
     if (q === "low") { renderer.setPixelRatio(1); sun.castShadow = false; setShadowSize(1024); }
     else if (q === "mid") { renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.2)); sun.castShadow = true; setShadowSize(1024); }

@@ -8,6 +8,17 @@ Phiên bản web 3D (PWA chơi offline hoàn toàn, sẵn sàng chạy trên Git
 - **Vật lý cầu & giải đố thật 100%**: Đi bộ vững trên Cầu gỗ Đảo Mây, Cầu vòm Rừng Nấm, Cầu đá & Đấu trường tròn Hang Pha Lê; 3 khe suối Chương 5 khoét sâu thật vào địa hình tuyết để phép `❄️` đóng băng thành Cầu Băng trượt qua; sửa trùng NPC ở cả 6 chương và tối ưu hiệu năng FPS (`PlanarReflector` xen kẽ khung hình trên mức `mid`).
 
 ## Cốt truyện & 6 Chương Nhiệm Vụ Đa Dạng (Không lặp lại!)
+
+Nhặt vật phẩm là nhánh khám phá tùy chọn: mỗi vật phẩm hồi một tim nếu Mây bị thương; tìm 5 vật phẩm ở chương 2–6 nhận sớm trang bị của vùng. Ở chương 1, kính lặn có sẵn giúp bơi nhanh. Ngọc được nhận sau khi hạ trùm, tại NPC hoặc bệ Ngọc; chỉ sưu tầm đủ không thay thế việc vận dụng phép. Huy hiệu tốc độ dành cho cuộc đua.
+
+| Chương | Học và tự vận dụng | Điều kiện Ngọc | Công dụng vật phẩm / thưởng tùy chọn | Khi thử sai |
+| --- | --- | --- | --- | --- |
+| 1 – Biển | Học Sóng cứu Bubi, tự phá mây mực và đẩy ngọc trai về trùm | Hạ Bạch Tuộc | Sao biển hồi tim; tìm rương, kỷ vật và bảo vật ẩn | Chờ trùm nhả ngọc trai rồi dùng Sóng đẩy ngược |
+| 2 – Rừng | Rửa bùn, học Nở Hoa và chọn cây chết để hồi sinh | Hạ Vua Nấm | Nấm sáng hồi tim; 5 nấm mở giày nhảy; khám phá rương và bảo vật | Tiến lại gần cây chết rồi chọn Nở Hoa |
+| 3 – Sa mạc | Hồi sinh ốc đảo, dùng Nắng kích hoạt các gương | Hạ Bọ Cạp | Đá mặt trời hồi tim; 5 đá mở khăn gió; khám phá rương và bảo vật | Chọn Nắng và hướng tới gương chưa sáng |
+| 4 – Pha lê | Thắp đuốc, dùng Cộng Hưởng phá tường và chơi Đô–Mi–Son | Hạ Golem | Tinh thể hồi tim; 5 tinh thể mở đèn pha; khám phá rương và bảo vật | Nghe lại thứ tự Đô–Mi–Son và thử từ đầu |
+| 5 – Tuyết | Phá băng nứt, dùng Sương Băng xây cầu và đóng cầu tuyết | Hạ Sói Tuyết | Bông tuyết hồi tim; 5 bông mở ván trượt; khám phá rương và bảo vật | Dùng Sương Băng gần khe suối hoặc cầu tuyết |
+| 6 – Mây | Học Lốc Cầu Vồng, tự phá ổ khóa và phối hợp phép đấu trùm | Hạ Vua Mây Bão | Lông vũ hồi tim; 5 lông mở cánh lướt; khám phá rương và bảo vật | Chọn phép theo pha trùm và tránh đòn trước khi phản công |
 **Vua Mây Bão (Bóng Xám)** đã cướp **6 Viên Ngọc Cầu Vồng**, bắt cóc **Bé Gió Lốc Tí Hon** và phủ Màn Sương Xám lên 6 vùng đất. Bé **Mây** xuất phát tại **Đảo Mây** với Cây Gậy Phép còn trống rỗng, trò chuyện với các **NPC Giao Nhiệm Vụ (`!`)**, thức tỉnh lần lượt **6 Kỹ Năng Nguyên Tố thực chiến**, dùng chúng giải đố/biến đổi thế giới và đánh bại **6 Trùm Sương Xám**:
 1. **🌊 Chương 1 — Vịnh San Hô Xanh** *(Giải cứu & Phản đòn)*: Gặp **Cụ Rùa San Hô Cổ** nhận **Phép `1` Sóng Xung Kích (`🌊`)** -> phá lưới đá cứu Cá heo Bubi, thổi tan 3 Đám Mây Mực quanh Tàu Đắm -> đấu **Trùm Bạch Tuộc Mực Khổng Lồ** bằng cách đẩy ngược Ngọc Trai Đen Nổ!
 2. **🌲 Chương 2 — Khu Rừng Nấm Xanh** *(Hồi sinh hệ sinh thái)*: Gặp **Bà Sóc Hạt Dẻ** -> rửa Ụ Bùn Đen bằng `🌊` để thức tỉnh **Phép `2` Nở Hoa Hồi Sinh (`🌿`)** -> **hồi sinh 3 Cây Cổ Thụ Chết Khô** mọc lá xanh, hoa & nấm lò xo -> phối hợp `🌊`+`🌿` đánh bại **Vua Nấm Khô Héo** hồi sinh Cây Cổ Thụ Mẹ!
