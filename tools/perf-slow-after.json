@@ -1,0 +1,1107 @@
+[
+  {
+    "run": 1,
+    "readyMs": 38984.99999998603,
+    "resources": [
+      {
+        "name": "http://127.0.0.1:52463/style.css",
+        "transfer": 31367,
+        "encoded": 31067
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/img/outfit-preview-vayhong.webp",
+        "transfer": 8230,
+        "encoded": 7930
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/img/hero.jpg",
+        "transfer": 86780,
+        "encoded": 86480
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/img/outfit-preview-haibim.webp",
+        "transfer": 8686,
+        "encoded": 8386
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/img/outfit-preview-muvang.webp",
+        "transfer": 8602,
+        "encoded": 8302
+      },
+      {
+        "name": "http://127.0.0.1:52463/three.min.js",
+        "transfer": 648477,
+        "encoded": 648177
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/packages.js",
+        "transfer": 1461,
+        "encoded": 1161
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/audio.js",
+        "transfer": 40231,
+        "encoded": 39931
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/data.js",
+        "transfer": 58851,
+        "encoded": 58551
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/core.js",
+        "transfer": 43507,
+        "encoded": 43207
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/pbr.js",
+        "transfer": 101243,
+        "encoded": 100943
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/outfit-color.js",
+        "transfer": 2006,
+        "encoded": 1706
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/vfx.js",
+        "transfer": 38449,
+        "encoded": 38149
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/player.js",
+        "transfer": 65866,
+        "encoded": 65566
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/systems.js",
+        "transfer": 113924,
+        "encoded": 113624
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/story.js",
+        "transfer": 81206,
+        "encoded": 80906
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/cutscene.js",
+        "transfer": 16613,
+        "encoded": 16313
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/levels/hub.js",
+        "transfer": 28902,
+        "encoded": 28602
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/levels/level1_ocean.js",
+        "transfer": 40651,
+        "encoded": 40351
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/levels/level2_forest.js",
+        "transfer": 33620,
+        "encoded": 33320
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/levels/level3_desert.js",
+        "transfer": 26785,
+        "encoded": 26485
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/levels/level4_crystal.js",
+        "transfer": 37536,
+        "encoded": 37236
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/levels/level5_snow.js",
+        "transfer": 35945,
+        "encoded": 35645
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/levels/level6_clouds.js",
+        "transfer": 37029,
+        "encoded": 36729
+      },
+      {
+        "name": "http://127.0.0.1:52463/game.js",
+        "transfer": 18270,
+        "encoded": 17970
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/img/hero.jpg",
+        "transfer": 0,
+        "encoded": 86480
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/img/tex-sand.jpg",
+        "transfer": 208607,
+        "encoded": 208307
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/img/tex-rock.jpg",
+        "transfer": 371323,
+        "encoded": 371023
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/img/tex-wood.jpg",
+        "transfer": 269826,
+        "encoded": 269526
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/img/tex-caustics.jpg",
+        "transfer": 52637,
+        "encoded": 52337
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/img/tex-pano.jpg",
+        "transfer": 326663,
+        "encoded": 326363
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/img/tex-fan.jpg",
+        "transfer": 250060,
+        "encoded": 249760
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/img/tex-fanalpha.jpg",
+        "transfer": 136511,
+        "encoded": 136211
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/models/may_rigged.glb",
+        "transfer": 717036,
+        "encoded": 716736
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/models/chest.glb",
+        "transfer": 123612,
+        "encoded": 123312
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/models/companion_milo.glb",
+        "transfer": 215180,
+        "encoded": 214880
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/models/npc_tortoise_elder.glb",
+        "transfer": 102892,
+        "encoded": 102592
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/models/hero_lighthouse.glb",
+        "transfer": 233120,
+        "encoded": 232820
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/models/cc0_boat.glb",
+        "transfer": 74900,
+        "encoded": 74600
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/models/cc0_cabin.glb",
+        "transfer": 622500,
+        "encoded": 622200
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/models/cc0_crab.glb",
+        "transfer": 143304,
+        "encoded": 143004
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/models/cc0_alpaca.glb",
+        "transfer": 373472,
+        "encoded": 373172
+      },
+      {
+        "name": "http://127.0.0.1:52463/favicon.ico",
+        "transfer": 22776,
+        "encoded": 22476
+      }
+    ]
+  },
+  {
+    "run": 2,
+    "readyMs": 31921.99999996228,
+    "resources": [
+      {
+        "name": "http://127.0.0.1:52463/style.css",
+        "transfer": 31367,
+        "encoded": 31067
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/img/outfit-preview-vayhong.webp",
+        "transfer": 8230,
+        "encoded": 7930
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/img/hero.jpg",
+        "transfer": 86780,
+        "encoded": 86480
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/img/outfit-preview-haibim.webp",
+        "transfer": 8686,
+        "encoded": 8386
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/img/outfit-preview-muvang.webp",
+        "transfer": 8602,
+        "encoded": 8302
+      },
+      {
+        "name": "http://127.0.0.1:52463/three.min.js",
+        "transfer": 648477,
+        "encoded": 648177
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/data.js",
+        "transfer": 58851,
+        "encoded": 58551
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/audio.js",
+        "transfer": 40231,
+        "encoded": 39931
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/packages.js",
+        "transfer": 1461,
+        "encoded": 1161
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/core.js",
+        "transfer": 43507,
+        "encoded": 43207
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/pbr.js",
+        "transfer": 101243,
+        "encoded": 100943
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/vfx.js",
+        "transfer": 38449,
+        "encoded": 38149
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/outfit-color.js",
+        "transfer": 2006,
+        "encoded": 1706
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/player.js",
+        "transfer": 65866,
+        "encoded": 65566
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/systems.js",
+        "transfer": 113924,
+        "encoded": 113624
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/story.js",
+        "transfer": 81206,
+        "encoded": 80906
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/cutscene.js",
+        "transfer": 16613,
+        "encoded": 16313
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/levels/hub.js",
+        "transfer": 28902,
+        "encoded": 28602
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/levels/level1_ocean.js",
+        "transfer": 40651,
+        "encoded": 40351
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/levels/level2_forest.js",
+        "transfer": 33620,
+        "encoded": 33320
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/levels/level3_desert.js",
+        "transfer": 26785,
+        "encoded": 26485
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/levels/level4_crystal.js",
+        "transfer": 37536,
+        "encoded": 37236
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/levels/level5_snow.js",
+        "transfer": 35945,
+        "encoded": 35645
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/levels/level6_clouds.js",
+        "transfer": 37029,
+        "encoded": 36729
+      },
+      {
+        "name": "http://127.0.0.1:52463/game.js",
+        "transfer": 18270,
+        "encoded": 17970
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/img/hero.jpg",
+        "transfer": 0,
+        "encoded": 86480
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/img/tex-sand.jpg",
+        "transfer": 208607,
+        "encoded": 208307
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/img/tex-wood.jpg",
+        "transfer": 269826,
+        "encoded": 269526
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/img/tex-rock.jpg",
+        "transfer": 371323,
+        "encoded": 371023
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/img/tex-caustics.jpg",
+        "transfer": 52637,
+        "encoded": 52337
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/img/tex-pano.jpg",
+        "transfer": 326663,
+        "encoded": 326363
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/img/tex-fan.jpg",
+        "transfer": 250060,
+        "encoded": 249760
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/img/tex-fanalpha.jpg",
+        "transfer": 136511,
+        "encoded": 136211
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/models/may_rigged.glb",
+        "transfer": 717036,
+        "encoded": 716736
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/models/chest.glb",
+        "transfer": 123612,
+        "encoded": 123312
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/models/companion_milo.glb",
+        "transfer": 215180,
+        "encoded": 214880
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/models/npc_tortoise_elder.glb",
+        "transfer": 102892,
+        "encoded": 102592
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/models/hero_lighthouse.glb",
+        "transfer": 233120,
+        "encoded": 232820
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/models/cc0_boat.glb",
+        "transfer": 74900,
+        "encoded": 74600
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/models/cc0_cabin.glb",
+        "transfer": 622500,
+        "encoded": 622200
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/models/cc0_crab.glb",
+        "transfer": 143304,
+        "encoded": 143004
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/models/cc0_alpaca.glb",
+        "transfer": 373472,
+        "encoded": 373172
+      },
+      {
+        "name": "http://127.0.0.1:52463/favicon.ico",
+        "transfer": 22776,
+        "encoded": 22476
+      }
+    ]
+  },
+  {
+    "run": 3,
+    "readyMs": 31046.99999996228,
+    "resources": [
+      {
+        "name": "http://127.0.0.1:52463/style.css",
+        "transfer": 31367,
+        "encoded": 31067
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/img/outfit-preview-vayhong.webp",
+        "transfer": 8230,
+        "encoded": 7930
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/img/hero.jpg",
+        "transfer": 86780,
+        "encoded": 86480
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/img/outfit-preview-muvang.webp",
+        "transfer": 8602,
+        "encoded": 8302
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/img/outfit-preview-haibim.webp",
+        "transfer": 8686,
+        "encoded": 8386
+      },
+      {
+        "name": "http://127.0.0.1:52463/three.min.js",
+        "transfer": 648477,
+        "encoded": 648177
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/data.js",
+        "transfer": 58851,
+        "encoded": 58551
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/audio.js",
+        "transfer": 40231,
+        "encoded": 39931
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/packages.js",
+        "transfer": 1461,
+        "encoded": 1161
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/core.js",
+        "transfer": 43507,
+        "encoded": 43207
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/pbr.js",
+        "transfer": 101243,
+        "encoded": 100943
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/vfx.js",
+        "transfer": 38449,
+        "encoded": 38149
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/outfit-color.js",
+        "transfer": 2006,
+        "encoded": 1706
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/player.js",
+        "transfer": 65866,
+        "encoded": 65566
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/story.js",
+        "transfer": 81206,
+        "encoded": 80906
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/systems.js",
+        "transfer": 113924,
+        "encoded": 113624
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/cutscene.js",
+        "transfer": 16613,
+        "encoded": 16313
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/levels/hub.js",
+        "transfer": 28902,
+        "encoded": 28602
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/levels/level1_ocean.js",
+        "transfer": 40651,
+        "encoded": 40351
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/levels/level2_forest.js",
+        "transfer": 33620,
+        "encoded": 33320
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/levels/level3_desert.js",
+        "transfer": 26785,
+        "encoded": 26485
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/levels/level4_crystal.js",
+        "transfer": 37536,
+        "encoded": 37236
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/levels/level5_snow.js",
+        "transfer": 35945,
+        "encoded": 35645
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/levels/level6_clouds.js",
+        "transfer": 37029,
+        "encoded": 36729
+      },
+      {
+        "name": "http://127.0.0.1:52463/game.js",
+        "transfer": 18270,
+        "encoded": 17970
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/img/hero.jpg",
+        "transfer": 0,
+        "encoded": 86480
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/img/tex-sand.jpg",
+        "transfer": 208607,
+        "encoded": 208307
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/img/tex-rock.jpg",
+        "transfer": 371323,
+        "encoded": 371023
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/img/tex-wood.jpg",
+        "transfer": 269826,
+        "encoded": 269526
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/img/tex-caustics.jpg",
+        "transfer": 52637,
+        "encoded": 52337
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/img/tex-pano.jpg",
+        "transfer": 326663,
+        "encoded": 326363
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/img/tex-fan.jpg",
+        "transfer": 250060,
+        "encoded": 249760
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/img/tex-fanalpha.jpg",
+        "transfer": 136511,
+        "encoded": 136211
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/models/may_rigged.glb",
+        "transfer": 717036,
+        "encoded": 716736
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/models/chest.glb",
+        "transfer": 123612,
+        "encoded": 123312
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/models/companion_milo.glb",
+        "transfer": 215180,
+        "encoded": 214880
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/models/npc_tortoise_elder.glb",
+        "transfer": 102892,
+        "encoded": 102592
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/models/hero_lighthouse.glb",
+        "transfer": 233120,
+        "encoded": 232820
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/models/cc0_boat.glb",
+        "transfer": 74900,
+        "encoded": 74600
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/models/cc0_cabin.glb",
+        "transfer": 622500,
+        "encoded": 622200
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/models/cc0_crab.glb",
+        "transfer": 143304,
+        "encoded": 143004
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/models/cc0_alpaca.glb",
+        "transfer": 373472,
+        "encoded": 373172
+      },
+      {
+        "name": "http://127.0.0.1:52463/favicon.ico",
+        "transfer": 22776,
+        "encoded": 22476
+      }
+    ]
+  },
+  {
+    "run": 4,
+    "readyMs": 31172.00000002049,
+    "resources": [
+      {
+        "name": "http://127.0.0.1:52463/style.css",
+        "transfer": 31367,
+        "encoded": 31067
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/img/outfit-preview-vayhong.webp",
+        "transfer": 8230,
+        "encoded": 7930
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/img/hero.jpg",
+        "transfer": 86780,
+        "encoded": 86480
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/img/outfit-preview-haibim.webp",
+        "transfer": 8686,
+        "encoded": 8386
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/img/outfit-preview-muvang.webp",
+        "transfer": 8602,
+        "encoded": 8302
+      },
+      {
+        "name": "http://127.0.0.1:52463/three.min.js",
+        "transfer": 648477,
+        "encoded": 648177
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/audio.js",
+        "transfer": 40231,
+        "encoded": 39931
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/data.js",
+        "transfer": 58851,
+        "encoded": 58551
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/packages.js",
+        "transfer": 1461,
+        "encoded": 1161
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/core.js",
+        "transfer": 43507,
+        "encoded": 43207
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/pbr.js",
+        "transfer": 101243,
+        "encoded": 100943
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/vfx.js",
+        "transfer": 38449,
+        "encoded": 38149
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/outfit-color.js",
+        "transfer": 2006,
+        "encoded": 1706
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/player.js",
+        "transfer": 65866,
+        "encoded": 65566
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/story.js",
+        "transfer": 81206,
+        "encoded": 80906
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/systems.js",
+        "transfer": 113924,
+        "encoded": 113624
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/cutscene.js",
+        "transfer": 16613,
+        "encoded": 16313
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/levels/hub.js",
+        "transfer": 28902,
+        "encoded": 28602
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/levels/level1_ocean.js",
+        "transfer": 40651,
+        "encoded": 40351
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/levels/level2_forest.js",
+        "transfer": 33620,
+        "encoded": 33320
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/levels/level3_desert.js",
+        "transfer": 26785,
+        "encoded": 26485
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/levels/level4_crystal.js",
+        "transfer": 37536,
+        "encoded": 37236
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/levels/level5_snow.js",
+        "transfer": 35945,
+        "encoded": 35645
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/levels/level6_clouds.js",
+        "transfer": 37029,
+        "encoded": 36729
+      },
+      {
+        "name": "http://127.0.0.1:52463/game.js",
+        "transfer": 18270,
+        "encoded": 17970
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/img/hero.jpg",
+        "transfer": 0,
+        "encoded": 86480
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/img/tex-sand.jpg",
+        "transfer": 208607,
+        "encoded": 208307
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/img/tex-rock.jpg",
+        "transfer": 371323,
+        "encoded": 371023
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/img/tex-wood.jpg",
+        "transfer": 269826,
+        "encoded": 269526
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/img/tex-caustics.jpg",
+        "transfer": 52637,
+        "encoded": 52337
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/img/tex-pano.jpg",
+        "transfer": 326663,
+        "encoded": 326363
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/img/tex-fan.jpg",
+        "transfer": 250060,
+        "encoded": 249760
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/img/tex-fanalpha.jpg",
+        "transfer": 136511,
+        "encoded": 136211
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/models/may_rigged.glb",
+        "transfer": 717036,
+        "encoded": 716736
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/models/chest.glb",
+        "transfer": 123612,
+        "encoded": 123312
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/models/companion_milo.glb",
+        "transfer": 215180,
+        "encoded": 214880
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/models/npc_tortoise_elder.glb",
+        "transfer": 102892,
+        "encoded": 102592
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/models/hero_lighthouse.glb",
+        "transfer": 233120,
+        "encoded": 232820
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/models/cc0_boat.glb",
+        "transfer": 74900,
+        "encoded": 74600
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/models/cc0_cabin.glb",
+        "transfer": 622500,
+        "encoded": 622200
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/models/cc0_crab.glb",
+        "transfer": 143304,
+        "encoded": 143004
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/models/cc0_alpaca.glb",
+        "transfer": 373472,
+        "encoded": 373172
+      },
+      {
+        "name": "http://127.0.0.1:52463/favicon.ico",
+        "transfer": 22776,
+        "encoded": 22476
+      }
+    ]
+  },
+  {
+    "run": 5,
+    "readyMs": 31156.00000001723,
+    "resources": [
+      {
+        "name": "http://127.0.0.1:52463/style.css",
+        "transfer": 31367,
+        "encoded": 31067
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/img/outfit-preview-vayhong.webp",
+        "transfer": 8230,
+        "encoded": 7930
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/img/hero.jpg",
+        "transfer": 86780,
+        "encoded": 86480
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/img/outfit-preview-haibim.webp",
+        "transfer": 8686,
+        "encoded": 8386
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/img/outfit-preview-muvang.webp",
+        "transfer": 8602,
+        "encoded": 8302
+      },
+      {
+        "name": "http://127.0.0.1:52463/three.min.js",
+        "transfer": 648477,
+        "encoded": 648177
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/audio.js",
+        "transfer": 40231,
+        "encoded": 39931
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/data.js",
+        "transfer": 58851,
+        "encoded": 58551
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/packages.js",
+        "transfer": 1461,
+        "encoded": 1161
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/core.js",
+        "transfer": 43507,
+        "encoded": 43207
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/pbr.js",
+        "transfer": 101243,
+        "encoded": 100943
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/vfx.js",
+        "transfer": 38449,
+        "encoded": 38149
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/outfit-color.js",
+        "transfer": 2006,
+        "encoded": 1706
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/player.js",
+        "transfer": 65866,
+        "encoded": 65566
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/systems.js",
+        "transfer": 113924,
+        "encoded": 113624
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/story.js",
+        "transfer": 81206,
+        "encoded": 80906
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/cutscene.js",
+        "transfer": 16613,
+        "encoded": 16313
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/levels/hub.js",
+        "transfer": 28902,
+        "encoded": 28602
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/levels/level1_ocean.js",
+        "transfer": 40651,
+        "encoded": 40351
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/levels/level2_forest.js",
+        "transfer": 33620,
+        "encoded": 33320
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/levels/level3_desert.js",
+        "transfer": 26785,
+        "encoded": 26485
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/levels/level4_crystal.js",
+        "transfer": 37536,
+        "encoded": 37236
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/levels/level5_snow.js",
+        "transfer": 35945,
+        "encoded": 35645
+      },
+      {
+        "name": "http://127.0.0.1:52463/js/levels/level6_clouds.js",
+        "transfer": 37029,
+        "encoded": 36729
+      },
+      {
+        "name": "http://127.0.0.1:52463/game.js",
+        "transfer": 18270,
+        "encoded": 17970
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/img/hero.jpg",
+        "transfer": 0,
+        "encoded": 86480
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/img/tex-sand.jpg",
+        "transfer": 208607,
+        "encoded": 208307
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/img/tex-rock.jpg",
+        "transfer": 371323,
+        "encoded": 371023
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/img/tex-wood.jpg",
+        "transfer": 269826,
+        "encoded": 269526
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/img/tex-caustics.jpg",
+        "transfer": 52637,
+        "encoded": 52337
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/img/tex-pano.jpg",
+        "transfer": 326663,
+        "encoded": 326363
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/img/tex-fan.jpg",
+        "transfer": 250060,
+        "encoded": 249760
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/img/tex-fanalpha.jpg",
+        "transfer": 136511,
+        "encoded": 136211
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/models/may_rigged.glb",
+        "transfer": 717036,
+        "encoded": 716736
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/models/chest.glb",
+        "transfer": 123612,
+        "encoded": 123312
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/models/companion_milo.glb",
+        "transfer": 215180,
+        "encoded": 214880
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/models/npc_tortoise_elder.glb",
+        "transfer": 102892,
+        "encoded": 102592
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/models/hero_lighthouse.glb",
+        "transfer": 233120,
+        "encoded": 232820
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/models/cc0_boat.glb",
+        "transfer": 74900,
+        "encoded": 74600
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/models/cc0_cabin.glb",
+        "transfer": 622500,
+        "encoded": 622200
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/models/cc0_crab.glb",
+        "transfer": 143304,
+        "encoded": 143004
+      },
+      {
+        "name": "http://127.0.0.1:52463/assets/models/cc0_alpaca.glb",
+        "transfer": 373472,
+        "encoded": 373172
+      },
+      {
+        "name": "http://127.0.0.1:52463/favicon.ico",
+        "transfer": 22776,
+        "encoded": 22476
+      }
+    ]
+  }
+]

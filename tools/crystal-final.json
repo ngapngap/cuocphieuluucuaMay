@@ -1,0 +1,46 @@
+[
+  {
+    "level": "level4",
+    "variant": "normal",
+    "gpu": "ANGLE (Intel, Intel(R) UHD Graphics 630 (0x00009BC5) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "passes": {
+      "reflection": 1736.300000011921,
+      "refraction": 0
+    },
+    "glCalls": {
+      "texSubImage2D": 1.1000001430511475,
+      "texImage2D": 0,
+      "compileShader": 0.10000002384185791,
+      "linkProgram": 0,
+      "getProgramParameter": 4.299999833106995,
+      "getUniformLocation": 0.699999988079071
+    },
+    "gaps": [
+      40,
+      26.700000000000728,
+      2186.5999999999985
+    ],
+    "tasks": [
+      {
+        "start": 11659.900000035763,
+        "duration": 228
+      },
+      {
+        "start": 11888.199999988079,
+        "duration": 1961
+      }
+    ],
+    "build": 225.60000002384186,
+    "draw": 1873.300000011921,
+    "toDrawEnd": 2228.5,
+    "maxGap": 2186.5999999999985,
+    "memory": {
+      "geometries": 316,
+      "textures": 102
+    },
+    "programs": 52,
+    "colliders": 38,
+    "errors": 0,
+    "webglError": 0
+  }
+]

@@ -88,6 +88,7 @@ def main():
         args.output.write_text(json.dumps(result, indent=2), encoding="utf8")
         print(result)
         browser.close()
+    server.shutdown()
     server.server_close()
 
 

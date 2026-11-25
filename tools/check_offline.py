@@ -39,11 +39,27 @@ def main():
         server.server_close()
         context.set_offline(True)
         page.reload(wait_until="domcontentloaded")
-        audio = page.evaluate("""async () => {
-          const r = await fetch('assets/voice/hub.mp3', {headers:{Range:'bytes=0-127'}});
-          return [r.status, (await r.arrayBuffer()).byteLength];
+        audio_ok = page.evaluate("""async () => {
+          const url = 'assets/voice/hub.mp3';
+          const full = new Uint8Array(await (await fetch(url)).arrayBuffer());
+          const size = full.length;
+          for (const [range, start, end] of [['0-127',0,127],['-4',size-4,size-1],[size-6+'-',size-6,size-1]]) {
+            const r = await fetch(url, {headers:{Range:'bytes='+range}});
+            const bytes = new Uint8Array(await r.arrayBuffer());
+            if (r.status !== 206 || r.headers.get('Content-Range') !== 'bytes '+start+'-'+end+'/'+size ||
+                bytes.length !== end-start+1 || !bytes.every((value,i) => value === full[start+i])) return false;
+          }
+          const outside = await fetch(url, {headers:{Range:'bytes='+size+'-'}});
+          return outside.status === 416 && outside.headers.get('Content-Range') === 'bytes */'+size;
         }""")
-        assert audio == [206, 128], audio
+        assert audio_ok
+        previews = page.evaluate("""async () => Promise.all(Object.values(MAY.OUTFITS).map(async outfit => {
+          const image = new Image();
+          image.src = outfit.img;
+          await image.decode();
+          return image.naturalWidth;
+        }))""")
+        assert len(previews) == 6 and min(previews) > 0
         page.locator("#btn-start-free").click()
         page.locator("#btn-play").click()
         assert not page.evaluate("MAY.save.voiceOn")
@@ -52,6 +68,7 @@ def main():
             page.locator("#btn-map").dispatch_event("click")
             page.locator("#map-grid .map-card").nth(idx).dispatch_event("click")
             page.wait_for_function("id => MAY.currentLevelId === id && MAY.currentCtx", arg=f"level{idx}")
+            page.evaluate("() => new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done)))")
             assert page.evaluate("MAY.currentCtx.colliders.length > 0 && MAY.ErrorBoundary.history.length === 0")
         page.reload(wait_until="domcontentloaded")
         page.locator("#btn-play").click()

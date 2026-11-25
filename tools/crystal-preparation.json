@@ -1,0 +1,90 @@
+[
+  {
+    "level": "level4",
+    "variant": "warmTextures",
+    "gpu": "ANGLE (Intel, Intel(R) UHD Graphics 630 (0x00009BC5) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "passes": {
+      "reflection": 7691.800000011921,
+      "refraction": 7665.5
+    },
+    "glCalls": {
+      "texSubImage2D": 92.39999997615814,
+      "texImage2D": 0,
+      "compileShader": 0.40000009536743164,
+      "linkProgram": 0.19999998807907104,
+      "getProgramParameter": 16.899999976158142,
+      "getUniformLocation": 3.9000000953674316
+    },
+    "gaps": [
+      279.90000000000146,
+      15506.199999999997
+    ],
+    "tasks": [
+      {
+        "start": 19561.19999998808,
+        "duration": 280
+      },
+      {
+        "start": 19843,
+        "duration": 15506
+      }
+    ],
+    "build": 157.5999999642372,
+    "preparation": 97.5,
+    "draw": 15501.600000023842,
+    "toDrawEnd": 15772.399999976158,
+    "maxGap": 15506.199999999997,
+    "memory": {
+      "geometries": 356,
+      "textures": 125
+    },
+    "programs": 118,
+    "colliders": 38,
+    "errors": 0,
+    "webglError": 0
+  },
+  {
+    "level": "level4",
+    "variant": "warmMaterials",
+    "gpu": "ANGLE (Intel, Intel(R) UHD Graphics 630 (0x00009BC5) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "passes": {
+      "reflection": 6236.800000011921,
+      "refraction": 9.199999988079071
+    },
+    "glCalls": {
+      "texSubImage2D": 0.6999999284744263,
+      "texImage2D": 0.09999996423721313,
+      "compileShader": 0.3999999761581421,
+      "linkProgram": 0.19999998807907104,
+      "getProgramParameter": 16.5,
+      "getUniformLocation": 4.199999928474426
+    },
+    "gaps": [
+      7559.799999999999,
+      6719.700000000001
+    ],
+    "tasks": [
+      {
+        "start": 21678.100000023842,
+        "duration": 7559
+      },
+      {
+        "start": 29321,
+        "duration": 6627
+      }
+    ],
+    "build": 180.80000001192093,
+    "preparation": 7356.300000011921,
+    "draw": 6623.400000035763,
+    "toDrawEnd": 14255.300000011921,
+    "maxGap": 7559.799999999999,
+    "memory": {
+      "geometries": 356,
+      "textures": 109
+    },
+    "programs": 123,
+    "colliders": 38,
+    "errors": 0,
+    "webglError": 0
+  }
+]

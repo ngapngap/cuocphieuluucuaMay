@@ -17,6 +17,13 @@ class Handler(SimpleHTTPRequestHandler):
     def log_message(self, *args):
         pass
 
+    def handle(self):
+        try:
+            super().handle()
+        except (ConnectionAbortedError, ConnectionResetError, BrokenPipeError):
+            # Closing a test browser cancels in-flight media and cache requests.
+            pass
+
 
 MEASURE = """async ([level, variant]) => {
   const gl = MAY.renderer.getContext();
@@ -159,6 +166,7 @@ def main():
                     print(variant, level, round(row["draw"]), round(row["maxGap"]), row["memory"], flush=True)
             finally:
                 browser.close()
+    server.shutdown()
     server.server_close()
 
 
