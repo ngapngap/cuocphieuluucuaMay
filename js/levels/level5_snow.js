@@ -354,7 +354,23 @@
     }
 
     /* TRÙM CHƯƠNG 5: 🦊 Sói Tuyết Băng Giá (Frostfang Alpha — Đặt bẫy Cột Băng ❄️ cho Sói trượt đâm choáng -> ☀️ thanh tẩy!) */
-    var wolfBossMesh = MAY.makeMonsterMesh("icewolf", 2.35);
+    var wolfBossMesh = MAY.makeRiggedBoss("wolf", 2.8, "icewolf", 2.35);
+    if (wolfBossMesh.userData.mixer) {
+      // A slightly broader shoulder silhouette reads from the frontal camera.
+      wolfBossMesh.children[0].scale.x *= 1.3;
+      wolfBossMesh.traverse(function (o) {
+        if (o.isMesh && o.material) {
+          o.material = o.material.clone();
+          if (o.material.color) o.material.color.setHex(0xb9ddf2);
+        }
+      });
+      var wolfIceMat = new THREE.MeshStandardMaterial({ color: 0x7edcf5, emissive: 0x2694b5, emissiveIntensity: 0.35, roughness: 0.3 });
+      for (var wi = 0; wi < 4; wi++) {
+        var wolfShard = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.55 + (wi % 2) * 0.16, 5), wolfIceMat);
+        wolfShard.position.set(0, 2.35 - wi * 0.06, -0.45 + wi * 0.45);
+        wolfShard.rotation.x = 0.26; wolfBossMesh.add(wolfShard);
+      }
+    }
     var activeIceTrap = null;
     function clearBossIceTrap() {
       if (ctx.removeCollider) ctx.removeCollider("boss_ice_pillar");
@@ -390,6 +406,7 @@
         bs.atkT -= dt;
         if (bs.atkT <= 0 && bs.pos.distanceTo(MAY.player.pos) < 34) {
           bs.atkT = 4.0;
+          if (bs.mesh.userData.playClip) bs.mesh.userData.playClip("attack", false);
           var targetP = MAY.player.pos.clone();
           targetP.y = 1.1;
           MAY.VFX.spawnTelegraph(targetP, 3.6, 1.1, 0xff3b5c);
@@ -609,19 +626,21 @@
         devices: [
           { id: "pup1", name: "Sói non sau vách đá", x: -17, z: -10, form: "wolf", color: 0xe5f4ff },
           { id: "pup2", name: "Sói non bên suối", x: 16, z: -23, form: "wolf", color: 0xd9ebf7 },
+          { id: "thaw", name: "Tuyết phủ chốt cầu", x: 12, z: -7, form: "crystal", color: 0xffca75, spell: "solar" },
           { id: "bridge", name: "Nhịp cầu băng bị nứt", x: 0, z: -20, form: "bridge", color: 0x7dd3fc, spell: "frost" },
           { id: "home", name: "Mái trú ấm", x: 0, z: -32, form: "shelter", color: 0xffd98a }
         ],
-        hint: function (v) { return !v.pup1 ? "Tìm sói non phía trái, sau vách đá." : !v.pup2 ? "Tìm sói non thứ hai phía phải bên suối." : !v.bridge ? "Sửa nhịp cầu phía trước bằng Sương Băng." : "Dẫn cả hai sói non qua cầu tới mái trú phía trước."; },
+        hint: function (v) { return !v.pup1 ? "Tìm sói non phía trái, sau vách đá." : !v.pup2 ? "Tìm sói non thứ hai phía phải bên suối." : v.bridgeTrial && !v.thaw && !v.bridge ? "Dùng Nắng làm tan tuyết phủ chốt cầu bên phải." : !v.bridge ? "Dùng Sương Băng nối nhịp cầu đã sạch tuyết." : "Dẫn cả hai sói non qua cầu tới mái trú phía trước."; },
         action: function (id, v) {
-          if (id === "pup1" || id === "pup2") { v[id] = true; return { text: "Sói non đã tìm thấy Mây và đi theo bạn.", done: false }; }
-          if (id === "bridge") { v.bridge = true; return { text: "Nhịp cầu đã nối: dẫn đàn qua được rồi!", done: false }; }
+          if (id === "pup1" || id === "pup2") { if(!v.pup1 && !v.pup2 && !v.bridge)v.bridgeTrial=true;v[id] = true; return { text: "Sói non đã tìm thấy Mây và đi theo bạn.", done: false }; }
+          if (id === "thaw") { v.thaw=true;return {text:"Nắng làm tan tuyết, lộ chốt cầu để kết băng!",done:false}; }
+          if (id === "bridge") { if(v.bridgeTrial && !v.thaw && !v.bridge)return {text:"Tuyết xốp không giữ được băng. Dùng Nắng làm sạch chốt bên phải trước!",done:false};v.bridge = true; return { text: "Nhịp cầu đã nối: dẫn đàn qua được rồi!", done: false }; }
           if (!v.pup1 || !v.pup2) return { text: "Còn sói non đang đợi. Hãy tìm đủ hai bạn!", done: false };
           if (!v.bridge) return { text: "Cầu còn nứt; hãy sửa cầu cho đàn sói.", done: false };
           v.home = true; return { text: "Sói non cuối cùng đã về mái trú và cất tiếng báo an toàn!", done: true };
         },
         look: function (id, v) { var pup = id === "pup1" || id === "pup2"; return { lit: !!v[id], angle: pup ? Math.PI : 0, hide: !!v.home && pup }; },
-        links: function (v) { return v.bridge ? [["bridge", "home", 0x7dd3fc]] : []; },
+        links: function (v) { var links=[];if(v.thaw)links.push(["thaw","bridge",0xffca75]);if(v.bridge)links.push(["bridge", "home", 0x7dd3fc]);return links; },
         followers: function (v) { return ["pup1", "pup2"].filter(function (id) { return !!v[id] && !v.home; }); }
       },
       makeVista: function (index) {

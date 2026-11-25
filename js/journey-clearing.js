@@ -11,6 +11,7 @@
       camera = new THREE.PerspectiveCamera(54, 1, 0.2, 170);
     scene.background = new THREE.Color(sky);
     scene.fog = new THREE.FogExp2(sky, 0.012);
+    MAY.addJourneyHorizon(scene, ctx.meta.num, state.section, sky);
     scene.add(new THREE.HemisphereLight(0xfff6e7, ground, 0.8));
     var sun = new THREE.DirectionalLight(0xffe5bd, 0.95);
     sun.position.set(-12, 24, 8);
@@ -350,7 +351,7 @@
         return { text: "Bạn đồng hành còn ở phía sau. Hãy đón bạn vào gần." };
       var result = field.action(id, values);
       refresh();
-      if (device.pattern) phrase = { id: id, notes: device.pattern, time: 0, index: 0, lit: false };
+      if (device.pattern) phrase = { id: id, notes: typeof device.pattern === "function" ? device.pattern(values) : device.pattern, time: 0, index: 0, lit: false };
       else if (id === "short" || id === "long")
         MAY.beep(id === "short" ? 523 : 784, id === "short" ? 0.16 : 0.52, "sine", 0.09, { exact: true });
       else MAY.beep(result.done ? 880 : 659, 0.16, "sine", 0.07);

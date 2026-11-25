@@ -123,7 +123,7 @@ CREATURE_FILES = {
     "cc0_clownfish.glb",
     "polyfork_bear.glb", "polyfork_camel.glb", "polyfork_deer.glb", "polyfork_hare.glb",
     "polyfork_octopus.glb", "polyfork_owl.glb", "polyfork_penguin.glb",
-    "polyfork_rabbit.glb", "polyfork_sheep.glb",
+    "polyfork_rabbit.glb", "polyfork_sheep.glb", "polyfork_wolf.glb",
 }
 
 

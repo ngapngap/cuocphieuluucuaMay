@@ -73,6 +73,14 @@ def main():
           return image.naturalWidth;
         }))""")
         assert len(previews) == 6 and min(previews) > 0
+        horizons = page.evaluate("""async () => Promise.all(
+          ['reef', 'forest', 'desert', 'cavern', 'snow', 'clouds'].map(async name => {
+            const image = new Image();
+            image.src = 'assets/img/horizon-' + name + '.webp';
+            await image.decode();
+            return [image.naturalWidth, image.naturalHeight];
+          }))""")
+        assert horizons == [[2048, 256]] * 6, horizons
         page.locator("#btn-start-free").click()
         page.locator("#btn-play").click()
         assert not page.evaluate("MAY.save.voiceOn")

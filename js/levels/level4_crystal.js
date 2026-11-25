@@ -145,6 +145,18 @@
     var archBridge = new THREE.Mesh(new THREE.BoxGeometry(4.7, 0.75, 45), bridgeMat);
     archBridge.position.set(0, 2.08, -8); archBridge.castShadow = true; archBridge.receiveShadow = true;
     ctx.add(archBridge);
+    // Stone ribs and crystal finials frame the lake without narrowing the crossing.
+    var caveFrameMat = new THREE.MeshStandardMaterial({map: MAY.PBR.wetCaveRock.map, color: 0xa69ab8, roughness: 0.82, flatShading: true});
+    var caveRibGeo = new THREE.DodecahedronGeometry(0.5, 0), caveRibDummy = new THREE.Object3D();
+    var caveRibs = new THREE.InstancedMesh(caveRibGeo, caveFrameMat, 12), caveRibN = 0;
+    [-1,1].forEach(function(side) { [6,-22].forEach(function(z, index) {
+      var y=ctx.groundH(side*7.1,z);
+      [[side*7.1,y+4.3,z,1.65,8.6,2.2],[side*7.1,y+8.8,z,2.35,0.7,2.7],[side*8.4,y+1.5,z,2.2,3.0,3.3]].forEach(function(p){caveRibDummy.position.set(p[0],p[1],p[2]);caveRibDummy.scale.set(p[3],p[4],p[5]);caveRibDummy.updateMatrix();caveRibs.setMatrixAt(caveRibN++,caveRibDummy.matrix);});
+    }); }); ctx.add(caveRibs);
+    [6,-22].forEach(function(z) { var arch=new THREE.Mesh(new THREE.TorusGeometry(7.1,0.52,6,24,Math.PI),caveFrameMat);arch.position.set(0,ctx.groundH(0,z)+8.1,z);ctx.add(arch); });
+    var caveJewels = new THREE.InstancedMesh(new THREE.OctahedronGeometry(0.55,0),new THREE.MeshStandardMaterial({color:0x78cdda,emissive:0x78cdda,emissiveIntensity:0.48,roughness:0.4}),4), caveJ=0;
+    [-1,1].forEach(function(side){[6,-22].forEach(function(z){caveRibDummy.position.set(side*7.1,ctx.groundH(side*7.1,z)+9.7,z+1.2);caveRibDummy.scale.set(1,1.6,0.6);caveRibDummy.updateMatrix();caveJewels.setMatrixAt(caveJ++,caveRibDummy.matrix);});});ctx.add(caveJewels);
+
     /* Sàn Đấu Trường Tròn r=8.4m ở giữa hồ (đỡ trên 4 cột đá cắm sâu xuống đáy hồ để vẫn bơi lặn dưới hồ được!) */
     var arenaDeck = new THREE.Mesh(new THREE.CylinderGeometry(8.4, 8.8, 0.75, 28), bridgeMat);
     arenaDeck.position.set(0, 2.08, -8); arenaDeck.castShadow = true; arenaDeck.receiveShadow = true;
@@ -456,6 +468,7 @@
     }
     function startEncore() {
       var rec = encoreRecord();
+      if (ctx.leaveBiomeClue) ctx.leaveBiomeClue();
       if (ctx.raceCh) ctx.raceCh.cancel();
       ctx.crystalEncoreActive = true;
       if (!encoreActive) {
@@ -626,26 +639,30 @@
       clearing: {
         section: 2, name:"Lời đáp bên hồ", brief:"Tìm bờ có câu gọi đúng, rồi đi tới các pha lê gõ hai ngắn, một dài.",
         devices:[
-          {id:"left",name:"Bờ trái ● ● ◆",x:-16,z:-22,form:"bell",color:0x6ee7f3,pattern:[0,0,2]},
-          {id:"right",name:"Bờ phải ● ◆ ●",x:16,z:-22,form:"bell",color:0xa58ac5,pattern:[0,2,0]},
+          {id:"left",name:"Bờ trái · nghe tín hiệu",x:-16,z:-22,form:"bell",color:0x6ee7f3,pattern:function(v){return v.crossSignal && v.note>=1?[0,2,0]:[0,0,2];}},
+          {id:"right",name:"Bờ phải · nghe tín hiệu",x:16,z:-22,form:"bell",color:0xa58ac5,pattern:function(v){return v.crossSignal && v.note>=1?[0,0,2]:[0,2,0];}},
           {id:"short",name:"Nhịp ngắn ●",x:-8,z:-5,form:"crystal",color:0x60d9ed},
           {id:"long",name:"Nhịp dài ◆",x:8,z:-5,form:"crystal",color:0xe78dd0},
           {id:"wind",name:"Tín hiệu Bé Gió",x:0,z:-30,form:"lamp",color:0xffe788}
         ],
-        hint:function(v){return !v.bank?"So sánh hai bờ và chọn câu ● ● ◆.":"Gõ tại pha lê: ● ● ◆ ("+(v.note||0)+"/3).";},
+        hint:function(v){return !v.bank?"So sánh hai bờ và chọn câu ● ● ◆.":v.crossSignal && v.note===1 && !v.shift?"Nguồn gọi đã chuyển sang bờ phải; tới đó nghe lại trước khi đáp tiếp.":"Gõ tại pha lê: ● ● ◆ ("+(v.note||0)+"/3).";},
         action:function(id,v){
-          if(id==="right")return {text:"Bờ này đáp ● ◆ ●, khác câu gọi. Hãy thử bờ kia.",done:false};
-          if(id==="left"){v.bank=true;return {text:"Đúng nguồn ● ● ◆. Tự gõ lời đáp ở hai pha lê.",done:false};}
+          if(id==="right"){
+            if(v.crossSignal && v.note>=1){v.shift=true;return {text:"Bờ phải giờ đáp ● ● ◆! Hãy hoàn thành lời đáp.",done:false};}
+            return {text:"Bờ này đáp ● ◆ ●, khác câu gọi. Hãy thử bờ kia.",done:false};
+          }
+          if(id==="left"){if(v.crossSignal && v.note>=1)return {text:"Nguồn đã chuyển sang bờ phải. Hãy nghe bờ bên kia.",done:false};if(!v.bank)v.crossSignal=true;v.bank=true;return {text:"Đúng nguồn ● ● ◆. Gõ nhịp đầu rồi quan sát hai bờ.",done:false};}
           if(id==="short"||id==="long"){
             if(!v.bank)return {text:"Tìm nguồn gọi đúng trước khi đáp.",done:false};
+            if(v.crossSignal && v.note===1 && !v.shift)return {text:"Ánh gọi đã chuyển bờ; tìm nguồn mới trước khi gõ tiếp.",done:false};
             var notes=["short","short","long"],i=v.note||0;
             if(id!==notes[i])return {text:"Nốt này chưa đúng; giữ những nốt đã gõ và thử lại.",done:false};
-            v.note=i+1;return {text:v.note===3?"Bé Gió nhận lời đáp: chờ tớ!":"Đúng nhịp "+v.note+"/3.",done:v.note===3};
+            v.note=i+1;return {text:v.note===3?"Bé Gió nhận lời đáp: chờ tớ!":v.crossSignal&&v.note===1?"Nhịp đầu đúng. Ánh gọi đã chuyển sang bờ phải!":"Đúng nhịp "+v.note+"/3.",done:v.note===3};
           }
           return {text:"Bé Gió còn chờ người bên lâu đài. Hãy gửi lời đáp.",done:false};
         },
-        look:function(id,v){return {lit:id==="left" || (id==="wind" && (v.note||0)>=3) || (id==="short" && !!v.bank) || (id==="long" && !!v.bank),angle:0};},
-        links:function(v){return v.bank?[["left","short",0x67e8f9],["short","long",0xd8a4ff]]:[["left","wind",0x67e8f9]];}
+        look:function(id,v){return {lit:id===(v.crossSignal&&v.note>=1?"right":"left") || (id==="wind" && (v.note||0)>=3) || (id==="short" && !!v.bank) || (id==="long" && !!v.bank),angle:0};},
+        links:function(v){return v.bank?[[v.crossSignal&&v.note>=1?"right":"left","short",0x67e8f9],["short","long",0xd8a4ff]]:[["left","wind",0x67e8f9]];}
       },
       sections: [
         { name: "Hang vọng", brief: "Cú Mèo gõ mẫu, Mây nhìn và gõ đáp.", landmark: "Chuông cửa hang", length: 590, sky: 0x302644, ground: 0x514359, path: 0x79677e, scenery: "echo", companion: "owl", events: [

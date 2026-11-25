@@ -247,6 +247,65 @@
   }
 
   var animalOvalGeo = MAY.protectGeometry(new THREE.SphereGeometry(1, 12, 8));
+  var butterflyMap, butterflyPanel;
+
+  function butterflyWings(group, tint) {
+    if (!butterflyMap) {
+      butterflyMap = new THREE.TextureLoader().load("assets/img/butterfly-wing.webp");
+      butterflyMap.encoding = THREE.sRGBEncoding;
+      MAY.protectTexture(butterflyMap);
+      butterflyPanel = new THREE.PlaneGeometry(1, 1, 5, 5);
+      var p = butterflyPanel.attributes.position, uv = butterflyPanel.attributes.uv;
+      for (var i = 0; i < p.count; i++) {
+        var span = uv.getX(i), chord = 1 - uv.getY(i);
+        p.setXYZ(i, span * 1.24, 0.18 * span + 0.07 * Math.sin(span * Math.PI),
+          (chord - 0.47) * 1.45 + 0.06 * Math.sin(span * Math.PI));
+      }
+      butterflyPanel.computeVertexNormals();
+      MAY.protectGeometry(butterflyPanel);
+    }
+    var material = stdMat(tint || 0x8de4fe, 0.74, {
+      map: butterflyMap, alphaTest: 0.43, side: THREE.DoubleSide
+    });
+    [-1, 1].forEach(function (side) {
+      var hinge = new THREE.Group(), wing = new THREE.Mesh(butterflyPanel, material);
+      wing.scale.x = side;
+      hinge.add(wing);
+      group.add(hinge);
+      if (side < 0) group.userData.wl = hinge;
+      else group.userData.wr = hinge;
+    });
+  }
+
+  function scallopValve() {
+    var positions = [], shades = [], indices = [];
+    var rim = new THREE.Color(0xad7698), lip = new THREE.Color(0xf5d6bf);
+    var pearlColor = new THREE.Color(0xcab6c4), shade = new THREE.Color();
+    var ribs = 11, slices = ribs * 4, rows = 8;
+    for (var j = 0; j <= rows; j++) {
+      var r = j / rows;
+      for (var i = 0; i <= slices; i++) {
+        var u = i / slices, a = (u - 0.5) * 2.42;
+        var ridge = (1 + Math.cos(u * ribs * Math.PI * 2)) * 0.5;
+        var edge = 1.54 + 0.08 * ridge;
+        positions.push(r * edge * Math.sin(a) * 0.71,
+          0.22 * r * r + 0.09 * r * ridge - 0.13 * Math.sin(r * Math.PI),
+          -r * edge * Math.cos(a));
+        shade.copy(pearlColor).lerp(rim, ridge * 0.37 + r * 0.23).lerp(lip, r > 0.93 ? 0.91 : r * 0.16);
+        shades.push(shade.r, shade.g, shade.b);
+        if (i && j) {
+          var k = j * (slices + 1) + i;
+          indices.push(k - slices - 2, k, k - 1, k - slices - 2, k - slices - 1, k);
+        }
+      }
+    }
+    var geo = new THREE.BufferGeometry();
+    geo.setIndex(indices);
+    geo.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+    geo.setAttribute("color", new THREE.Float32BufferAttribute(shades, 3));
+    geo.computeVertexNormals();
+    return geo;
+  }
   function animalOval(parent, material, x, y, z, width, height, length) {
     var part = new THREE.Mesh(animalOvalGeo, material);
     part.userData.sharedGeo = true;
@@ -394,6 +453,21 @@
     return g;
   }
 
+  // The two painted coats occupy adjacent halves of one atlas. Each animal
+  // owns its UV transform so dressing it cannot recolor another instance.
+  function selectCoat(group, secondHalf) {
+    group.traverse(function (mesh) {
+      var original = mesh.material;
+      if (!mesh.isSkinnedMesh || !original || original.name !== "fauna_coat" || !original.map) return;
+      var material = original.clone();
+      material.map = original.map.clone();
+      material.map.repeat.set(0.5, 1);
+      material.map.offset.x = secondHalf ? 0.5 : 0;
+      material.map.needsUpdate = true;
+      mesh.material = material;
+    });
+  }
+
   var RIGGED_ANIMAL_MAP = {
     rabbit:       { key: "rabbit", scale: 3.6, whiteRabbit: true, defaultClip: "idle" },
     forestrabbit: { key: "rabbit", scale: 3.6, defaultClip: "idle" },
@@ -420,6 +494,7 @@
     if (RIGGED_ANIMAL_MAP[kind]) {
       var rg = buildRiggedAnimal(RIGGED_ANIMAL_MAP[kind].key, RIGGED_ANIMAL_MAP[kind], opts);
       if (rg) {
+        if (kind === "rabbit" || kind === "forestrabbit") selectCoat(rg, kind === "rabbit");
         if (kind === "penguin") {
           var scarfMat = stdMat(0xe34c58, 0.85);
           var scarf = new THREE.Mesh(new THREE.TorusGeometry(0.26, 0.045, 6, 16), scarfMat);
@@ -620,36 +695,20 @@
       var tail = new THREE.Mesh(new THREE.SphereGeometry(0.24, 8, 6), wh); tail.scale.set(0.75, 0.75, 1.7); tail.position.set(0, 0.56, 0.75); g.add(tail);
       addEyes(g, 0.11, 0.77, -0.72, 0.045);
     } else if (kind === "butterfly") {
-      var wm = stdMat(opts.color || 0x4dd0ff, 0.4, { emissive: 0x1a88c8, emissiveIntensity: 0.45, side: THREE.DoubleSide });
-      var bd = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.05, 0.7, 6), stdMat(0x2a2438));
-      bd.rotation.x = Math.PI / 2; g.add(bd);
-      var wl = new THREE.Mesh(new THREE.CircleGeometry(0.65, 12), wm); wl.rotation.x = -Math.PI / 2; wl.position.set(-0.62, 0.05, 0); g.add(wl);
-      var wr = wl.clone(); wr.position.x = 0.62; g.add(wr);
-      g.userData.wl = wl; g.userData.wr = wr;
+      butterflyWings(g, opts.color);
+      var thorax = stdMat(0x39303f, 0.88);
+      animalOval(g, thorax, 0, 0.046, 0.03, 0.062, 0.074, 0.29);
+      animalOval(g, thorax, 0, 0.074, -0.23, 0.078, 0.066, 0.072);
+      [-1, 1].forEach(function (side) {
+        taperedLimb(g, thorax, [side * 0.04, 0.10, -0.26], [side * 0.18, 0.18, -0.43], 0.012, 0.008);
+        animalOval(g, thorax, side * 0.18, 0.18, -0.43, 0.017, 0.015, 0.026);
+      });
     } else if (kind === "panda" || kind === "polarbear") {
       var isPanda = kind === "panda";
       // Prefer the locally cached Polyfork bear; the procedural shape below remains offline fallback.
       var realBear = buildRiggedAnimal("polyfork_bear", { rotY: Math.PI, scale: 1.0 }, opts);
       if (realBear) {
-        realBear.traverse(function (o) {
-          if (!o.isMesh || !o.geometry.attributes.color) return;
-          o.geometry = o.geometry.clone();
-          o.userData.sharedGeo = false;
-          var colors = o.geometry.attributes.color, pos = o.geometry.attributes.position;
-          // The source is unindexed, so coloring each triangle by its center keeps its facets crisp.
-          for (var i = 0; i < colors.count; i += 3) {
-            var x = 0, y = 0, z = 0, old = 0;
-            for (var k = 0; k < 3; k++) { x += pos.getX(i+k); y += pos.getY(i+k); z += pos.getZ(i+k); old += colors.getX(i+k); }
-            x /= 3; y /= 3; z /= 3; old /= 3;
-            var faceDetail = old < 0.025 && z > 0.52;
-            var pandaBlack = isPanda && (y < 0.64 || (z > -0.13 && z < 0.30 && y < 1.18) ||
-              (z > 0.38 && y > 1.17 && Math.abs(x) > 0.12) ||
-              (z > 0.57 && y > 0.92 && y < 1.18 && Math.abs(x) > 0.10));
-            var value = faceDetail ? 0.018 : pandaBlack ? 0.035 : (isPanda ? 0.84 : 0.88);
-            for (var c = 0; c < 3; c++) colors.setXYZ(i+c, value, value * (faceDetail || pandaBlack ? 1.04 : 0.99), value * (isPanda ? 0.96 : 1.0));
-          }
-          colors.needsUpdate = true;
-        });
+        selectCoat(realBear, isPanda);
         return realBear;
       }
       var fur = stdMat(isPanda ? 0xf4f0e6 : 0xeaf4f5, 0.92);
@@ -819,6 +878,17 @@
       var blb = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 6), new THREE.MeshBasicMaterial({ color: 0xffffff }));
       blb.position.set(0, 0.85, -0.42); g.add(blb);
       var nose = new THREE.Mesh(new THREE.SphereGeometry(0.11, 8, 6), stdMat(0xff9eb5)); nose.position.set(0, 0.48, -0.56); g.add(nose);
+      var glove = stdMat(0xa67564, 0.83), claw = stdMat(0xe4c8a0, 0.88);
+      animalOval(g, glove, 0, 0.48, -0.48, 0.20, 0.13, 0.15);
+      animalOval(g, stdMat(0xbb923e, 0.74), 0, 0.755, -0.18, 0.315, 0.035, 0.34);
+      [-1, 1].forEach(function (side) {
+        animalOval(g, m, side * 0.31, 0.33, -0.10, 0.20, 0.17, 0.23);
+        animalOval(g, glove, side * 0.42, 0.24, -0.23, 0.16, 0.088, 0.17);
+        for (var toe = -1; toe <= 1; toe++) {
+          var x = side * (0.42 + toe * 0.061);
+          taperedLimb(g, claw, [x, 0.23, -0.33], [x + side * toe * 0.015, 0.18, -0.44 + Math.abs(toe) * 0.025], 0.027, 0.005);
+        }
+      });
       addEyes(g, 0.13, 0.6, -0.45, 0.04);
     } else if (kind === "firefly" || kind === "shootingstar") {
       var col = kind === "firefly" ? 0xcaff70 : 0xffd93d;
@@ -916,10 +986,12 @@
       }
       g.add(star);
     } else if (kind === "pearl") {
-      var sh = new THREE.Mesh(new THREE.SphereGeometry(0.9, 14, 10, 0, Math.PI * 2, 0, Math.PI * 0.5), stdMat(0xe8b7d4, 0.4));
-      sh.rotation.x = Math.PI; sh.position.y = 0.4; g.add(sh);
+      var sh = new THREE.Mesh(scallopValve(), stdMat(0xffffff, 0.46, { vertexColors: true, side: THREE.DoubleSide }));
+      sh.position.set(0, 0.22, 0.61); g.add(sh);
+      var lid = sh.clone();
+      lid.rotation.x = 1.25; g.add(lid);
       var pr = new THREE.Mesh(new THREE.SphereGeometry(0.34, 14, 10), stdMat(0xffffff, 0.15, { metalness: 0.3, emissive: 0xffeef8, emissiveIntensity: 0.35 }));
-      pr.position.y = 0.58; g.add(pr);
+      pr.position.set(0, 0.55, -0.12); g.add(pr);
     } else if (kind === "turtle") {
       if (MAY.modelsReady && MAY.MODEL_T.turtle) {
         g.add(MAY.MODEL_T.turtle.group.clone(true));

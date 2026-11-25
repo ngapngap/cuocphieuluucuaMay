@@ -1,17 +1,20 @@
 /* Shell installation is independent of optional world downloads. */
 importScripts("js/packages.js");
-var CACHE = "may-phieu-luu-v15-journey-1";
+var CACHE = "may-phieu-luu-v15-biome-bonus-1";
 var SHELL = [
   "./", "index.html", "style.css", "three.min.js",
   "game.js", "manifest.json", "favicon.ico", "js/data.js",
   "js/audio.js", "js/packages.js", "js/core.js", "js/pbr.js",
-  "js/vfx.js", "js/outfit-color.js", "js/player.js", "js/systems.js", "js/replays.js", "js/journey-scene.js", "js/journey-clearing.js", "js/journey.js", "js/story.js",
+  "js/vfx.js", "js/outfit-color.js", "js/player.js", "js/systems.js", "js/replays.js", "js/biome-bonus.js", "js/journey-scene.js", "js/journey-clearing.js", "js/journey.js", "js/story.js",
   "js/cutscene.js", "js/levels/hub.js", "js/levels/level1_ocean.js", "js/levels/level2_forest.js",
   "js/levels/level3_desert.js", "js/levels/level4_crystal.js", "js/levels/level5_snow.js", "js/levels/level6_clouds.js",
   "icons/icon-192.png", "icons/icon-512.png"
 ];
 var SHARED_MEDIA = [
   "assets/img/hero.jpg",
+  "assets/img/butterfly-wing.webp",
+  "assets/img/horizon-reef.webp", "assets/img/horizon-forest.webp", "assets/img/horizon-desert.webp",
+  "assets/img/horizon-cavern.webp", "assets/img/horizon-snow.webp", "assets/img/horizon-clouds.webp",
   "assets/img/outfit-preview-vayhong.webp", "assets/img/outfit-preview-haibim.webp", "assets/img/outfit-preview-muvang.webp",
   "assets/img/outfit-preview-rungxanh.webp", "assets/img/outfit-preview-tuyetbong.webp", "assets/img/outfit-preview-cauvong.webp",
   "assets/img/tex-caustics.jpg", "assets/img/tex-fan.jpg", "assets/img/tex-fanalpha.jpg", "assets/img/tex-pano.jpg",

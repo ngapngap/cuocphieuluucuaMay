@@ -59,7 +59,7 @@
     act(c, nav, true);
   };
   window.routeClearing5 = function (v) {
-    return !v.pup1 ? "pup1" : !v.pup2 ? "pup2" : !v.bridge ? "bridge" : "home";
+    return !v.pup1 ? "pup1" : !v.pup2 ? "pup2" : v.bridgeTrial && !v.thaw && !v.bridge ? "thaw" : !v.bridge ? "bridge" : "home";
   };
   window.routeClearing6 = function (v) {
     return !v.bubi ? "bubi" : !v.rabbit ? "rabbit" : !v.owl ? "owl" : !v.bell ? "bell" : "lamp";

@@ -8,7 +8,7 @@
     level2: ["companion_milo", "boss_mushroom_king", "cc0_fox", "polyfork_deer", "polyfork_rabbit", "polyfork_bear", "fish", "tang-blue", "tang-yellow"],
     level3: ["polyfork_camel", "cc0_fox", "npc_tortoise_elder", "amphora", "fish", "tang-blue", "tang-yellow"],
     level4: ["boss_crystal_golem", "npc_tortoise_elder", "polyfork_owl", "fish", "tang-blue", "tang-yellow"],
-    level5: ["cc0_reindeer", "cc0_fox", "polyfork_bear", "polyfork_hare", "polyfork_penguin"],
+    level5: ["cc0_reindeer", "cc0_fox", "polyfork_bear", "polyfork_hare", "polyfork_penguin", "polyfork_wolf"],
     level6: ["companion_milo", "cc0_unicorn", "polyfork_sheep", "boss_storm_king", "hero_castle", "cc0_windmill", "jelly"]
   };
   function modelURL(name) { return "assets/models/" + name + ".glb"; }

@@ -30,3 +30,5 @@ Kiểm tra ngoại tuyến đã thử ngắt tải giữa chừng, kết nối l
 ## Phạm vi còn lại
 
 Phần lớn đạo cụ tĩnh ở những chương khác vẫn dùng ánh sáng sẵn có của cảnh. Vòng rune còn lặp và HUD cố định vẫn dùng bố cục hiện tại. Kiểm tra bố cục dọc dùng cửa sổ trình duyệt mô phỏng. Hiệu năng GPU trên điện thoại thật, từng tuyến cầu và toàn bộ hoạt ảnh chiến đấu của sáu trùm còn cần được kiểm chứng.
+
+Đợt rà tiếp theo có ảnh đối chiếu Mây, Milo, gấu, thỏ, bốn trùm và cả sáu vùng chơi. [Kết quả dựng lại và chơi thử](ra-soat-my-thuat.md).

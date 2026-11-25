@@ -189,6 +189,13 @@
       });
     });
     ctx.add(posts); ctx.add(piers);
+    // A welcoming arch marks the central island while leaving the bridge clear.
+    var gateMat = new THREE.MeshStandardMaterial({color:0xbc8b70,roughness:0.72,metalness:0.16});
+    var gateStem = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.65,0.9,1,8),gateMat,4), gateDummy=new THREE.Object3D(),gateIndex=0;
+    [-1,1].forEach(function(side){var x=side*5.0,z=7,y=ctx.groundH(x,z);[[x,y+3.4,z,0.8,6.8,0.8],[x,y+7,z,1.2,0.5,1.2]].forEach(function(p){gateDummy.position.set(p[0],p[1],p[2]);gateDummy.scale.set(p[3],p[4],p[5]);gateDummy.updateMatrix();gateStem.setMatrixAt(gateIndex++,gateDummy.matrix);});});ctx.add(gateStem);
+    var gateArch=new THREE.Mesh(new THREE.TorusGeometry(5.0,0.38,8,26,Math.PI),gateMat);gateArch.position.set(0,ctx.groundH(0,7)+6.6,7);ctx.add(gateArch);
+    var gateStar=new THREE.Mesh(new THREE.OctahedronGeometry(0.75,0),new THREE.MeshStandardMaterial({color:0xffdc8d,emissive:0xffdc8d,emissiveIntensity:0.55,roughness:0.3}));gateStar.position.set(0,ctx.groundH(0,7)+12.1,7);ctx.add(gateStar);
+
 
     /* Biển mây mềm mại bồng bềnh bên dưới */
     var seaCloud = new THREE.Mesh(
@@ -436,10 +443,15 @@
 
     /* TRÙM CUỐI: ⛈️ VUA MÂY BÃO (Rigged Blender GLB — 3 Pha Tổng Hợp: Hất Quái Vỡ Khiên -> Tia Nắng -> Trói Hoa + Lốc Hất Tung Lên Trời!) */
     var stormBossMesh = MAY.makeRiggedBoss("stormking", 1.15, "stormcloud", 2.95);
-    var bossShield = new THREE.Mesh(
-      new THREE.SphereGeometry(3.8, 18, 14),
-      new THREE.MeshPhysicalMaterial({ color: 0x4c1d95, emissive: 0x7e22ce, emissiveIntensity: 0.55, transparent: true, opacity: 0.42, wireframe: false })
-    );
+    // Three open arcs signal the shield without masking the king's face.
+    var bossShield = new THREE.Group();
+    var shieldMat = new THREE.MeshBasicMaterial({ color: 0xb48cff, transparent: true, opacity: 0.65, depthWrite: false });
+    var shieldArc = new THREE.TorusGeometry(3.8, 0.065, 5, 32, Math.PI * 1.72);
+    for (var si = 0; si < 3; si++) {
+      var shieldRing = new THREE.Mesh(shieldArc, shieldMat);
+      shieldRing.rotation.set(si === 0 ? Math.PI / 2 : 0.25, si * Math.PI / 3, si * 0.8);
+      bossShield.add(shieldRing);
+    }
     bossShield.position.y = stormBossMesh.userData.mixer ? 2.8 : 1.6;
     stormBossMesh.add(bossShield);
 

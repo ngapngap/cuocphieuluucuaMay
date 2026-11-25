@@ -34,6 +34,7 @@
     entry.promise = MAY.loadWorldModels(levelId).then(function () {
       if (pendingLevel !== entry) return false;
       if (MAY.activeJourney) MAY.activeJourney.leave();
+      if (MAY.currentCtx && MAY.currentCtx.leaveBiomeClue) MAY.currentCtx.leaveBiomeClue();
       if (MAY.Cutscene && MAY.Cutscene.cancelSilent) MAY.Cutscene.cancelSilent();
       if (MAY.closeAllModals) MAY.closeAllModals();
       if (MAY.closeDialogue) MAY.closeDialogue(false);
@@ -71,6 +72,7 @@
       MAY.currentLevelId = levelId;
 
       MAY.currentCtx = MAY.LEVELS[levelId]();
+      if (MAY.installBiomeBonus) MAY.installBiomeBonus(MAY.currentCtx);
       MAY.applyOutfit(MAY.save.outfit);
       if (MAY.VFX) MAY.VFX.syncSpellUI();
       MAY.refreshHUD();

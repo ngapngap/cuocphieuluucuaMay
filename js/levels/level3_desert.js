@@ -359,7 +359,77 @@
     }
 
     /* TRÙM CHƯƠNG 3: 🦂 Bọ Cạp Sa Mạc Khổng Lồ */
-    var scorpBossMesh = MAY.makeMonsterMesh("sandscorpion", 2.45);
+    function makeScorpionBoss() {
+      var g = new THREE.Group();
+      var shell = new THREE.MeshStandardMaterial({ color: 0x70402d, roughness: 0.48, metalness: 0.18 });
+      var plateMat = new THREE.MeshStandardMaterial({ color: 0xa96637, roughness: 0.43, metalness: 0.22 });
+      var edge = new THREE.MeshStandardMaterial({ color: 0x352332, roughness: 0.62 });
+      var gold = new THREE.MeshStandardMaterial({ color: 0xf8ba4f, emissive: 0xb04a0a, emissiveIntensity: 0.55, roughness: 0.3 });
+      var red = new THREE.MeshBasicMaterial({ color: 0xff536a });
+      var ovalGeo = new THREE.SphereGeometry(1, 10, 8), limbGeo = new THREE.CylinderGeometry(0.09, 0.14, 1, 7);
+      function oval(parent, mat, x, y, z, sx, sy, sz) {
+        var m = new THREE.Mesh(ovalGeo, mat); m.position.set(x,y,z); m.scale.set(sx,sy,sz); parent.add(m); return m;
+      }
+      function link(parent, a, b, width, mat) {
+        var d = new THREE.Vector3().subVectors(b,a), m = new THREE.Mesh(limbGeo, mat);
+        m.position.copy(a).add(b).multiplyScalar(0.5); m.scale.set(width, d.length(), width);
+        m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), d.normalize()); parent.add(m); return m;
+      }
+      oval(g, shell, 0, 0.65, 0, 0.86, 0.48, 1.10);
+      for (var p = 0; p < 5; p++) oval(g, plateMat, 0, 0.91, -0.56 + p * 0.31, 0.83 - p * 0.045, 0.23, 0.28);
+      oval(g, shell, 0, 0.68, -0.98, 0.70, 0.37, 0.54);
+      [-1,1].forEach(function (side) {
+        oval(g, red, side * 0.33, 0.86, -1.40, 0.105, 0.085, 0.09);
+        for (var l = 0; l < 4; l++) {
+          var z = -0.55 + l * 0.38;
+          var a = new THREE.Vector3(side*0.62,0.55,z), b = new THREE.Vector3(side*1.05,0.38,z+0.12), c = new THREE.Vector3(side*1.35,0.08,z+0.36);
+          link(g,a,b,1.0,shell); link(g,b,c,0.75,edge);
+        }
+        var claw = new THREE.Group(); claw.position.set(side*0.74,0.55,-0.94); g.add(claw);
+        link(claw,new THREE.Vector3(0,0,0),new THREE.Vector3(side*0.56,0,-0.48),1.9,shell);
+        oval(claw,plateMat,side*0.72,0,-0.65,0.39,0.23,0.48);
+        link(claw,new THREE.Vector3(side*0.55,0,-0.87),new THREE.Vector3(side*0.42,0,-1.33),1.15,edge);
+        link(claw,new THREE.Vector3(side*0.91,0,-0.86),new THREE.Vector3(side*0.76,0,-1.27),1.15,edge);
+        g.userData[side < 0 ? "leftClaw" : "rightClaw"] = claw;
+      });
+      var tail = new THREE.Group(); tail.position.set(0,0.62,0.82); g.add(tail);
+      var points = [[0,0,0],[0,0.34,0.50],[0,0.84,0.80],[0,1.40,0.85],[0,1.95,0.58],[0,2.24,0.08]];
+      for (var ti=0;ti<points.length-1;ti++) {
+        var a = new THREE.Vector3().fromArray(points[ti]), b = new THREE.Vector3().fromArray(points[ti+1]);
+        link(tail,a,b,2.25-ti*0.20,ti%2 ? shell : plateMat); oval(tail,edge,b.x,b.y,b.z,0.18,0.18,0.18);
+      }
+      var stinger = new THREE.Mesh(new THREE.ConeGeometry(0.20,0.78,7),gold);
+      stinger.position.set(0,2.18,-0.25); stinger.rotation.x = -Math.PI*0.65; tail.add(stinger);
+      // Keep the independently moving claws and tail, while batching their
+      // static pieces by material to avoid a draw call for every leg segment.
+      function batchParts(parent) {
+        parent.children.filter(function (o) { return o.isGroup; }).forEach(batchParts);
+        var batches = new Map();
+        parent.children.slice().forEach(function (o) {
+          if (!o.isMesh) return;
+          o.updateMatrix();
+          var geo = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone();
+          geo.applyMatrix4(o.matrix);
+          var batch = batches.get(o.material);
+          if (!batch) { batch = { positions: [], normals: [] }; batches.set(o.material, batch); }
+          Array.prototype.push.apply(batch.positions, geo.attributes.position.array);
+          Array.prototype.push.apply(batch.normals, geo.attributes.normal.array);
+          geo.dispose(); parent.remove(o);
+          if (o.geometry !== ovalGeo && o.geometry !== limbGeo) o.geometry.dispose();
+        });
+        batches.forEach(function (batch, material) {
+          var geometry = new THREE.BufferGeometry();
+          geometry.setAttribute("position", new THREE.Float32BufferAttribute(batch.positions, 3));
+          geometry.setAttribute("normal", new THREE.Float32BufferAttribute(batch.normals, 3));
+          parent.add(new THREE.Mesh(geometry, material));
+        });
+      }
+      batchParts(g); ovalGeo.dispose(); limbGeo.dispose();
+      g.userData.tailPivot = tail; g.scale.setScalar(2.45);
+      g.traverse(function (o) { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+      return g;
+    }
+    var scorpBossMesh = makeScorpionBoss();
     var ch3Npc;
     var ch3Boss = ctx.setBoss({
       name: "Bọ Cạp Sa Mạc Khổng Lồ", icon: "🦂",
@@ -369,6 +439,9 @@
       onTick: function (dt, t, bs) {
         var ang = Math.atan2(MAY.player.pos.x - bs.pos.x, MAY.player.pos.z - bs.pos.z);
         bs.mesh.rotation.y = ang + Math.PI;
+        if (bs.mesh.userData.tailPivot) bs.mesh.userData.tailPivot.rotation.x = Math.sin(t * 2.2) * 0.12;
+        if (bs.mesh.userData.leftClaw) bs.mesh.userData.leftClaw.rotation.y = Math.sin(t * 2.8) * 0.12;
+        if (bs.mesh.userData.rightClaw) bs.mesh.userData.rightClaw.rotation.y = -Math.sin(t * 2.8) * 0.12;
         bs.atkT -= dt;
         if (bs.atkT <= 0 && bs.pos.distanceTo(MAY.player.pos) < 34) {
           bs.atkT = 3.2;

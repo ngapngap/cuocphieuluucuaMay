@@ -96,5 +96,5 @@ window.routeClearing3 = function (v) {
   return !v.first ? "first" : "relay";
 };
 window.routeClearing4 = function (v) {
-  return !v.bank ? "left" : (v.note || 0) < 2 ? "short" : "long";
+  return !v.bank ? "left" : v.crossSignal && v.note===1 && !v.shift ? "right" : (v.note || 0) < 2 ? "short" : "long";
 };

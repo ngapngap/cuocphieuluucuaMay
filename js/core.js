@@ -429,6 +429,7 @@
     polyfork_owl: "owl",
     polyfork_penguin: "penguin",
     polyfork_octopus: "octopus",
+    polyfork_wolf: "wolf",
     cc0_fox: "fox",
     cc0_deer: "deer",
     cc0_reindeer: "reindeer",
@@ -733,7 +734,9 @@
       else if (nm.indexOf("hit") !== -1) actions.hit = act;
       else if (nm.indexOf("defeat") !== -1) actions.defeat = act;
       else if (nm.indexOf("idle") !== -1 && !actions.idle) actions.idle = act;
+      else if (nm.indexOf("run") !== -1 && !actions.run) actions.run = act;
     });
+    if (!actions.attack && actions.run) actions.attack = actions.run;
     if (!actions.idle && cloned.animations && cloned.animations.length) {
       actions.idle = mixer.clipAction(cloned.animations[0]);
     }

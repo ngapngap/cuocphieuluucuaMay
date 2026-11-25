@@ -1,0 +1,68 @@
+{
+  "1": {
+    "clock": 326,
+    "wallWithDialogue": 50.92,
+    "activity": {
+      "journey": 299.4150000000967,
+      "nativeActive": 25.569000000119782,
+      "nativeStationary": 0.10320000004768293,
+      "finished": true
+    },
+    "journeyFramesSimulated": true
+  },
+  "2": {
+    "clock": 382,
+    "wallWithDialogue": 38.98,
+    "activity": {
+      "journey": 358.0249000000873,
+      "nativeActive": 23.764799999892762,
+      "nativeStationary": 0.24069999998810232,
+      "finished": true
+    },
+    "journeyFramesSimulated": true
+  },
+  "3": {
+    "clock": 420,
+    "wallWithDialogue": 40.72,
+    "activity": {
+      "journey": 393.92410000014235,
+      "nativeActive": 24.24179999989261,
+      "nativeStationary": 0.39460000008343865,
+      "finished": true
+    },
+    "journeyFramesSimulated": true
+  },
+  "4": {
+    "clock": 320,
+    "wallWithDialogue": 27.33,
+    "activity": {
+      "journey": 308.441199999965,
+      "nativeActive": 11.425900000095568,
+      "nativeStationary": 0.11409999996425313,
+      "finished": true
+    },
+    "journeyFramesSimulated": true
+  },
+  "5": {
+    "clock": 359,
+    "wallWithDialogue": 36.98,
+    "activity": {
+      "journey": 329.59510000000887,
+      "nativeActive": 27.935899999916977,
+      "nativeStationary": 0.09160000002385393,
+      "finished": true
+    },
+    "journeyFramesSimulated": true
+  },
+  "6": {
+    "clock": 427,
+    "wallWithDialogue": 46.3,
+    "activity": {
+      "journey": 396.36599999993973,
+      "nativeActive": 29.462000000119478,
+      "nativeStationary": 0.15269999992847616,
+      "finished": true
+    },
+    "journeyFramesSimulated": true
+  }
+}

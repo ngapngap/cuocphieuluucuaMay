@@ -2,6 +2,67 @@
 (function (MAY) {
   var laneWidth = 3.7;
   MAY.journeyLaneWidth = laneWidth;
+  var horizonNames = ["", "reef", "forest", "desert", "cavern", "snow", "clouds"];
+  var horizonFog = [0, 0x4599a5, 0x91b4a5, 0xd6af8e, 0x596f99, 0xafc6dd, 0xb7c6df];
+  MAY.addJourneyHorizon = function (scene, biome, section, sky) {
+    var indoors = biome === 3 && section === 1;
+    var dusk = biome === 3 && section >= 2;
+    var fog = new THREE.Color(horizonFog[biome]).lerp(new THREE.Color(sky), indoors || dusk ? 0.66 : 0.25);
+    scene.fog.color.copy(fog);
+    var settings = {
+      panorama: { value: null },
+      inverseProjection: { value: new THREE.Matrix4() },
+      cameraBasis: { value: new THREE.Matrix3() },
+      haze: { value: fog },
+      grading: { value: indoors ? 0.78 : dusk ? 0.49 : 0.15 },
+      azimuth: { value: 0.48 + 0.11 * section }
+    };
+    var material = new THREE.ShaderMaterial({
+      uniforms: settings, depthWrite: false, depthTest: false, toneMapped: false,
+      vertexShader: [
+        "uniform mat4 inverseProjection; uniform mat3 cameraBasis; varying vec3 sight;",
+        "void main(){",
+        "  vec4 ray=inverseProjection*vec4(position.xy,1.,1.);",
+        "  sight=cameraBasis*ray.xyz; gl_Position=vec4(position.xy,1.,1.);",
+        "}"
+      ].join("\n"),
+      fragmentShader: [
+        "uniform sampler2D panorama; uniform vec3 haze; uniform float grading,azimuth; varying vec3 sight;",
+        "void main(){",
+        "  vec3 dir=normalize(sight);",
+        "  float longitude=atan(dir.x,-dir.z)/6.2831853;",
+        "  float x=1.-abs(mod(azimuth+2.*longitude,2.)-1.);",
+        "  float y=(asin(clamp(dir.y,-1.,1.))+.115)/.52;",
+        "  vec3 ink=texture2D(panorama,vec2(x,clamp(y,.003,.997))).rgb;",
+        "  float lum=dot(ink,vec3(.299,.587,.114));",
+        "  vec3 color=mix(ink,haze*(.4+.65*lum),grading);",
+        "  color=mix(color,haze,.57*(1.-smoothstep(-.22,.09,y)));",
+        "  color=mix(color,mix(haze,vec3(.79,.87,.94),.56),.75*smoothstep(.98,1.48,y));",
+        "  gl_FragColor=vec4(color,1.);",
+        "}"
+      ].join("\n")
+    });
+    var backdrop = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), material);
+    backdrop.name = "JourneyHorizon";
+    backdrop.visible = false;
+    backdrop.frustumCulled = false;
+    backdrop.renderOrder = -1000;
+    backdrop.onBeforeRender = function (renderer, world, camera) {
+      settings.inverseProjection.value.copy(camera.projectionMatrixInverse);
+      settings.cameraBasis.value.setFromMatrix4(camera.matrixWorld);
+    };
+    scene.add(backdrop);
+    var released = false;
+    var name = indoors ? "cavern" : horizonNames[biome];
+    var texture = new THREE.TextureLoader().load("assets/img/horizon-" + name + ".webp", function () {
+      if (!released) backdrop.visible = true;
+    });
+    settings.panorama.value = texture;
+    material.addEventListener("dispose", function () {
+      released = true;
+      texture.dispose();
+    });
+  };
   MAY.journeyFloorMaterial = function (biome, options) {
     var name = ["", "sandRipple", "forestGround", "sandRipple", "wetCaveRock", "snow", "stoneWall"][biome];
     var maps = MAY.PBR[name];
@@ -34,9 +95,11 @@
     var s = config.sections[sectionIndex],
       biome = ctx.meta.num;
     var canopy = biome === 2 && s.scenery === "canopy";
+    var skyBridge = biome === 6;
     var scene = new THREE.Scene();
     scene.background = new THREE.Color(s.sky);
     scene.fog = new THREE.FogExp2(s.sky, biome === 4 ? 0.017 : 0.011);
+    MAY.addJourneyHorizon(scene, biome, sectionIndex, s.sky);
     scene.environment = MAY.scene.environment;
     scene.add(new THREE.HemisphereLight(0xfff6df, s.ground, 0.8));
     var sun = new THREE.DirectionalLight(0xffedc2, 0.95);
@@ -144,6 +207,23 @@
         [soil, soil],
         deckMaterial
       );
+    } else if (skyBridge) {
+      // A real raised bridge over a cloud sea, rather than a tiled field.
+      var cloudSea = new THREE.Mesh(new THREE.PlaneGeometry(500, s.length + 150),
+        new THREE.MeshStandardMaterial({ color: 0xd8c5e8, roughness: 1 }));
+      cloudSea.rotation.x = -Math.PI / 2;
+      cloudSea.position.set(0, -10, -s.length / 2); scene.add(cloudSea);
+      var bridgeSide = new THREE.MeshStandardMaterial({ vertexColors: true, color: 0xffffff, roughness: 0.85, side: THREE.DoubleSide });
+      var bridgeStone = new THREE.Color(0x796c96), bridgeEdge = new THREE.Color(0xb19dbd);
+      ribbon([[-7.6,0],[-7.6,-1.1],[-7.1,-1.35],[7.1,-1.35],[7.6,-1.1],[7.6,0]],
+        [bridgeEdge,bridgeStone,bridgeStone,bridgeStone,bridgeStone,bridgeEdge], bridgeSide);
+      var stripe = [0xb85878,0xc59255,0x699a84,0x5c91ae,0x8e73a9].map(function (c) { return new THREE.Color(c); });
+      ribbon([[-7.5,0.02],[-4.5,0.02],[-1.5,0.02],[1.5,0.02],[4.5,0.02],[7.5,0.02]],
+        [stripe[0],stripe[1],stripe[2],stripe[3],stripe[4],stripe[4]], bridgeSide);
+      // Narrow stone kerbs remain legible alongside the pastel paving.
+      var edging = new THREE.Color(0xa98a75);
+      ribbon([[-7.5,0.045],[-7.12,0.045]], [edging,edging], bridgeSide);
+      ribbon([[7.12,0.045],[7.5,0.045]], [edging,edging], bridgeSide);
     } else
       ribbon(
         [
@@ -256,6 +336,16 @@
       transform.updateMatrix();
       art.get(key).matrices.push(transform.matrix.clone());
     }
+    if (skyBridge) {
+      // Staggered joints suggest individual slabs without thousands of meshes.
+      for (var joint = -18, row = 0; joint < s.length + 24; joint += 3.2, row++) {
+        var tangent = -Math.atan((xAt(joint + 0.05) - xAt(joint - 0.05)) / 0.1);
+        stamp("sky-paving-joints", box, 0x91828e, joint, 0, 0.055, 14.1, 0.025, 0.045, tangent);
+        [-1, 1].forEach(function (side) {
+          stamp("sky-paving-joints", box, 0x91828e, joint + 1.6, side * (row % 2 ? 2.2 : 3.6), 0.055, 0.045, 0.025, 3.15, tangent);
+        });
+      }
+    }
     // Separate silhouettes mark navigable edges even with fog or reduced audio.
     for (var i = 0; i < s.length / 6 + 2; i++) {
       var dist = i * 6,
@@ -266,10 +356,10 @@
       var g = s.scenery || "";
       if (biome === 1 && g === "wreck") {
         stamp("rib", box, 0x704936, dist, offset, 2.6, 0.68, 7, 0.78, 0.2, side * 0.35);
-        stamp("plank", box, 0x977052, dist, offset + side * 1.2, 1.1, 2.6, 0.34, 4.6, a * 0.2, side * 0.36);
+        if (i % 3 !== 1) stamp("plank", box, 0x977052, dist, offset + side * 1.2, 1.1, 2.6, 0.34, 4.6, a * 0.2, side * 0.36);
       } else if (biome === 1) {
         stamp("coral", trunk, 0xf38d74, dist, offset, 1.1, 0.37, 3 * size, 0.42, a, side * 0.2);
-        stamp("arm", trunk, 0xffbb8d, dist, offset + 0.52, 1.8, 0.24, 1.8, 0.26, 0, -0.7);
+        if (i % 3 !== 0) stamp("arm", trunk, 0xffbb8d, dist, offset + 0.52, 1.8, 0.24, 1.8, 0.26, 0, -0.7);
         stamp("kelp", sphere, 0x338575, dist + 1, offset + 0.8, 1, 0.26, 2.6 * size, 0.45, a, 0.25);
       } else if (biome === 2 && canopy) {
         stamp(
@@ -285,7 +375,7 @@
           a,
           side * 0.08
         );
-        stamp("canopy-crown", stone, 0x55936a, dist, offset + side * 3, -4, 5.2, 2.6, 5.2, a);
+        stamp("canopy-crown", stone, 0x55936a, dist, offset + side * 3, -4, 4.1 + (i % 3) * 0.7, 2.2 + (i % 2) * 0.8, 5.2, a);
         stamp(
           "canopy-cap",
           sphere,
@@ -301,8 +391,8 @@
       } else if (biome === 2) {
         stamp("bark", trunk, 0x5c5441, dist, offset + side * 3, 4.4, size, 11, size, a, side * 0.13);
         stamp("leaf", stone, 0x478458, dist, offset + side * 3, 9, 4.5, 3.5, 4.7, a);
-        stamp("stem", trunk, 0xedce9c, dist + 1, offset, 1, 0.46, 2.5 * size, 0.5, a);
-        stamp(
+        if (i % 3 !== 1) stamp("stem", trunk, 0xedce9c, dist + 1, offset, 1, 0.46, 2.5 * size, 0.5, a);
+        if (i % 3 !== 1) stamp(
           "cap",
           sphere,
           i % 4 < 2 ? 0xdf846f : 0xecb371,
@@ -315,22 +405,49 @@
           a
         );
       } else if (biome === 3) {
-        stamp("column", trunk, 0xb48253, dist, offset, 2.9, 1.1, 6 * size, 1.1, a * 0.1);
-        stamp("capital", box, 0xf0cc8d, dist, offset, 5.95 * size, 2.6, 0.65, 2.6, a * 0.1);
+        if (i % 3 !== 1) {
+          stamp("column", trunk, 0xb48253, dist, offset, 2.9, 1.1, 6 * size, 1.1, a * 0.1);
+          stamp("capital", box, 0xf0cc8d, dist, offset, 5.95 * size, 2.6, 0.65, 2.6, a * 0.1);
+        } else stamp("ruin", stone, 0xb48253, dist, offset, 1.3, 2.8, 2.1, 2.0, a);
         if (i % 5 === 0) stamp("pylon", spike, 0xbb996a, dist, offset + side * 15, 4, 7, 10, 7, a);
       } else if (biome === 4) {
         stamp("cave", stone, 0x514a75, dist, offset + side * 5, 3.3, 5 * size, 6.8, 4.3, a);
-        stamp("quartz", spike, 0x8e9fe5, dist, offset, 2.0, 0.95, 5 * size, 1.1, a, side * 0.24);
-        stamp("amethyst", spike, 0xc886ef, dist + 1, offset + 1, 1.15, 0.65, 2.9, 0.8, a, -side * 0.3);
+        if (i % 3 !== 1) stamp("quartz", spike, 0x8e9fe5, dist, offset, 2.0, 0.95, (3.5 + i % 3) * size, 1.1, a, side * 0.24);
+        if (i % 3 !== 2) stamp("amethyst", spike, 0xc886ef, dist + 1, offset + 1, 1.15, 0.65, 2.9, 0.8, a, -side * 0.3);
+        if (i % 4 === 0) {
+          stamp("cave-shelf", box, 0x453b60, dist, offset + side * 6, 5.2, 7.2, 1.1, 5.2, a * 0.2, side * 0.08);
+          stamp("cave-column", stone, 0x625479, dist + 2, offset + side * 8, 4.5, 2.1, 8.8, 2.8, a);
+          stamp("cave-glint", stone, 0x77d6d5, dist + 2, offset + side * 5, 3.4, 0.9, 1.8, 0.9, a);
+        }
       } else if (biome === 5) {
         stamp("granite", stone, 0x737e97, dist, offset, 0.65, 2.2 * size, 1.5, 2.4, a);
         stamp("drift", stone, 0xe6f7ff, dist, offset, 1.45, 2.45 * size, 1.1, 2.6, a);
-        stamp("icepine", spike, 0x65979a, dist + 2, offset + side * 6, 3.0, 2.4 * size, 7, 2.5, a);
-        stamp("whitepine", spike, 0xdae8ee, dist + 2, offset + side * 6, 4.8, 1.9 * size, 4.2, 1.9, a);
+        if (i % 4 !== 1) {
+          var pineHeight = 5.0 + (i % 3) * 1.3;
+          stamp("icepine", spike, 0x65979a, dist + 2, offset + side * 6, pineHeight * 0.45, 2.0 * size, pineHeight, 2.1, a);
+          stamp("whitepine", spike, 0xdae8ee, dist + 2, offset + side * 6, pineHeight * 0.69, 1.55 * size, pineHeight * 0.57, 1.6, a);
+        } else stamp("snow-boulder", stone, 0xc1d8e4, dist + 2, offset + side * 6, 1.1, 3.0, 2.2, 2.5, a);
       } else {
         stamp("cloud", sphere, 0xffe8e9, dist, offset + side * 4, 0.8, 4.5 * size, 2, 4.2, a);
-        stamp("pier", trunk, 0xa99ebd, dist, offset, 2.1, 0.75, 4.6, 0.75, a * 0.2);
-        stamp("gold", spike, 0xfac976, dist, offset, 5.3, 1.0, 2.4, 1.0, a);
+        if (i % 4 === 0) {
+          stamp("pier", trunk, 0xa99ebd, dist, offset, 2.5, 0.75, 5.3, 0.75, a * 0.2);
+          stamp("gold", spike, 0xfac976, dist, offset, 5.9, 1.0, 2.0, 1.0, a);
+        } else if (i % 4 === 1) {
+          stamp("sky-masonry", box, 0xb99cac, dist, offset, 1.65, 2.6, 3.3, 2.3, a * 0.2);
+          stamp("sky-rail", box, 0x9e725d, dist, offset, 3.45, 3.0, 0.35, 2.7, a * 0.2);
+        } else if (i % 4 === 2) {
+          stamp("pier", trunk, 0xa99ebd, dist, offset, 1.25, 0.48, 2.5, 0.48, a);
+          stamp("sky-lantern", sphere, 0xffd889, dist, offset, 2.8, 0.55, 0.7, 0.55, a);
+        }
+        var bridgeSlope = (xAt(dist + 0.05) - xAt(dist - 0.05)) / 0.1;
+        [-1, 1].forEach(function (edge) {
+          stamp("sky-rail", box, 0x9e725d, dist, edge * 7.7, 1.15, 0.22, 0.22, 6.3, -Math.atan(bridgeSlope));
+          stamp("sky-post", box, 0xb38f75, dist, edge * 7.7, 0.55, 0.22, 1.1, 0.22, 0);
+        });
+        if (i % 4 === 0) {
+          stamp("sky-masonry", box, 0xb99cac, dist + 1, offset + side * 3, -0.5, 6, 1.0, 4.0, a * 0.15);
+          stamp("sky-lantern", sphere, 0xffd889, dist + 1, offset + side * 3, 4.7, 0.65, 0.85, 0.65, a);
+        }
       }
     }
     art.forEach(function (v) {

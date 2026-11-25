@@ -20,8 +20,9 @@ Mây đi tìm sáu Ngọc để thắp lại hải đăng. Nửa đường, Bé 
 
 ## Cấu trúc mã nguồn
 
-Tác giả, giấy phép và các thay đổi của chín mẫu thú được ghi trong [danh sách mô hình Polyfork](assets/models/POLYFORK.md).
+Tác giả, giấy phép và các thay đổi của mười mẫu thú được ghi trong [danh sách mô hình Polyfork](assets/models/POLYFORK.md).
 Ảnh trước và sau của Mây, gấu, thỏ, Đảo Mây và cầu mây nằm trong [báo cáo kiểm tra hình ảnh](docs/kiem-tra-hinh-anh.md).
+Ảnh từ lần dựng lại Mây, Milo, Cụ Rùa, bốn trùm và sáu vùng có trong [báo cáo mỹ thuật](docs/ra-soat-my-thuat.md). Cơ chế chuyển bờ, mở chốt cầu, sáu trạm sau Ngọc và thời lượng từng chương có trong [thiết kế nội dung](docs/noi-dung.md).
 Các chặng cứu hộ, đài gương và hoạt động mở sau khi nhận Ngọc có trong [bảng nhịp chơi và chơi lại](docs/nhip-choi-va-choi-lai.md).
 
 - `index.html`, `style.css`, `game.js`: Giao diện HUD, Thanh Phép Thuật, Bản Đồ Thế Giới (`M`), Sổ Tay & Tủ Đồ (`J`), và vòng lặp chính.

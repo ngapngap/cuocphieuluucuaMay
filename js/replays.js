@@ -97,7 +97,7 @@
         if (race.startRing.userData.rune) race.startRing.userData.rune.rotation.z += dt * 1.4;
         var distance = race.startRing.position.distanceTo(player);
         if (distance > 3.7) armed = true;
-        if (ctx.fishRescueActive || ctx.crystalEncoreActive || (ctx.boss && ctx.boss.active && !ctx.boss.defeated) ||
+        if (ctx.fishRescueActive || ctx.crystalEncoreActive || ctx.biomeClueActive || (ctx.boss && ctx.boss.active && !ctx.boss.defeated) ||
             (ctx.visitingSideQuest && !ctx.save.sideQuest.done)) {
           if (distance < 3.1) armed = false;
           return;
@@ -149,6 +149,8 @@
       if (activity !== "music" && ctx.leaveCrystalEncore) ctx.leaveCrystalEncore();
       if (activity !== "rematch" && ctx.leaveBossRematch) ctx.leaveBossRematch();
       if (activity !== "fish" && ctx.leaveFishRescue) ctx.leaveFishRescue();
+      if (activity !== "clue" && ctx.leaveBiomeClue) ctx.leaveBiomeClue();
+      if (activity === "clue" && ctx.startBiomeClue) return ctx.startBiomeClue();
       if (activity === "fish" && ctx.startFishRescue) return ctx.startFishRescue();
       if (activity === "music" && ctx.startCrystalEncore) return ctx.startCrystalEncore();
       if (activity === "rematch" && ctx.startBossRematch) return ctx.startBossRematch();
@@ -224,6 +226,11 @@
     var cleared = MAY.LEVEL_META.filter(function (meta) { return meta.num && MAY.getLevelSave(meta.id).gem; });
     cleared.forEach(function (meta) {
       var saved = MAY.getLevelSave(meta.id);
+      var clueTitle = MAY.getBiomeBonusTitle && MAY.getBiomeBonusTitle(meta.id);
+      if (clueTitle) {
+        var clue = saved.challenges.biomeClue;
+        add(meta, "clue", "🔎 " + clueTitle, clue && clue.wins ? "Kỷ niệm đã tìm: " + clue.wins : "Quan sát ba dấu và tìm lời giải");
+      }
       if (meta.id === "level1") {
         var rescue = saved.challenges.fishRoutes, story = saved.story.steps;
         var paths = rescue ? rescue.paths : story.fishRescueChosen ? 1 << (Number(story.fishRescueExit) === 1 ? 1 : 0) : 0;

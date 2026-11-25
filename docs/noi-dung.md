@@ -68,6 +68,30 @@ Lượt chơi nghiệm thu ngày 25/11/2026 ghi nhận **36 phút 54 giây chơi
 - Người chơi tự tay bật đèn sau lời đáp cuối. Vua Mây Bão xuất trận. Khi đã nhận đủ sáu Ngọc, Mây trở về Đảo Mây và có thể chuẩn bị buổi hòa nhạc.
 - Nghiệm thu đèn bật sớm, đủ lời đáp, đánh trùm, nhận Ngọc thứ sáu, trở về đảo và mở được hồi kết.
 
+## Độ khó trên tuyến chính và lý do quay lại
+
+Ở Vịnh, Mây tập một việc mỗi lần và nhìn thấy ngay con cá nào vừa thoát. Sang Rừng và Sa Mạc, lựa chọn bên đi làm đổi thiết bị, phép hoặc đường thoát phía trước. Hai thử thách trong Hang và ở Tuyết tăng độ khó bằng cách thay đổi tình huống giữa lúc trẻ đang giải.
+
+- **Hang Pha Lê.** Khi nốt đầu của Mây được nhận, nguồn gọi chuyển sang bờ đối diện. Đèn, mẫu nốt nhìn thấy và âm thanh cùng chuyển. Cố đứng ở bờ cũ sẽ nhận gợi ý. Qua đúng bờ mới có thể gõ tiếp. Bản lưu nhớ nốt vừa hoàn thành.
+- **Thung Lũng Tuyết.** Tuyết xốp che chốt cầu. Trẻ dùng Nắng để làm lộ chốt, rồi dùng Băng cố định cầu và dắt hai sói non qua. Nếu dùng Băng trước, lời nhắc chỉ ra lớp tuyết còn vướng.
+- **Vương Quốc Mây.** Đoạn cuối nối kỹ năng đã tập với lời hứa của Mây. Từng người bạn báo an, người chơi tự quyết định lúc nào đủ tín hiệu để thắp hải đăng.
+
+Sau Ngọc, mỗi bản đồ có một trạm thử thách tự chọn. Có thể đến trực tiếp hoặc mở trạm từ Sổ tay. Ở Vịnh, Bubi dùng san hô và vỏ sò để chỉ đường. Rừng có dấu hạt sồi và lá. Sa Mạc có dấu mặt trời và bình nước. Hang dùng chuông và trống. Tuyết dùng dấu chân và mái trú. Trên Mây có chuông gió và cụm mây. Người chơi quan sát các vật thể, nhớ thứ tự trong lời kể rồi chọn bằng phím hoặc chạm. Sau một lần thành công, trạm mở lượt lần ngược dấu. Sổ tay lưu số lần hoàn thành và số lượt giải đúng ngay. [Trạm dấu nhạc sau một lựa chọn sai ở 390 × 844](tram-dau-nhac-390.webp).
+
+| Chương | Lượt trước ở tốc độ thường | Hồi quy có tăng tốc sau chỉnh độ khó |
+| --- | ---: | ---: |
+| Vịnh San Hô | 5:25 | 5:26 |
+| Rừng Nấm | 6:20 | 6:22 |
+| Sa Mạc | 6:58 | 7:00 |
+| Hang Pha Lê | 5:11 | 5:20 |
+| Thung Lũng Tuyết | 5:55 | 5:59 |
+| Vương Quốc Mây | 7:05 | 7:07 |
+| **Đến Ngọc thứ sáu** | **36:54** | **37:14 mô phỏng** |
+
+Mốc trước khi mở rộng là 3:40. **Dự kiến khoảng 37 phút** cho tuyến chính khi biết đường. Sáu trạm tự chọn, mỗi trạm dự trù 1–2 phút ở lượt đầu, nâng tổng dự kiến lên **43–49 phút** nếu chơi hết. Con số này chưa được đo với trẻ. Số liệu hồi quy lấy từ lượt mới bắt đầu bằng bản lưu trống, qua sáu trùm, nhận sáu Ngọc, mở Lễ hội và trở về đảo. Các khung hình trung gian ở vùng mở rộng được mô phỏng bằng bước 50 ms. [Phương pháp và số đo ở tốc độ thường](nghiem-thu-sau-chuong.md).
+
+Lệnh `python -B -X utf8 tools/check_late_difficulty.py` thử chọn sai và sửa ở Hang, Tuyết. Lệnh `python -B -X utf8 tools/check_biome_bonus.py` mở sáu trạm trên bản đồ bằng bản lưu đã có Ngọc rồi tải lại để đối chiếu phần thưởng. [Dữ liệu hồi quy 37:14](thoi-luong-hoi-quy-do-kho.json).
+
 ## Nghiệm thu chung
 
 1. Đi từ bản lưu mới đến sáu Ngọc bằng điều khiển người chơi. Ghi thời gian hoạt động từng chương, tổng và tỷ số so với 220 giây. Mốc nghiệm thu x10 là tổng từ 2.200 giây. Các ngân sách từng chương giúp xác định chỗ thiếu nội dung. Thoại, phim, tải tài nguyên, tạm dừng, đứng chờ và hoạt động sau Ngọc không được dùng để bù thời lượng.

@@ -603,11 +603,12 @@
 
     /* ---- TRÙM CHƯƠNG 1: 🐙 Bạch Tuộc Mực Khổng Lồ (Kraken Sương Xám tại Cổng Đá [-30, 5.2, 22]) ---- */
     var krakenMesh = new THREE.Group();
+    var kTentacles = [];
+    if (!MAY.RIGGED || !MAY.RIGGED.octopus) {
     var kMat = new THREE.MeshStandardMaterial({ color: 0x3b185f, emissive: 0x4c1d95, emissiveIntensity: 0.45, roughness: 0.45 });
     var kHead = new THREE.Mesh(new THREE.SphereGeometry(2.6, 16, 12), kMat); kHead.scale.set(1, 1.25, 1); kHead.position.y = 2.0; krakenMesh.add(kHead);
     var kCrown = new THREE.Mesh(new THREE.TorusGeometry(1.8, 0.35, 8, 18), new THREE.MeshStandardMaterial({ color: 0x1a0b2e, emissive: 0xff3b5c, emissiveIntensity: 0.8 }));
     kCrown.rotation.x = Math.PI / 2; kCrown.position.y = 3.6; krakenMesh.add(kCrown);
-    var kTentacles = [];
     for (var kt = 0; kt < 8; kt++) {
       var ka = (kt / 8) * Math.PI * 2;
       var tn = new THREE.Mesh(new THREE.CapsuleGeometry(0.38, 3.6, 6, 10), kMat);
@@ -619,6 +620,33 @@
       var eye = new THREE.Mesh(new THREE.SphereGeometry(0.42, 10, 8), new THREE.MeshBasicMaterial({ color: 0xff3b5c }));
       eye.position.set(ex, 2.2, -2.35); krakenMesh.add(eye);
     });
+    }
+    // Reuse the locally loaded octopus rig with a private ink-coloured coat.
+    if (MAY.RIGGED && MAY.RIGGED.octopus) {
+      krakenMesh = MAY.makeRiggedBoss("octopus", 2.05, "stormcloud", 2.95);
+      krakenMesh.traverse(function (o) {
+        if (!o.isMesh || !o.geometry || !o.geometry.attributes.color) return;
+        o.geometry = o.geometry.clone(); o.userData.sharedGeo = false;
+        var colors = o.geometry.attributes.color;
+        for (var ci = 0; ci < colors.count; ci++) {
+          var r = colors.getX(ci), green = colors.getY(ci), blue = colors.getZ(ci);
+          if (r > 0.15 && r > green * 1.25 && r > blue * 1.3) {
+            var shade = Math.max(0.22, Math.min(1, r));
+            colors.setXYZ(ci, shade * 0.33, shade * 0.10, shade * 0.56);
+          }
+        }
+        colors.needsUpdate = true;
+      });
+      var inkGold = new THREE.MeshStandardMaterial({ color: 0xf4c45f, metalness: 0.55, roughness: 0.35 });
+      var inkCrown = new THREE.Mesh(new THREE.TorusGeometry(1.05, 0.16, 6, 16), inkGold);
+      inkCrown.rotation.x = Math.PI / 2; inkCrown.position.y = 3.35; krakenMesh.add(inkCrown);
+      for (var ki = 0; ki < 5; ki++) {
+        var ka2 = ki * Math.PI * 2 / 5;
+        var inkPoint = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.72, 5), inkGold);
+        inkPoint.position.set(Math.sin(ka2) * 0.96, 3.65, Math.cos(ka2) * 0.96); krakenMesh.add(inkPoint);
+      }
+      kTentacles = [];
+    }
     krakenMesh.traverse(function (o) { if (o.isMesh) o.castShadow = true; });
 
     /* Ẩn Cá heo Bubi tự do cho đến khi Mây thật sự phá lưới đá cứu Bubi (tránh trùng 2 Bubi cùng lúc!) */
