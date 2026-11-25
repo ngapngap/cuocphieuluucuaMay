@@ -108,6 +108,7 @@
   MAY.setMasterMute = function (muted) {
     MAY.voiceOn = !muted;
     if (muted) stopSpeech();
+    if (MAY.refreshDialogueVoiceUI) MAY.refreshDialogueVoiceUI();
     if (!AC || !masterGain) return;
     try {
       var now = AC.currentTime;
@@ -719,8 +720,10 @@
         var sc = scoreViVoice(vs[i]);
         if (sc > bestSc) { bestSc = sc; best = vs[i]; }
       }
+      var voiceChanged = viVoice !== best;
       viVoice = best;
       MAY.hasViVoice = !!viVoice;
+      if (voiceChanged && MAY.canSpeakDialogue && MAY.refreshDialogueVoiceUI) MAY.refreshDialogueVoiceUI();
     } catch (e) {}
   }
 
@@ -780,6 +783,7 @@
   function stopSpeech() {
     _speakSeq++;
     clearTimeout(_speakTimer);
+    _speakTimer = null;
     if (_curAudio) { try { _curAudio.pause(); _curAudio.currentTime = 0; } catch (e) {} _curAudio = null; }
     if ("speechSynthesis" in window) { try { speechSynthesis.cancel(); } catch (e) {} }
     _activeUtterance = null;
@@ -814,13 +818,24 @@
   }
 
   MAY.stopSpeech = stopSpeech;
-  MAY.playVoice = function (clipKey) {
+  MAY.isSpeechActive = function () { return !!(_curAudio || _activeUtterance || _speakTimer); };
+  // Automatic narration is opportunistic: a stale item or skill hint is text-only
+  // while another line or a dialogue is active. Explicit page/shot changes may interrupt.
+  MAY.playVoice = function (clipKey, options) {
     if (!MAY.voiceOn || !clipKey) return;
+    if (!(options && options.interrupt) && (MAY.dialogueOpen || MAY.isSpeechActive())) return;
     stopSpeech();
     playLocalVoiceClip(clipKey, _speakSeq);
   };
-  MAY.speak = function (text, clipKey) {
+  MAY.canSpeakDialogue = function (text, clipKey) {
+    if (!MAY.voiceOn) return false;
+    if (clipKey) return true;
+    if ("speechSynthesis" in window && !viVoice) pickVoice();
+    return !!(text && viVoice && "speechSynthesis" in window);
+  };
+  MAY.speak = function (text, clipKey, options) {
     if (!MAY.voiceOn || !text) return;
+    if (!(options && options.interrupt) && (MAY.dialogueOpen || MAY.isSpeechActive())) return;
     var clean = cleanSpeechText(text);
     if (!clean) return;
     stopSpeech();
@@ -830,33 +845,35 @@
     var isDynamicQuiz = clean.toLowerCase().indexOf("câu đố nè") === 0;
     if (isDynamicQuiz && viVoice && "speechSynthesis" in window) {
       _speakTimer = setTimeout(function () {
+        _speakTimer = null;
         if (seq !== _speakSeq || !MAY.voiceOn) return;
         try {
           var u = new SpeechSynthesisUtterance(clean);
           u.voice = viVoice; u.lang = viVoice.lang || "vi-VN"; u.rate = 0.96; u.pitch = 1.0;
           _activeUtterance = u;
           setVoiceDuck(true);
-          u.onend = u.onerror = function () { _activeUtterance = null; if (seq === _speakSeq) setVoiceDuck(false); };
+          u.onend = u.onerror = function () { if (seq === _speakSeq) { _activeUtterance = null; setVoiceDuck(false); } };
           speechSynthesis.speak(u);
-        } catch (e) {}
+        } catch (e) { if (seq === _speakSeq) { _activeUtterance = null; setVoiceDuck(false); } }
       }, 45);
       return;
     }
 
-    var key = clipKey || inferVoiceClip(clean);
+    var key = clipKey || (!(options && options.exactText) && inferVoiceClip(clean));
     if (key) { playLocalVoiceClip(key, seq); return; }
 
     if (viVoice && "speechSynthesis" in window) {
       _speakTimer = setTimeout(function () {
+        _speakTimer = null;
         if (seq !== _speakSeq || !MAY.voiceOn) return;
         try {
           var u2 = new SpeechSynthesisUtterance(clean);
           u2.voice = viVoice; u2.lang = viVoice.lang || "vi-VN"; u2.rate = 0.98; u2.pitch = 1.0;
           _activeUtterance = u2;
           setVoiceDuck(true);
-          u2.onend = u2.onerror = function () { _activeUtterance = null; if (seq === _speakSeq) setVoiceDuck(false); };
+          u2.onend = u2.onerror = function () { if (seq === _speakSeq) { _activeUtterance = null; setVoiceDuck(false); } };
           speechSynthesis.speak(u2);
-        } catch (e) {}
+        } catch (e) { if (seq === _speakSeq) { _activeUtterance = null; setVoiceDuck(false); } }
       }, 45);
     }
   };

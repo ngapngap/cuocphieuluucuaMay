@@ -372,7 +372,9 @@ body.touch #big { display: none; }
 #dlg-role { font-size: 12px; font-weight: 700; color: #9fd8ef; background: rgba(255,255,255,.1); padding: 2px 9px; border-radius: 999px; }
 #dlg-page { margin-left: auto; font-size: 12px; font-weight: 800; color: #cde8f6; }
 #dlg-text { font-size: 16px; line-height: 1.5; color: #f5fbff; min-height: 50px; }
-.dlg-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 12px; }
+.dlg-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-top: 12px; }
+#dlg-replay[hidden] { display: none; }
+@media (max-width: 600px) { .dlg-key { display: none; } }
 .dlg-key { font-size: 12px; color: #9ec8de; font-weight: 700; }
 @keyframes dlgSlide { from { opacity: 0; transform: translateX(-50%) translateY(18px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
 

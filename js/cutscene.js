@@ -38,8 +38,9 @@
     cs.shotT = 0;
     var sh = cs.shots[idx];
     if (!sh) return;
+    if (MAY.stopSpeech) MAY.stopSpeech();
     setCaption(sh.speaker || "", sh.caption || "", idx, cs.shots.length);
-    if (sh.voiceClip && MAY.playVoice) MAY.playVoice(sh.voiceClip);
+    if (sh.voiceClip && MAY.playVoice) MAY.playVoice(sh.voiceClip, { interrupt: true });
     if (sh.onEnter) {
       try { sh.onEnter(cs); } catch (e) {}
     }
@@ -49,6 +50,7 @@
     if (!activeCS) return;
     var cs = activeCS;
     activeCS = null;
+    if (MAY.stopSpeech) MAY.stopSpeech();
     showCutsceneUI(false);
     MAY.camera.fov = _savedFov;
     MAY.camera.updateProjectionMatrix();
@@ -105,6 +107,7 @@
       if (!activeCS) return;
       var cs = activeCS;
       activeCS = null;
+      if (MAY.stopSpeech) MAY.stopSpeech();
       showCutsceneUI(false);
       MAY.camera.fov = _savedFov;
       MAY.camera.updateProjectionMatrix();

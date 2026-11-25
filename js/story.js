@@ -12,7 +12,26 @@
      1. HỘP THOẠI KỂ CHUYỆN NPC (MULTI-PAGE RPG DIALOGUE)
      ========================================================================== */
   var dlgState = null;
+  var lastDialogueInput = 0;
   MAY.dialogueOpen = false;
+
+  function dialogueClip() {
+    if (!dlgState) return null;
+    return (dlgState.voiceClips && dlgState.voiceClips[dlgState.idx]) ||
+      (dlgState.idx === 0 ? dlgState.voiceClip : null);
+  }
+  MAY.refreshDialogueVoiceUI = function () {
+    var replay = document.getElementById("dlg-replay");
+    if (replay) replay.hidden = !dlgState || !MAY.canSpeakDialogue ||
+      !MAY.canSpeakDialogue(dlgState.pages[dlgState.idx] || "", dialogueClip());
+  };
+  MAY.replayDialoguePage = function () {
+    if (!dlgState) return;
+    var line = dlgState.pages[dlgState.idx] || "", clip = dialogueClip();
+    if (MAY.stopSpeech) MAY.stopSpeech();
+    if (clip && MAY.playVoice) MAY.playVoice(clip, { interrupt: true });
+    else if (MAY.speak) MAY.speak(line, null, { interrupt: true, exactText: true });
+  };
 
   function renderDialoguePage() {
     if (!dlgState) return;
@@ -25,17 +44,16 @@
     if (pg) pg.textContent = (dlgState.idx + 1) + "/" + dlgState.pages.length;
     var isLast = dlgState.idx >= dlgState.pages.length - 1;
     if (btn) btn.textContent = isLast ? (dlgState.endBtn || "✨ Mây hiểu rồi!") : "Tiếp theo ▸";
+    MAY.refreshDialogueVoiceUI();
     if (box) box.classList.remove("hidden");
     if (MAY.sndDialogue) MAY.sndDialogue();
-    if (dlgState.voiceClips && dlgState.voiceClips[dlgState.idx]) {
-      MAY.playVoice(dlgState.voiceClips[dlgState.idx]);
-    } else if (dlgState.idx === 0 && dlgState.voiceClip) {
-      MAY.playVoice(dlgState.voiceClip);
-    }
+    MAY.replayDialoguePage();
   }
 
   MAY.openDialogue = function (opts) {
-    if (!opts || !opts.pages || !opts.pages.length) return;
+    if (!opts || !opts.pages || !opts.pages.length || dlgState) return;
+    if (MAY.stopSpeech) MAY.stopSpeech();
+    lastDialogueInput = 0;
     dlgState = {
       name: opts.name || "Bạn Đồng Hành",
       role: opts.role || "",
@@ -63,6 +81,7 @@
 
   MAY.advanceDialogue = function () {
     if (!dlgState) return;
+    if (MAY.stopSpeech) MAY.stopSpeech();
     if (dlgState.idx < dlgState.pages.length - 1) {
       dlgState.idx++;
       renderDialoguePage();
@@ -83,6 +102,7 @@
 
   MAY.closeDialogue = function (invokeDone) {
     var cb = (invokeDone && dlgState) ? dlgState.onDone : null;
+    if (dlgState && MAY.stopSpeech) MAY.stopSpeech();
     dlgState = null;
     MAY.dialogueOpen = false;
     if (MAY.player && MAY.player.clearKeys) MAY.player.clearKeys();
@@ -99,13 +119,22 @@
   };
 
   var dlgBtn = document.getElementById("dlg-next");
-  if (dlgBtn) dlgBtn.onclick = function () { MAY.advanceDialogue(); };
+  function advanceFromInput() {
+    var now = performance.now();
+    if (lastDialogueInput && now - lastDialogueInput < 250) return;
+    lastDialogueInput = now;
+    MAY.advanceDialogue();
+  }
+  if (dlgBtn) dlgBtn.onclick = advanceFromInput;
+  var replayBtn = document.getElementById("dlg-replay");
+  if (replayBtn) replayBtn.onclick = function () { MAY.replayDialoguePage(); };
   window.addEventListener("keydown", function (e) {
     if (!MAY.dialogueOpen) return;
     if (e.code === "Space" || e.code === "Enter") {
+      if (e.target && e.target.closest && e.target.closest("#dlg-replay")) return;
       e.preventDefault();
       e.stopPropagation();
-      MAY.advanceDialogue();
+      if (!e.repeat) advanceFromInput();
     } else if (e.code === "Escape") {
       e.preventDefault();
       e.stopPropagation();
@@ -1264,7 +1293,7 @@
           var ang = Math.atan2(npc.group.position.x - pPos.x, npc.group.position.z - pPos.z);
           npc.group.rotation.y += (Math.atan2(Math.sin(ang - npc.group.rotation.y), Math.cos(ang - npc.group.rotation.y))) * Math.min(1, dt * 4.5);
         }
-        if (npc.autoGreet && !npc.autoGreeted && !MAY.modalOpen && !(MAY.Cutscene && MAY.Cutscene.isPlaying()) && (npc.state === "!" || npc.state === "★") && nd < 4.2) {
+        if (npc.autoGreet && !npc.autoGreeted && !MAY.modalOpen && !(MAY.isSpeechActive && MAY.isSpeechActive()) && !(MAY.Cutscene && MAY.Cutscene.isPlaying()) && (npc.state === "!" || npc.state === "★") && nd < 4.2) {
           npc.autoGreeted = true;
           if (npc.onTalk) npc.onTalk(npc);
         }
