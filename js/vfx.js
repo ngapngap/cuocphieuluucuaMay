@@ -768,6 +768,7 @@
       syncSpellUI();
     }
     castCooldown = 0.72;
+    MAY.currentCtx.storyInputThisFrame = true;
     var p = MAY.player.pos;
     var fwdX = -Math.sin(MAY.player.yaw), fwdZ = -Math.cos(MAY.player.yaw);
     var tx = p.x + fwdX * 6.5, tz = p.z + fwdZ * 6.5;

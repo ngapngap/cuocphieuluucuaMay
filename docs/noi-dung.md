@@ -34,6 +34,7 @@ Mở sâu vào khu vực của sáu chương hiện có. Mỗi khu có lối và
 - Bà Sóc chỉ những rễ cây khô. Trẻ nhìn vệt nước, xoay nhánh dẫn dòng và dùng Nở Hoa khi rễ đã ướt. Nấm mọc thành bậc cho Mây leo lên chỗ trước đó chưa tới được.
 - Trên cao, các khoảng trống trong tán để lộ hai nguồn sáng. Mây đổi góc nhìn, lần theo nguồn sáng thật rồi mở lối tắt về Cây Mẹ. Dưới gốc, Thỏ Bông dạy tín hiệu “chờ tớ”.
 - Trẻ gửi hai nhịp ngắn và một nhịp dài. Cuối rừng có ánh đèn đáp. Lúc này Mây vẫn tin rằng chỉ cần thắp sáng hải đăng là Bé Gió sẽ về.
+- Sau lời đáp từ đồi xa, Mây chọn cành ướt hoặc cành hoa: dùng Sóng nâng cầu lá hoặc Nở Hoa gọi bậc nấm. Hai nhánh nhập tại cổng dây leo; Mây mở cổng rồi mang nhịp đáp về đèn Cây Mẹ.
 - Nghiệm thu đường nước sai/đúng có phản hồi khác nhau, dấu hiệu trên cao đọc được khi tắt tiếng, tín hiệu được gửi bằng bàn phím và chạm.
 
 ### 3. Chính Mây đổi hướng ánh sáng
@@ -41,6 +42,7 @@ Mở sâu vào khu vực của sáu chương hiện có. Mỗi khu có lối và
 - Sân gương dạy quan hệ giữa hướng gương và nơi vệt sáng chạm. Trong kim tự tháp, các đích nằm ở những vị trí khác nhau. Mây phải theo đường tia và chỉnh gương tại chỗ để nối các phòng.
 - Ở đài quan sát, tia sáng gặp hải đăng. Bé Gió phát lại nhịp đã học trong rừng. Theo tia xuống dưới, trẻ thấy bóng bão tiến về lâu đài. Mây chủ động tách ánh sáng khỏi nơi Bé Gió đang trú và chuyển sang tháp trống.
 - Bão chuyển hướng; cổng đấu Bọ Cạp mở. Một lần chỉnh sai chỉ cần sửa chiếc gương đang làm việc. Giữ hướng đã hoàn thành khi mở lại game.
+- Trên lối thoát sau bão, Mây chọn khe đá hoặc sườn cát để tiếp cận đèn lái. Chỉnh gương và thắp cột thu khiến bão rời cửa trú; Mây đi qua lối vừa quang.
 - Nghiệm thu bằng cách cố chiếu vào lâu đài, quan sát hệ quả, tự đổi hướng rồi mở trận trùm. Bỏ qua hội thoại vẫn phải tự giải.
 
 ### 4. Tiếng gọi bên kia hồ

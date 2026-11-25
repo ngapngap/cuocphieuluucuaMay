@@ -212,11 +212,11 @@
       for (var h = 0; h < hits.length; h++) {
         if (hits[h].point.distanceTo(pPos) > 14) continue;
         var it = findInteractive(hits[h].object, ctx.interactives);
-        if (it && isInteractiveActive(it) && it.onInteract) { it.onInteract(it); return; }
+        if (it && isInteractiveActive(it) && it.onInteract) { ctx.storyInputThisFrame = true; it.onInteract(it); return; }
       }
     }
     if (!currentTarget || !isInteractiveActive(currentTarget)) return;
-    if (currentTarget.onInteract) currentTarget.onInteract(currentTarget);
+    if (currentTarget.onInteract) { ctx.storyInputThisFrame = true; currentTarget.onInteract(currentTarget); }
   };
 
   /* ---- Nhà máy tạo bạn thú 3D siêu dễ thương cho cả 6 màn ---- */
@@ -1640,12 +1640,24 @@
       });
     }
 
+    var previousPlayPosition = new THREE.Vector3();
+    var previousYaw, previousPitch;
     ctx.updateAll = function (dt, t) {
       var pPos = MAY.player.pos;
-      if (MAY.started && !MAY.modalOpen) {
+      var player = MAY.player;
+      var moved = Math.hypot(pPos.x - previousPlayPosition.x, pPos.z - previousPlayPosition.z) > dt * 0.08;
+      var rising = player.keys.Space || player.keys.KeyC || player.vert.up || player.vert.down;
+      var changedDepth = rising && Math.abs(pPos.y - previousPlayPosition.y) > dt * 0.08;
+      var looking = previousYaw !== player.yaw || previousPitch !== player.pitch;
+      if (MAY.started && !MAY.modalOpen && !document.hidden && previousYaw !== undefined &&
+          (moved || changedDepth || looking || ctx.storyInputThisFrame)) {
         ctx.playSecs += dt;
         if (!ls.gem) ls.playSecs = Math.floor(ctx.playSecs);
       }
+      previousPlayPosition.copy(pPos);
+      previousYaw = player.yaw;
+      previousPitch = player.pitch;
+      ctx.storyInputThisFrame = false;
       if (ctx.portalCooldown > 0) ctx.portalCooldown -= dt;
 
       /* Đèn mặt trời & bóng đổ sắc nét đi theo Mây */

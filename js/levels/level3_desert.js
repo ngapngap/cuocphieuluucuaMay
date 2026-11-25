@@ -468,6 +468,17 @@
           {at:0.68,kind:"pass",lane:0,cue:"Lối giữa đã khuất cát",success:"Mây qua cơn gió."},
           {at:0.78,kind:"cast",spell:"solar",cue:"Thắp đèn báo lối trú cuối cùng",success:"Đường trú hiện rõ phía trước."},
           {at:0.89,kind:"echo",pattern:[0,0,2],cue:"Báo cho Bé Gió lối trú đã sáng",success:"Bé Gió thấy dấu báo lối trú."}
+        ]},
+        { name: "Lối thoát sau cơn bão", brief: "Chọn đường vòng, xoay đèn dẫn cát ra khỏi cửa rồi đưa mọi người tới nơi trú.", landmark: "Cổng trú sau bão", length: 400, sky: 0x776a77, ground: 0x95795f, path: 0xd2b27e, scenery: "observatory", events: [
+          {at:.09,kind:"fork",choices:["Khe đá phía trái", "Sườn cát phía phải"],cue:"Bão chắn cửa; chọn khe đá hoặc sườn cát để tới đèn lái bão.",success:"Mây chọn lối vòng tới đèn."},
+          {at:.23,kind:"pass",lane:-1,cue:"Nép trái qua khe đá.",success:"Mây qua khe đá.",afterFork:[
+            {lane:-1,cue:"Qua khe đá bên trái, tránh vùng cát xoáy.",success:"Khe đá che Mây khỏi gió."},
+            {lane:1,cue:"Đi trên sườn cát bên phải tránh mỏm đá.",success:"Mây tới đèn từ sườn cát."}
+          ]},
+          {at:.39,kind:"align",lane:0,slots:4,answer:2,initial:0,cue:"Xoay đèn dẫn bão khỏi cửa trú, tới cột thu bão.",success:"Tia chạm cột thu; gió đổi khỏi cửa."},
+          {at:.54,kind:"cast",lane:0,spell:"solar",cue:"Thắp cột thu bão để giữ tia dẫn gió.",success:"Cột sáng lên, luồng bão rời cửa."},
+          {at:.69,kind:"pass",lane:1,cue:"Cửa trái còn cát; qua lối phải vừa quang.",success:"Mây qua lối thoát đã mở."},
+          {at:.85,kind:"pass",lane:0,cue:"Theo dấu sáng vào giữa cổng trú.",success:"Mây tới nơi trú, bão ở lại phía cột thu."}
         ]}
       ],
       makeVista: function (i, state) {
@@ -482,6 +493,20 @@
           // A roof and paired pillars turn this stretch into connected chambers.
           box(29,1,75,0,10,-32,sandstone);
           [-1,1].forEach(function(side) { for(var z=-8;z>=-68;z-=15) { box(2,10,2,side*12,5,z,sandstone); box(5,1,2,side*10,9,z,gold); } });
+        }
+        if (i === 4) {
+          var gateMat = new THREE.MeshStandardMaterial({color:0x8a6954,roughness:.9});
+          box(3,9,3,-6,4.5,-28,gateMat);box(3,9,3,6,4.5,-28,gateMat);box(15,1,3,0,9,-28,gateMat);
+          var marker=new THREE.Mesh(new THREE.OctahedronGeometry(1.2,0),gold);marker.position.set(10,7,-22);g.add(marker);
+          var cloud=new THREE.Group(), cm=new THREE.MeshStandardMaterial({color:0x514957,roughness:1});
+          [-2,0,2].forEach(function(x){var m=new THREE.Mesh(new THREE.SphereGeometry(2,9,7),cm);m.position.x=x;cloud.add(m);});g.add(cloud);
+          var ray=new THREE.Mesh(new THREE.CylinderGeometry(.13,.13,1,8),gold);g.add(ray);
+          var tag=MAY.makeLabel("CỬA TRÚ",{sx:4,sy:.8,bg:"rgba(25,25,40,.9)"});tag.position.set(0,11,-28);g.add(tag);
+          return {group:g,tick:function(distance,lateral,eventIndex,time){
+            var clear=eventIndex>=3, target=new THREE.Vector3(clear?10:0,7,clear?-22:-28), from=new THREE.Vector3(0,4,-10), d=target.clone().sub(from);
+            ray.position.copy(from).add(target).multiplyScalar(.5);ray.scale.y=d.length();ray.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),d.normalize());
+            cloud.position.set(target.x,12+Math.sin(time)*.2,target.z);
+          }};
         }
         if (i >= 2) {
           var towerMat = new THREE.MeshStandardMaterial({color:0xc1a072,roughness:0.8});

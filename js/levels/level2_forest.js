@@ -482,7 +482,7 @@
         } else if (ch2St.steps.rootTrialWet && sp === "growth") {
           ch2St.steps.rootTrialDone = true; MAY.persist(); tg.markDone();
           MAY.VFX.spawnVineTrap(rootTrialPos.clone(), 2.3);
-          MAY.toast("🌿 Rễ Cây Mẹ bừng sáng! Vua Nấm đã xuất hiện.");
+          MAY.toast("🌿 Rễ Cây Mẹ bừng sáng! Theo lối dưới rễ lên tán nấm tìm tín hiệu của Thỏ Bông.");
           updateCh2Story();
         } else {
           MAY.toast(ch2St.steps.rootTrialWet ? "🌿 Rễ đã ướt: dùng Nở Hoa (2+R)!" : "🌊 Rễ còn khô: dùng Sóng (1+R) trước!");
@@ -542,6 +542,20 @@
           {at:.64,kind:"cast",lane:0,spell:"growth",cue:"Gọi hoa quanh chân đèn nở.",success:"Mầm bừng nở!"},
           {at:.76,kind:"pass",lane:-1,cue:"Theo ánh hoa bên trái tới mé rừng.",success:"Mây tìm được đường qua."},
           {at:.88,kind:"escort",lane:0,cue:"Cùng Thỏ đến chỗ nhìn rõ ánh đèn cuối rừng.",success:"Ánh đèn từ đồi xa đã đáp lại lời gọi của Mây!"}
+        ]},
+        { name: "Lối dây leo về Cây Mẹ", brief: "Mang lời đáp từ đồi xa về gốc cây qua một trong hai lối trên tán.", landmark: "Cổng dây leo về gốc", length: 430, sky: 0x79aa85, ground: 0x477550, path: 0xb2d999, scenery: "canopy", events: [
+          {at:.10,kind:"fork",choices:["Cành ướt bên trái", "Cành hoa bên phải"],cue:"Chọn cành ướt hoặc cành hoa để mang lời đáp về cây.",success:"Mây chọn đường về trên tán."},
+          {at:.24,kind:"cast",lane:-1,spell:"wave",cue:"Cành ướt: dùng Sóng nâng nhịp cầu lá.",success:"Cầu lá nổi lên dưới chân.",afterFork:[
+            {lane:-1,spell:"wave",cue:"Cành ướt bên trái: dùng Sóng nâng cầu lá.",success:"Cầu lá nổi lên trên dòng nước."},
+            {lane:1,spell:"growth",cue:"Cành hoa bên phải: dùng Nở Hoa gọi bậc nấm.",success:"Bậc nấm nở dẫn qua cành hoa."}
+          ]},
+          {at:.39,kind:"pass",lane:-1,cue:"Qua cầu lá bên trái.",success:"Mây giữ lời đáp trên đường về.",afterFork:[
+            {lane:-1,cue:"Qua cầu lá phía trái.",success:"Mây qua cành ướt."},
+            {lane:1,cue:"Bước qua bậc nấm phía phải.",success:"Mây qua cành hoa."}
+          ]},
+          {at:.54,kind:"cast",lane:0,spell:"growth",cue:"Dùng Nở Hoa mở cổng dây leo chung.",success:"Dây leo tách ra, hai lối nhập lại về Cây Mẹ."},
+          {at:.69,kind:"pass",lane:1,cue:"Theo dải lá bên phải qua cửa vừa mở.",success:"Mây đi qua cổng dây leo."},
+          {at:.84,kind:"echo",pattern:[0,0,2],cue:"Gửi lời đáp từ đồi xa về đèn nơi Cây Mẹ.",success:"Đèn ở gốc nhận hai ngắn, một dài."}
         ]}
       ],
       clearing: {
@@ -573,6 +587,21 @@
         look: function(id,v) {return {lit:id==='source'?!!v.source:id==='valve'?!!v.valve:id==='tree'?!!v.tree:id==='flower'?!!v.flower:!!v.flower,angle:id==='valve'&&v.valve?1.1:0};},
         links: function(v) {var out=[];if(v.source)out.push(["source","valve",0x64cce8]);if(v.valve)out.push(["valve","tree",0x64cce8]);if(v.tree)out.push(["tree","flower",0x8be48f]);if(v.flower)out.push(["flower","short",0xffde84],["flower","long",0xffbd77]);return out;},
         followers: function() {return [];}
+      },
+      makeVista: function (index, state) {
+        if (index !== 4) return null;
+        var g = new THREE.Group(), bark = new THREE.MeshStandardMaterial({color:0x557744,roughness:0.9});
+        var vine = new THREE.MeshStandardMaterial({color:0x3b9f5c,emissive:0x123618,roughness:0.8}), strands=[];
+        [-1,1].forEach(function(side) {
+          var post=new THREE.Mesh(new THREE.CylinderGeometry(.65,1,9,8),bark);post.position.set(side*7,4.5,-28);g.add(post);
+          var strand=new THREE.Mesh(new THREE.TorusGeometry(4.4,.23,7,24,Math.PI),vine);strand.position.set(side*3,7,-28);strand.rotation.z=side*.25;g.add(strand);strands.push({mesh:strand,side:side});
+        });
+        var lamp=new THREE.Mesh(new THREE.SphereGeometry(.7,12,8),new THREE.MeshBasicMaterial({color:0xffe078}));lamp.position.set(0,8,-28);g.add(lamp);
+        var tag=MAY.makeLabel("ĐÈN CÂY MẸ",{sx:4,sy:.8,bg:"rgba(20,35,22,.92)"});tag.position.set(-3,8,-32);g.add(tag);
+        return {group:g,tick:function(distance,lateral,eventIndex,time){
+          strands.forEach(function(v){v.mesh.position.x=v.side*(eventIndex>=4?7:3);v.mesh.rotation.z=v.side*(eventIndex>=4?.8:.25);});
+          lamp.scale.setScalar(eventIndex>=6?1.5:1+.12*Math.sin(time*3));
+        }};
       },
       makeLandmark: function (index) {
         var g = new THREE.Group();
