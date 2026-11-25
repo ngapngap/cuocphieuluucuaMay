@@ -172,29 +172,33 @@
     }
 
     /* Đá vụn ẩm & mảnh tinh thể rải sàn hang + quanh đầu cầu/cụm pha lê lớn */
-    MAY.scatterDebris(ctx, 200, function (x, z) { return Math.hypot(x - LAKE.x, z - LAKE.z) > LAKE.r + 2; }, { spread: 68, size: 0.25, color: 0x484466 });
+    var caveDebrisGeo = new THREE.DodecahedronGeometry(0.18, 0);
+    var caveDebrisMat = new THREE.MeshStandardMaterial({ color: 0x37354b, roughness: 0.95, flatShading: true });
+    MAY.scatterDebris(ctx, 140, function (x, z) { return Math.hypot(x - LAKE.x, z - LAKE.z) > LAKE.r + 2; }, { spread: 68, geo: caveDebrisGeo, mat: caveDebrisMat });
     MAY.scatterPropCluster(ctx, [
       { x: 0, z: 16, rMin: 2.8, rMax: 6.2, count: 18 },
       { x: 0, z: -36, rMin: 2.5, rMax: 6.5, count: 18 },
       { x: -26, z: 22, rMin: 2.0, rMax: 5.5, count: 14 },
       { x: 28, z: 20, rMin: 2.0, rMax: 5.5, count: 14 }
-    ], { size: 0.24, color: 0x5c4f8a });
+    ], { geo: caveDebrisGeo, mat: caveDebrisMat });
 
     /* Các cụm Pha Lê khổng lồ trong suốt phản chiếu + Đèn thực tế tỏa sáng lên mặt đá ướt */
     var crysCols = [0xc084fc, 0x38bdf8, 0xf472b6, 0x2dd4bf, 0xa78bfa];
+    var crystalGeo = new THREE.ConeGeometry(0.45, 1, 6);
+    var crystalMats = {};
     function makeCrystalCluster(color, sc, addLight) {
       var g = new THREE.Group();
-      var mat = new THREE.MeshPhysicalMaterial({
-        color: color, emissive: color, emissiveIntensity: 0.68,
-        roughness: 0.08, metalness: 0.15, clearcoat: 1.0, transparent: true, opacity: 0.9
-      });
+      var mat = crystalMats[color] || (crystalMats[color] = new THREE.MeshStandardMaterial({
+        color: color, emissive: color, emissiveIntensity: 0.24, roughness: 0.55, metalness: 0.08
+      }));
       for (var k = 0; k < 5; k++) {
         var h = (1.8 + (k % 3) * 1.1) * sc;
-        var sp = new THREE.Mesh(new THREE.ConeGeometry(0.45 * sc, h, 6), mat);
+        var sp = new THREE.Mesh(crystalGeo, mat);
+        sp.scale.set(sc, h, sc);
         var a = (k / 5) * Math.PI * 2;
         sp.position.set(Math.cos(a) * 0.45 * sc, h * 0.42, Math.sin(a) * 0.45 * sc);
         sp.rotation.z = Math.cos(a) * 0.28; sp.rotation.x = -Math.sin(a) * 0.28;
-        sp.castShadow = true; g.add(sp);
+        g.add(sp);
       }
       if (addLight) {
         var pl = MAY.makePooledLight ? MAY.makePooledLight(color, 2.2, 28) : new THREE.PointLight(color, 2.2, 28);
@@ -251,7 +255,7 @@
     }));
 
     var chimeNames = ["Đô 🎵", "Rê 🎵", "Mi 🎵", "Son 🎵", "La 🎵"];
-    ctx.addInteractProps([[-12, 14], [12, 14], [-22, -4], [22, -4], [0, -28]].map(function (p, i) {
+    ctx.addInteractProps([[-12, 14], [12, 14], [-22, -4], [22, -4], [7, -32]].map(function (p, i) {
       var cl = makeCrystalCluster(crysCols[i], 0.85, false);
       var cpy = ctx.groundH(p[0], p[1]);
       cl.position.set(p[0], cpy, p[1]);
@@ -275,7 +279,7 @@
     });
 
     /* 3 Thử thách Màn 4 */
-    ctx.addRingsChallenge([[-18, 22], [-28, 6], [-24, -18], [0, -28], [24, -18]], { title: "5 vòng pha lê ánh sáng", color: 0xd8b4fe, emissive: 0x7e22ce });
+    ctx.addRingsChallenge([[-18, 22], [-28, 6], [-24, -18], [-6, -30], [24, -18]], { title: "5 vòng pha lê ánh sáng", color: 0xd8b4fe, emissive: 0x7e22ce });
     ctx.addRaceChallenge([14, 24], [[32, 14], [34, -16], [0, -30], [-30, -8]], { title: "Đua cùng Dơi Bibi", time: 55 });
     ctx.addQuizStation([0, 26], { label: "Cổng Đố Hình Học" });
 
@@ -329,12 +333,34 @@
       { pos: new THREE.Vector3(16, ctx.groundH(16, 10), 10),   label: "🎵 Nốt 2: MI", noteIdx: 2, col: 0x4ade80 },
       { pos: new THREE.Vector3(0, ctx.groundH(0, -28), -28),   label: "🎵 Nốt 3: SON", noteIdx: 3, col: 0xf472b6 }
     ];
+    var echoBaseGeo = new THREE.CylinderGeometry(1.05, 1.22, 0.48, 8);
+    var echoBaseMat = new THREE.MeshStandardMaterial({ color: 0x554e6a, roughness: 0.8 });
+    var echoShapeGeo = [new THREE.SphereGeometry(0.72, 14, 10), new THREE.ConeGeometry(0.78, 2.05, 3), new THREE.OctahedronGeometry(0.9, 0)];
     var echoMeshes = echoCoords.map(function (ec, idx) {
-      var m = makeCrystalCluster(ec.col, 1.35, false);
+      var m = new THREE.Group();
+      var base = new THREE.Mesh(echoBaseGeo, echoBaseMat); base.position.y = 0.24; m.add(base);
+      var top = new THREE.Mesh(echoShapeGeo[idx], new THREE.MeshStandardMaterial({ color: ec.col, emissive: ec.col, emissiveIntensity: 0.3, roughness: 0.35, flatShading: true }));
+      top.position.y = 1.65; if (idx === 2) top.scale.y = 1.25; m.add(top);
+      var symbol = MAY.makeLabel(["●", "▲", "◆"][idx], { sx: 1.2, sy: 1.2, w: 96, h: 96, fontSize: 56, bg: "rgba(20,20,32,.95)", color: "#ffffff" });
+      symbol.position.set(0, 2.8, 0); m.add(symbol);
+      m.userData.noteTop = top; m.userData.noteTime = 0;
       m.position.copy(ec.pos); ctx.add(m);
       ctx.addCollider(ec.pos.x, ec.pos.z, 0.92, "echo_crystal", { minY: ec.pos.y - 0.5, maxY: ec.pos.y + 3.6 });
       return m;
     });
+    function pulseEcho(idx) { echoMeshes[idx].userData.noteTime = 0.65; }
+    var caveUpdate = ctx.onUpdate;
+    ctx.onUpdate = function (dt, t) {
+      if (caveUpdate) caveUpdate(dt, t);
+      echoMeshes.forEach(function (m, i) {
+        var data = m.userData, top = data.noteTop;
+        data.noteTime = Math.max(0, data.noteTime - dt);
+        var hit = data.noteTime / 0.65;
+        top.position.y = 1.65 + Math.sin(t * 1.8 + i) * 0.07 - Math.sin(hit * Math.PI) * 0.3;
+        top.material.emissiveIntensity = 0.3 + hit * 1.4;
+        top.rotation.y += dt * (0.3 + hit * 2);
+      });
+    };
     var echoPatterns = [[0, 1, 2], [2, 0, 1]];
     var echoRound = ch4St.steps.echoRound === 1 ? 1 : 0;
     var echoProgress = Math.max(0, Math.min(2, Number(ch4St.steps.echoProgress) || 0));
@@ -358,6 +384,7 @@
           noteButtons.forEach(function (b) { b.classList.remove("flash"); });
           noteButtons[n].classList.add("flash");
           musicStatus.textContent = "♪ " + noteNames[n];
+          pulseEcho(n);
           MAY.sndChime(echoCoords[n].noteIdx);
           setTimeout(function () {
             if (token === replayToken && MAY.currentCtx === ctx) noteButtons[n].classList.remove("flash");
@@ -537,7 +564,7 @@
     echoCoords.forEach(function (ec, idx) {
       echoTargets[idx] = ctx.addSkillTarget({
         id: "l4_echo_" + idx, pos: ec.pos, radius: 9.0, reqSpell: "crystal",
-        hint: "💎 " + ["● ĐÔ", "▲ MI", "◆ SON"][idx], done: false,
+        hint: "💎 " + ["● ĐÔ", "▲ MI", "◆ SON"][idx], hintY: 4.1, done: false,
         isActive: function () { return practiceActive || (ch4St.stage >= 2 && !!ch4St.steps.wallBroken && !ch4St.steps.echoDone); },
         onHit: function () {
           ++replayToken;
@@ -547,7 +574,7 @@
           musicStatus.textContent = "Đã gõ: " + played.map(function (n) { return noteNames[n]; }).join(" → ");
           MAY.sndChime(ec.noteIdx);
           MAY.burstAt(ec.pos.clone().add(new THREE.Vector3(0, 2, 0)), ec.col, 22);
-          echoMeshes[idx].scale.setScalar(1.22);
+          pulseEcho(idx);
           if (practiceActive) {
             if ([1, 2, 0][practiceProgress] !== idx) {
               MAY.toast("🎵 Thử lại nốt " + (practiceProgress + 1) + ": ▲ MI → ◆ SON → ● ĐÔ");

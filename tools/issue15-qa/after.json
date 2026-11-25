@@ -1,0 +1,38 @@
+[
+  {
+    "first": 3844.2000000476837,
+    "draws": 423,
+    "gap": 3733.300000000003,
+    "gpu": "ANGLE (Intel, Intel(R) UHD Graphics 630 (0x00009BC5) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "quality": "low",
+    "width": 1180,
+    "height": 760
+  },
+  {
+    "first": 988.1000000238419,
+    "draws": 192,
+    "gap": 853.5,
+    "gpu": "ANGLE (Intel, Intel(R) UHD Graphics 630 (0x00009BC5) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "quality": "low",
+    "width": 390,
+    "height": 844
+  },
+  {
+    "first": 2901,
+    "draws": 929,
+    "gap": 2773.2,
+    "gpu": "ANGLE (Intel, Intel(R) UHD Graphics 630 (0x00009BC5) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "quality": "mid",
+    "width": 1180,
+    "height": 760
+  },
+  {
+    "first": 664,
+    "draws": 539,
+    "gap": 600,
+    "gpu": "ANGLE (Intel, Intel(R) UHD Graphics 630 (0x00009BC5) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "quality": "mid",
+    "width": 390,
+    "height": 844
+  }
+]
