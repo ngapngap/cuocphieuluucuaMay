@@ -496,6 +496,98 @@
       rootTarget.ring.visible = active;
     }
 
+    // Le nouveau sentier commence aux racines, avant le r?veil du Vua N?m.
+    var expedition = MAY.createChapterJourney(ctx, {
+      title: "Tin nhắn trên tán nấm", entry: [0, ctx.groundH(0, 17), 17], color: 0x85e1a5,
+      sections: [
+        { name: "Rễ Cây Mẹ", brief: "Soi vệt nước và xoay nhánh dẫn dòng về rễ khô.", landmark: "Đài dẫn nước", length: 590, sky: 0x658c77, ground: 0x537656, path: 0x8bbf80, scenery: "roots", events: [
+          {at:.08,kind:"pass",lane:-1,cue:"Vệt nước vòng bên trái rễ lớn.",success:"Mây tìm được đường qua."},
+          {at:.19,kind:"align",lane:0,slots:4,answer:2,initial:0,cue:"Xoay máng về phía rễ có lá xanh.",success:"Nhánh đã nối tới dấu sáng."},
+          {at:.30,kind:"cast",lane:0,spell:"wave",cue:"Dùng Sóng đưa nước vào máng.",success:"Dòng nước mở lối."},
+          {at:.41,kind:"pass",lane:1,cue:"Đi bên phải qua rễ nổi.",success:"Mây tìm được đường qua."},
+          {at:.52,kind:"align",lane:-1,slots:4,answer:1,initial:3,cue:"Xoay nhánh về vệt sáng trên rễ.",success:"Nhánh đã nối tới dấu sáng."},
+          {at:.64,kind:"cast",lane:0,spell:"wave",cue:"Tưới nước cho rễ vừa nối.",success:"Dòng nước mở lối."},
+          {at:.76,kind:"cast",lane:0,spell:"growth",cue:"Rễ đã ướt: dùng Nở Hoa đánh thức mầm.",success:"Mầm bừng nở!"},
+          {at:.88,kind:"pass",lane:1,cue:"Theo bậc nấm mới mọc bên phải.",success:"Mây tìm được đường qua."}
+        ]},
+        { name: "Bậc nấm", brief: "Nấm mở đường lên cao; tìm từng khoảng có thể bước tiếp.", landmark: "Cầu thang nấm", length: 590, sky: 0x82b794, ground: 0x628e63, path: 0xa8d995, scenery: "canopy", events: [
+          {at:.08,kind:"pass",lane:1,cue:"Bậc nấm đầu nằm bên phải.",success:"Mây tìm được đường qua."},
+          {at:.19,kind:"cast",lane:0,spell:"growth",cue:"Đánh thức cụm mầm giữa đường.",success:"Mầm bừng nở!"},
+          {at:.30,kind:"pass",lane:-1,cue:"Nhánh gãy chắn phải; qua trái.",success:"Mây tìm được đường qua."},
+          {at:.41,kind:"pass",lane:0,cue:"Theo hàng nấm sáng ở giữa.",success:"Mây tìm được đường qua."},
+          {at:.52,kind:"cast",lane:1,spell:"growth",cue:"Gọi bậc nấm phía phải nở ra.",success:"Mầm bừng nở!"},
+          {at:.64,kind:"pass",lane:1,cue:"Theo bậc mới sang phải.",success:"Mây tìm được đường qua."},
+          {at:.76,kind:"pass",lane:-1,cue:"Lách trái dưới vòm lá thấp.",success:"Mây tìm được đường qua."},
+          {at:.88,kind:"pass",lane:0,cue:"Đến khoảng trống giữa tán.",success:"Mây tìm được đường qua."}
+        ]},
+        { name: "Hai ánh sáng trên tán", brief: "Lần theo nguồn sáng thật và mở lối tắt về Cây Mẹ.", landmark: "Vòm lá hai ánh", length: 590, sky: 0xa8d4a3, ground: 0x6a9d68, path: 0xc7e6a0, scenery: "canopy", events: [
+          {at:.08,kind:"switch",lane:0,choices:["Tia xuyên lá", "Đốm phản chiếu"],answer:0,cue:"Tìm tia sáng xuyên qua lá, không phải đốm phản chiếu.",success:"Mây theo đúng nguồn sáng."},
+          {at:.19,kind:"fork",lane:0,choices:["Nhánh lá xanh", "Nhánh hoa vàng"],cue:"Chọn nhánh lá xanh bên trái hoặc nhánh hoa vàng bên phải.",success:"Mây chọn một lối qua tán."},
+          {at:.30,kind:"align",lane:0,slots:4,answer:2,initial:1,cue:"Xoay nhánh lá để tia tới dấu trên thân cây.",success:"Nhánh đã nối tới dấu sáng.", afterFork:[
+            {lane:-1,answer:1,cue:"Nhánh lá xanh: xoay máng bên trái về dấu sáng.",success:"Tia sáng qua nhánh lá xanh."},
+            {lane:1,answer:3,cue:"Nhánh hoa vàng: xoay máng bên phải về dấu sáng.",success:"Tia sáng qua nhánh hoa vàng."}
+          ]},
+          {at:.41,kind:"pass",lane:1,cue:"Đi phía phải tới vệt sáng kế tiếp.",success:"Mây tìm được đường qua."},
+          {at:.52,kind:"switch",lane:0,choices:["Đốm phản chiếu", "Tia xuyên lá"],answer:1,cue:"Chọn tia nối liền với khe lá trên cao.",success:"Mây theo đúng nguồn sáng."},
+          {at:.64,kind:"cast",lane:0,spell:"growth",cue:"Gọi dây leo ở dấu sáng mở lối tắt.",success:"Mầm bừng nở!"},
+          {at:.76,kind:"pass",lane:-1,cue:"Theo dây leo phía trái xuống gốc.",success:"Mây tìm được đường qua."},
+          {at:.88,kind:"pass",lane:0,cue:"Tìm Thỏ Bông bên gốc cây.",success:"Mây tìm được đường qua."}
+        ]},
+        { name: "Lời đáp từ đồi xa", brief: "Tín hiệu đã gửi. Cùng Thỏ Bông theo các ánh đèn để tìm lời đáp từ đồi xa.", landmark: "Đèn hiệu cuối rừng", length: 600, sky: 0x8bb99e, ground: 0x638c6b, path: 0xb4dba0, scenery: "roots", companion: "rabbit", events: [
+          {at:.08,kind:"pass",lane:0,cue:"Theo ánh đèn giữa lối ra khỏi vườn rễ.",success:"Ánh đèn xa nhấp nháy sau tán cây."},
+          {at:.19,kind:"escort",lane:-1,cue:"Dẫn Thỏ qua lối trái tránh rễ gai.",success:"Bạn đồng hành đã đi qua cùng Mây."},
+          {at:.30,kind:"pass",lane:1,cue:"Tìm đèn nhỏ phía phải.",success:"Mây tìm được đường qua."},
+          {at:.41,kind:"switch",lane:0,choices:["Hai ngắn, một dài", "Một dài, hai ngắn"],answer:0,cue:"Đèn xa đáp bằng nhịp nào Mây vừa học?",success:"Đúng rồi: hai ngắn, một dài nghĩa là chờ tớ."},
+          {at:.52,kind:"escort",lane:1,cue:"Dẫn Thỏ qua lối phải.",success:"Bạn đồng hành đã đi qua cùng Mây."},
+          {at:.64,kind:"cast",lane:0,spell:"growth",cue:"Gọi hoa quanh chân đèn nở.",success:"Mầm bừng nở!"},
+          {at:.76,kind:"pass",lane:-1,cue:"Theo ánh hoa bên trái tới mé rừng.",success:"Mây tìm được đường qua."},
+          {at:.88,kind:"escort",lane:0,cue:"Cùng Thỏ đến chỗ nhìn rõ ánh đèn cuối rừng.",success:"Ánh đèn từ đồi xa đã đáp lại lời gọi của Mây!"}
+        ]}
+      ],
+      clearing: {
+        section: 2, name: "Vườn rễ và đèn hiệu", brief: "Nối nước từ suối đến rễ, gọi hoa nở rồi gửi lời chờ tớ.",
+        devices: [
+          {id:"source",name:"Nguồn nước",x:-19,z:0,form:"valve",color:0x75dced},
+          {id:"valve",name:"Nhánh dẫn nước",x:-8,z:-20,form:"valve",color:0x80dfe5},
+          {id:"tree",name:"Rễ Cây Mẹ",x:10,z:-29,form:"tree",color:0x83ce78},
+          {id:"flower",name:"Mầm hoa",x:19,z:-12,form:"flower",color:0xffa9c4,spell:"growth"},
+          {id:"short",name:"Đèn nhịp ngắn",x:6,z:2,form:"lamp",color:0xffdf86},
+          {id:"long",name:"Đèn nhịp dài",x:-5,z:3,form:"lamp",color:0xffbc71}
+        ],
+        hint: function(v) { if(!v.source)return "Mở nguồn nước ở đầu vườn."; if(!v.valve)return "Xoay nhánh dẫn nước về rễ."; if(!v.tree)return "Đánh thức rễ đã ướt."; if(!v.flower)return "Gọi mầm hoa nở."; return "Gửi hai nhịp ngắn rồi một nhịp dài. Đã đúng "+(v.notes||0)+"/3."; },
+        action: function(id,v) {
+          if(id==='source'){v.source=true;return {text:"Nước sáng lên ở đầu nguồn.",done:false};}
+          if(id==='valve'){if(!v.source)return {text:"Máng khô; mở nguồn nước trước.",done:false};v.valve=true;return {text:"Nhánh xoay, nước chảy về rễ.",done:false};}
+          if(id==='tree'){if(!v.valve)return {text:"Rễ còn khô; hãy nối dòng nước.",done:false};v.tree=true;return {text:"Rễ uống nước và bừng xanh.",done:false};}
+          if(id==='flower'){if(!v.tree)return {text:"Mầm đang chờ rễ được tưới.",done:false};v.flower=true;return {text:"Hoa nở, soi sáng hai chiếc đèn.",done:false};}
+          if(id==='short'||id==='long'){
+            if(!v.flower)return {text:"Đèn chưa sáng; hãy đánh thức hoa.",done:false};
+            var expected=(v.notes||0)<2?'short':'long';
+            if(id!==expected)return {text:"Nhịp này khác lời gọi. Giữ nhịp đúng và thử lại.",done:false};
+            v.notes=(v.notes||0)+1;
+            if(v.notes===3){v.sent=true;return {text:"Hai ngắn, một dài: ánh đèn cuối rừng đáp lại!",done:true};}
+            return {text:"Đèn sáng nhịp "+v.notes+"/3.",done:false};
+          }
+          return {text:"Hãy tìm đường nước.",done:false};
+        },
+        look: function(id,v) {return {lit:id==='source'?!!v.source:id==='valve'?!!v.valve:id==='tree'?!!v.tree:id==='flower'?!!v.flower:!!v.flower,angle:id==='valve'&&v.valve?1.1:0};},
+        links: function(v) {var out=[];if(v.source)out.push(["source","valve",0x64cce8]);if(v.valve)out.push(["valve","tree",0x64cce8]);if(v.tree)out.push(["tree","flower",0x8be48f]);if(v.flower)out.push(["flower","short",0xffde84],["flower","long",0xffbd77]);return out;},
+        followers: function() {return [];}
+      },
+      makeLandmark: function (index) {
+        var g = new THREE.Group();
+        var bark = new THREE.MeshStandardMaterial({color: 0x765641, roughness: .95});
+        var leaf = new THREE.MeshStandardMaterial({color: index === 3 ? 0xffd879 : 0x65bb72, emissive: index === 3 ? 0x64410e : 0x163a20});
+        for (var side = -1; side <= 1; side += 2) {
+          var trunk = new THREE.Mesh(new THREE.CylinderGeometry(.6, 1.1, 6, 7), bark); trunk.position.set(side * 4.5, 3, 0); trunk.rotation.z = side * -.12; g.add(trunk);
+          var crown = new THREE.Mesh(new THREE.SphereGeometry(2.2, 8, 6), leaf); crown.position.set(side * 4.5, 6, 0); crown.scale.y = .5; g.add(crown);
+        }
+        var branch = new THREE.Mesh(new THREE.CylinderGeometry(.35, .5, 9, 7), bark); branch.rotation.z = Math.PI / 2; branch.position.y = 5.5; g.add(branch);
+        if (index === 1 || index === 3) { var cap = new THREE.Mesh(new THREE.SphereGeometry(1.2, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2), leaf); cap.position.set(0, 2.5, 0); g.add(cap); var stem = new THREE.Mesh(new THREE.CylinderGeometry(.3, .5, 2.5, 8), bark); stem.position.y = 1.25; g.add(stem); }
+        return g;
+      }, onComplete: updateCh2Story
+    });
+
     function updateCh2Story() {
       syncRootTrial();
       if (ch2St.rewarded || ctx.save.gem) {
@@ -536,6 +628,7 @@
           ? "DÙNG 🌿 NỞ HOA ĐÁNH THỨC RỄ CÂY MẸ (2+R)"
           : "DÙNG 🌊 SÓNG DẪN NƯỚC VỀ RỄ CÂY MẸ (1+R)", rootTrialPos);
       } else {
+        if (ch2St.stage < 3 && expedition.block()) return;
         ch2St.stage = 3;
         MAY.persist();
         ch2Npc.setMarker("?");
