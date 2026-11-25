@@ -58,12 +58,12 @@ window.MAY = window.MAY || {};
       npcColor: "#38bdf8",
       intro: [
         "Mây ơi, nguy to rồi! Đêm qua, Vua Mây Bão — Bóng Xám đã tấn công Đảo Mây, cướp đi 6 Viên Ngọc Cầu Vồng và bắt Bé Gió Lốc Tí Hon lên đỉnh trời!",
-        "Không có 6 Viên Ngọc, Màn Sương Xám đang lan xuống cả 6 vùng đất: biển bị mực đen bao phủ, Cây Cổ Thụ Rừng Xanh đang chết khô, còn các sinh vật lớn bị sương xám điều khiển!",
+        "Đêm qua Bé Gió còn hỏi cụ có thể nhìn thấy hải đăng từ bên kia biển không. Con đã hứa sẽ giữ cho bạn một đốm sáng để tìm đường về, phải không Mây?",
         "May sao Cây Gậy Phép Cầu Vồng vẫn còn đây, nhưng nó đang trống rỗng phép thuật. Mây hãy cầm Gậy Phép, bắt đầu từ Vịnh San Hô Xanh để đánh thức từng Kỹ Năng Nguyên Tố và cứu các vùng đất nhé!"
       ],
       introBtn: "✨ Mây nhận Gậy Phép lên đường!",
       inProgress: [
-        "Ngọn Hải Đăng đang chờ đủ 6 Viên Ngọc Cầu Vồng để thắp sáng lại bầu trời đó Mây ơi!",
+        "Có những hôm sương dày đến nỗi cụ phải áp tai lên cửa sổ mới nghe được tiếng chuông từ bờ bên kia. Nếu bạn gọi, con nhớ dừng lại nghe nhé.",
         "Mây có thể bước vào Cổng Ánh Sáng quanh đảo hoặc bấm phím M (Bản Đồ) để chọn vùng đất tiếp theo. Đừng quên khi học được Phép Nở Hoa ở Chương 2, hãy quay lại hồi sinh Cây Anh Đào khô cạnh nhà gỗ nhé!"
       ],
       treeQuestIntro: [

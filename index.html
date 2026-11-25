@@ -19,6 +19,20 @@
 <div id="mask"></div>
 <div id="grade"></div>
 <div id="dot"></div>
+<section id="journey" hidden aria-labelledby="journey-title">
+  <div class="journey-top">
+    <div class="journey-title"><small id="journey-chapter"></small><h2 id="journey-title"></h2><progress id="journey-progress" max="1" value="0" aria-label="Đường đã đi trong khu vực"></progress></div>
+    <button type="button" id="journey-leave">Về cửa vào</button>
+  </div>
+  <div class="journey-caption"><p id="journey-cue"></p><p id="journey-status" aria-live="polite"></p><div id="journey-actions"></div></div>
+  <canvas id="journey-map" width="168" height="154" hidden aria-label="Sơ đồ vị trí của Mây và các địa điểm trong khu vực"></canvas>
+  <div class="journey-nav" aria-label="Di chuyển trong khu vực">
+    <button type="button" data-move="KeyA" aria-label="Sang trái">◀</button>
+    <button type="button" data-move="KeyW" aria-label="Tiến lên">▲</button>
+    <button type="button" data-move="KeyS" aria-label="Lùi lại">▼</button>
+    <button type="button" data-move="KeyD" aria-label="Sang phải">▶</button>
+  </div>
+</section>
 
 <!-- HUD Góc trên trái: Nhiệm vụ cốt truyện + Nhiệm vụ phụ tương tác + Thanh 6 Phép Nguyên Tố -->
 <div class="hud" id="hud-left">
@@ -321,6 +335,9 @@
 <script src="js/player.js"></script>
 <script src="js/systems.js"></script>
 <script src="js/replays.js"></script>
+<script src="js/journey-scene.js"></script>
+<script src="js/journey-clearing.js"></script>
+<script src="js/journey.js"></script>
 <script src="js/story.js"></script>
 <script src="js/cutscene.js"></script>
 <script src="js/levels/hub.js"></script>

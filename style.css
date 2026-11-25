@@ -575,3 +575,31 @@ button:focus-visible, summary:focus-visible, #interact:focus-visible { outline: 
   #spell-row { flex-wrap: nowrap; }
 }
 @media (max-width: 720px) { #obj { max-width: 48vw; } }
+/* Controls stay in the same viewport as Mây and the approaching landmark. */
+#journey[hidden] { display: none; }
+#journey { position:fixed; inset:0; z-index:80; pointer-events:auto; color:#fffcf4; font:600 15px/1.4 system-ui,sans-serif; }
+#journey button { pointer-events:auto; color:inherit; background:#192d40ee; border:1px solid #fff5; border-radius:12px; font:inherit; padding:8px 13px; cursor:pointer; touch-action:none; }
+#journey button:focus-visible { outline:3px solid #ffd574; }
+#journey button[aria-pressed="true"], #journey button.playing { color:#1b2935; background:#ffe19b; }
+.journey-top { display:flex; align-items:start; justify-content:space-between; padding:max(14px,env(safe-area-inset-top)) 16px 0; gap:8px; }
+.journey-title,.journey-caption { background:linear-gradient(120deg,#132739ef,#23394be8); border:1px solid #f9e1bc40; border-radius:14px; box-shadow:0 6px 20px #0003; }
+.journey-title { padding:8px 14px; max-width:68%; }
+.journey-title small { color:#ffdc98; }
+.journey-title h2 { font-size:clamp(16px,2vw,23px); margin:1px 0 3px; }
+.journey-title progress { display:block; width:100%; height:4px; accent-color:#ffce74; }
+.journey-caption { position:absolute; bottom:max(18px,env(safe-area-inset-bottom)); left:50%; transform:translateX(-50%); width:min(520px,90vw); box-sizing:border-box; padding:10px 15px; }
+.journey-caption p { margin:0; }
+#journey-status { color:#ffe1a9; font-size:0.9em; margin-top:3px; }
+#journey-actions { display:flex; flex-wrap:wrap; gap:5px; }
+#journey-actions:not(:empty) { margin-top:7px; }
+.journey-nav { display:none; }
+#journey-map { position:absolute; top:max(66px,calc(env(safe-area-inset-top) + 56px)); right:12px; width:100px; height:92px; background:#172c3de6; border:1px solid #fff7; border-radius:12px; }
+body.in-journey :is(.hud,#hud-right,#dot,#hint,#interact,#joy,#touch-btns,#mobile-actions,#skill-banner,#toast,#big,#vignette,#mask,#grade) { visibility:hidden !important; }
+body.in-journey { touch-action:none; }
+@media (pointer:coarse),(max-width:700px) {
+  .journey-top { padding-inline:9px; }
+  #journey { font-size:14px; }
+  .journey-caption { bottom:max(76px,calc(env(safe-area-inset-bottom) + 68px)); width:min(95vw,520px); }
+  .journey-nav { display:flex; position:absolute; bottom:max(12px,env(safe-area-inset-bottom)); left:50%; transform:translateX(-50%); gap:12px; }
+  .journey-nav button { width:58px; min-height:46px; }
+}

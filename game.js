@@ -33,6 +33,7 @@
     if (MAY.started) MAY.toast("Đang tới " + MAY.getMeta(levelId).shortName + "…");
     entry.promise = MAY.loadWorldModels(levelId).then(function () {
       if (pendingLevel !== entry) return false;
+      if (MAY.activeJourney) MAY.activeJourney.leave();
       if (MAY.Cutscene && MAY.Cutscene.cancelSilent) MAY.Cutscene.cancelSilent();
       if (MAY.closeAllModals) MAY.closeAllModals();
       if (MAY.closeDialogue) MAY.closeDialogue(false);
@@ -304,6 +305,11 @@
     try {
       var dt = Math.min(clock.getDelta(), 0.05);
       var t = clock.elapsedTime;
+      if (!MAY.activeJourney && MAY.currentCtx.chapterJourney) MAY.currentCtx.chapterJourney.resumeIfNeeded();
+      if (MAY.activeJourney) {
+        MAY.activeJourney.frame(dt, t);
+        return;
+      }
       MAY.shaderUniforms.uTime.value = t;
       MAY.ensureEnv();
 

@@ -1368,7 +1368,7 @@
   };
 
   /* Cập nhật hoạt ảnh xương & khuôn mặt bé Mây trong lúc Cutscene 3D đang quay (không di chuyển vật lý) */
-  P.updateRigOnly = function (dt, t, ctx) {
+  P.updateRigOnly = function (dt, t, ctx, journeyClip) {
     var d = dt || 0.016;
     diver.position.set(playerPos.x, playerPos.y - 0.12, playerPos.z);
     diver.rotation.y = P.yaw;
@@ -1393,7 +1393,7 @@
         if (rigMay.oneShotT <= 0) rigMay.oneShotName = null;
       }
       if (!rigMay.oneShotName) {
-        playMayClip(P.onLand ? "Idle" : "Swim_Idle", 0.16, false);
+        playMayClip(journeyClip || (P.onLand ? "Idle" : "Swim_Idle"), 0.16, false);
       }
       rigMay.mixer.update(d);
       if (rigMay.faceMesh && rigMay.faceMesh.morphTargetInfluences && rigMay.faceMesh.morphTargetDictionary) {

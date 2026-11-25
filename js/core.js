@@ -931,6 +931,8 @@
     });
   }
 
+  MAY.disposeSceneBranch = disposeWorldRoot;
+
   function releaseRetiredRoots() {
     releaseTimer = null;
     retiredRoots.forEach(disposeWorldRoot);

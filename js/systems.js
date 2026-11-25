@@ -181,6 +181,9 @@
         }
       }
     }
+    if (ctx.chapterJourney && ctx.chapterJourney.available && MAY.player.pos.distanceTo(ctx.chapterJourney.entry)<5.6) {
+      found=ctx.chapterJourney.interaction;
+    }
     currentTarget = found;
     if (interactEl) {
       if (found) {

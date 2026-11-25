@@ -193,7 +193,7 @@
           {
             dur: 3.0, fov: 66,
             speaker: "🐢 Cụ Rùa Già Gác Đèn",
-            caption: "Mây và Cún Milo chuẩn bị lên đường đánh thức 6 Phép Nguyên Tố cứu 6 vùng đất kỳ diệu!",
+            caption: "Trước khi đèn tắt, Mây đã hứa với Bé Gió: “Cậu cứ nhìn về ngọn đèn. Tớ sẽ chỉ đường về nhà.”",
             fromPos: new THREE.Vector3(10, p.y + 5.5, p.z + 10),
             toPos: new THREE.Vector3(-4.2, npc.y + 3.2, npc.z + 8.5),
             fromLook: p.clone().add(new THREE.Vector3(0, 0.8, 0)),
