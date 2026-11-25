@@ -47,6 +47,7 @@
       if (MAY.currentCtx && MAY.currentCtx.save && !MAY.currentCtx.save.gem && MAY.currentCtx.playSecs > 0) {
         MAY.currentCtx.save.playSecs = Math.round(MAY.currentCtx.playSecs);
       }
+      entry.replacingWorld = true;
       MAY.currentCtx = null;
       var crystalPanel = document.getElementById("crystal-music");
       if (crystalPanel) crystalPanel.classList.add("hidden");
@@ -67,8 +68,6 @@
       document.body.classList.remove("boss-active");
       MAY.clearWorld();
       MAY.currentLevelId = levelId;
-      MAY.save.currentLevel = levelId;
-      MAY.persist();
 
       MAY.currentCtx = MAY.LEVELS[levelId]();
       MAY.applyOutfit(MAY.save.outfit);
@@ -96,7 +95,20 @@
           MAY.toast(m.icon + " " + m.title, m.intro);
         }
       }
+      MAY.save.currentLevel = levelId;
+      MAY.persist();
+      if (!MAY.started) {
+        document.getElementById("btn-play").disabled = false;
+        setBoot("Sẵn sàng khám phá!", 100);
+        startOfflineDownload();
+      }
       return true;
+    }).catch(function (error) {
+      if (pendingLevel !== entry) return false;
+      if (entry.replacingWorld) MAY.currentCtx = null;
+      MAY.releaseRetiredWorld();
+      MAY.reportError(error, "enterLevel", { pause: true });
+      return false;
     }).finally(function () {
       if (pendingLevel === entry) pendingLevel = null;
     });
@@ -243,7 +255,8 @@
   /* Nút phục hồi Global Error Boundary */
   var btnErrResume = document.getElementById("err-resume");
   if (btnErrResume) btnErrResume.onclick = function () {
-    if (MAY.ErrorBoundary) MAY.ErrorBoundary.dismiss();
+    if (MAY.currentCtx) MAY.ErrorBoundary.dismiss();
+    else MAY.ErrorBoundary.recoverToHub();
   };
   var btnErrHub = document.getElementById("err-hub");
   if (btnErrHub) btnErrHub.onclick = function () {
@@ -262,11 +275,7 @@
   var initLv = MAY.save.currentLevel || "hub";
   if (MAY.isLevelUnlocked && !MAY.isLevelUnlocked(initLv)) initLv = "hub";
   setBoot("Đang chuẩn bị " + MAY.getMeta(initLv).shortName + "…", 20);
-  MAY.enterLevel(initLv, true).then(function () {
-    document.getElementById("btn-play").disabled = false;
-    setBoot("Sẵn sàng khám phá!", 100);
-    startOfflineDownload();
-  }).catch(function (error) { MAY.reportError(error, "startup", { pause: true }); });
+  MAY.enterLevel(initLv, true);
 
   function startOfflineDownload() {
     if (!("serviceWorker" in navigator) || !MAY.currentCtx) return;
@@ -324,6 +333,7 @@
       if (MAY.updateAudioListener) MAY.updateAudioListener(MAY.camera);
       var camUnderwater = !!(ctx && ctx.waterLevel !== undefined && MAY.camera.position.y < ctx.waterLevel);
       MAY.renderFrame(dt, camUnderwater);
+      MAY.releaseRetiredWorld();
       if (MAY.ErrorBoundary) MAY.ErrorBoundary.consecutiveFrameErrors = 0;
 
       frames++;
@@ -389,6 +399,7 @@
         };
       }
     } catch (err) {
+      MAY.releaseRetiredWorld();
       if (MAY.ErrorBoundary) {
         MAY.ErrorBoundary.consecutiveFrameErrors++;
         MAY.reportError(err, "renderLoop", { pause: MAY.ErrorBoundary.consecutiveFrameErrors >= 3 });

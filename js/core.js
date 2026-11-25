@@ -886,41 +886,61 @@
     return false;
   }
 
+  var retiredRoots = [];
+  var releaseTimer = null;
+
+  function disposeWorldRoot(ch) {
+    ch.traverse(function (o) {
+      // Cloned rigs own their skeletons, including the GPU bone texture.
+      if (o.userData.ownsSkeleton) o.skeleton.dispose();
+      if (o.isLight && o.shadow && o.shadow.map) {
+        try { o.shadow.map.dispose(); o.shadow.map = null; } catch (e) {}
+      }
+      if (o.isMesh || o.isPoints || o.isLine) {
+        if (o.geometry && o.geometry !== sharedStarGeo && o.geometry !== burstGeo && !o.userData.sharedGeo && !protectedGeos.has(o.geometry.uuid)) {
+          try { o.geometry.dispose(); } catch (e) {}
+        }
+        if (o.isInstancedMesh && o.dispose) {
+          try { o.dispose(); } catch (e) {}
+        }
+        if (o.material) {
+          var mats = Array.isArray(o.material) ? o.material : [o.material];
+          mats.forEach(function (m) {
+            if (!m || protectedMats.has(m.uuid)) return;
+            MAT_TEX_SLOTS.forEach(function (slot) {
+              if (m[slot] && !isProtectedTex(m[slot])) { try { m[slot].dispose(); } catch (e) {} }
+            });
+            try { m.dispose(); } catch (e) {}
+          });
+        }
+      } else if (o.isSprite && o.material) {
+        if (o.material.map && !isProtectedTex(o.material.map)) { try { o.material.map.dispose(); } catch (e) {} }
+        try { o.material.dispose(); } catch (e) {}
+      }
+    });
+  }
+
+  function releaseRetiredRoots() {
+    releaseTimer = null;
+    retiredRoots.forEach(disposeWorldRoot);
+    retiredRoots.length = 0;
+  }
+
   MAY.clearWorld = function () {
+    if (releaseTimer !== null) clearTimeout(releaseTimer);
+    releaseRetiredRoots();
     bursts.length = 0;
     burstInst.count = 0;
     if (MAY.resetLevelLights) MAY.resetLevelLights();
-    while (worldRoot.children.length > 0) {
-      var ch = worldRoot.children[0];
-      worldRoot.remove(ch);
-      ch.traverse(function (o) {
-        // Cloned rigs own their skeletons, including the GPU bone texture.
-        if (o.userData.ownsSkeleton) o.skeleton.dispose();
-        if (o.isLight && o.shadow && o.shadow.map) {
-          try { o.shadow.map.dispose(); o.shadow.map = null; } catch (e) {}
-        }
-        if (o.isMesh || o.isPoints || o.isLine) {
-          if (o.geometry && o.geometry !== sharedStarGeo && o.geometry !== burstGeo && !o.userData.sharedGeo && !protectedGeos.has(o.geometry.uuid)) {
-            try { o.geometry.dispose(); } catch (e) {}
-          }
-          if (o.isInstancedMesh && o.dispose) {
-            try { o.dispose(); } catch (e) {}
-          }
-          if (o.material) {
-            var mats = Array.isArray(o.material) ? o.material : [o.material];
-            mats.forEach(function (m) {
-              if (!m || protectedMats.has(m.uuid)) return;
-              MAT_TEX_SLOTS.forEach(function (slot) {
-                if (m[slot] && !isProtectedTex(m[slot])) { try { m[slot].dispose(); } catch (e) {} }
-              });
-              try { m.dispose(); } catch (e) {}
-            });
-          }
-        } else if (o.isSprite && o.material) {
-          if (o.material.map && !isProtectedTex(o.material.map)) { try { o.material.map.dispose(); } catch (e) {} }
-          try { o.material.dispose(); } catch (e) {}
-        }
-      });
+    retiredRoots = worldRoot.children.slice();
+    retiredRoots.forEach(function (ch) { worldRoot.remove(ch); });
+  };
+
+  // The new scene's first draw acquires matching shader programs before its
+  // predecessor releases its materials. Keep at most one detached scene.
+  MAY.releaseRetiredWorld = function () {
+    if (retiredRoots.length && releaseTimer === null) {
+      releaseTimer = setTimeout(releaseRetiredRoots, 0);
     }
   };
 
@@ -1005,7 +1025,7 @@
     report: function (err, source, opts) {
       opts = opts || {};
       var msg = (err && (err.message || String(err))) || "Lỗi không xác định";
-      if (/ResizeObserver loop|AbortError|NotAllowedError/i.test(msg)) return;
+      if (!opts.pause && /ResizeObserver loop|AbortError|NotAllowedError/i.test(msg)) return;
       var stack = (err && err.stack) ? String(err.stack) : (source ? ("Nguồn: " + source + "\n" + msg) : msg);
       var entry = { time: new Date().toISOString(), source: source || "runtime", message: msg, stack: stack };
       this.history.push(entry);
