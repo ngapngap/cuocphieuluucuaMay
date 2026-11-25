@@ -33,6 +33,7 @@
   MAY.makeJourneyScene = function (ctx, config, sectionIndex, state) {
     var s = config.sections[sectionIndex],
       biome = ctx.meta.num;
+    var canopy = biome === 2 && s.scenery === "canopy";
     var scene = new THREE.Scene();
     scene.background = new THREE.Color(s.sky);
     scene.fog = new THREE.FogExp2(s.sky, biome === 4 ? 0.017 : 0.011);
@@ -59,7 +60,10 @@
       return 11 * Math.sin(d / 47 + seed) + 4.5 * Math.sin(d / 20 + seed * 0.6) + forkOffset(d, null);
     }
     function height(d) {
-      return (biome === 2 || biome === 5 || biome === 6 ? 3.6 : 1.75) * Math.sin(d / 38 + seed);
+      return (
+        (canopy ? 12 : 0) +
+        (biome === 2 || biome === 5 || biome === 6 ? 3.6 : 1.75) * Math.sin(d / 38 + seed)
+      );
     }
     function place(d, lateral, up, vec) {
       var dx = (xAt(d + 0.05) - xAt(d - 0.05)) / 0.1;
@@ -70,7 +74,7 @@
       ahead = new THREE.Vector3();
     var surface = new THREE.Color(s.path),
       soil = new THREE.Color(s.ground);
-    function ribbon(edges, colors) {
+    function ribbon(edges, colors, material) {
       var verts = [],
         shades = [],
         uvs = [],
@@ -83,7 +87,7 @@
             variation = 0.97 + 0.035 * Math.sin(i * 0.8 + j);
           place(d, edge[0], edge[1], pt);
           verts.push(pt.x, pt.y, pt.z);
-          uvs.push(pt.x / 115, pt.z / 115);
+          uvs.push(pt.x / (canopy ? 7 : 115), pt.z / (canopy ? 7 : 115));
           var c = colors[j];
           shades.push(c.r * variation, c.g * variation, c.b * variation);
           if (i && j) {
@@ -102,44 +106,77 @@
       scene.add(
         new THREE.Mesh(
           geo,
-          MAY.journeyFloorMaterial(biome, {
-            vertexColors: true,
-            roughness: biome === 5 ? 0.46 : 0.83,
-            side: THREE.DoubleSide
-          })
+          material ||
+            MAY.journeyFloorMaterial(biome, {
+              vertexColors: true,
+              roughness: biome === 5 ? 0.46 : 0.83,
+              side: THREE.DoubleSide
+            })
         )
       );
     }
     var rim = surface.clone().lerp(new THREE.Color(config.color), 0.35);
-    ribbon(
-      [
-        [-95, -3],
-        [-15, -0.8],
-        [-7.4, -0.06],
-        [-6.8, 0],
-        [-5.9, 0.08],
-        [0, 0.08],
-        [5.9, 0.08],
-        [6.8, 0],
-        [7.4, -0.06],
-        [15, -0.8],
-        [95, -3]
-      ],
-      [soil, soil, soil, rim, surface, surface, surface, rim, soil, soil, soil]
-    );
+    var deckMaterial = canopy
+      ? new THREE.MeshStandardMaterial({
+          map: MAY.PBR.bark.map,
+          normalMap: MAY.PBR.bark.normalMap,
+          roughnessMap: MAY.PBR.bark.roughnessMap,
+          color: 0xb6a386,
+          roughness: 0.9,
+          side: THREE.DoubleSide
+        })
+      : null;
+    if (canopy) {
+      // The deck is raised above a separate forest floor. Its width covers all
+      // three steering lanes; the two fork ribbons below cover both arms.
+      var floor = new THREE.Mesh(
+        new THREE.PlaneGeometry(500, s.length + 150),
+        MAY.journeyFloorMaterial(2, { color: 0x63805f, roughness: 0.95 })
+      );
+      floor.rotation.x = -Math.PI / 2;
+      floor.position.set(0, -8, -s.length / 2);
+      scene.add(floor);
+      ribbon(
+        [
+          [-7.5, 0],
+          [7.5, 0]
+        ],
+        [soil, soil],
+        deckMaterial
+      );
+    } else
+      ribbon(
+        [
+          [-95, -3],
+          [-15, -0.8],
+          [-7.4, -0.06],
+          [-6.8, 0],
+          [-5.9, 0.08],
+          [0, 0.08],
+          [5.9, 0.08],
+          [6.8, 0],
+          [7.4, -0.06],
+          [15, -0.8],
+          [95, -3]
+        ],
+        [soil, soil, soil, rim, surface, surface, surface, rim, soil, soil, soil]
+      );
     // Both visible arms exist before choosing; the saved choice steers the
     // player and subsequent stations along the selected curve until rejoining.
     s.events.forEach(function (e) {
       if (e.kind !== "fork") return;
       [0, 1].forEach(function (choice) {
         var vertices = [],
+          uvs = [],
           indices = [],
           start = e.at * s.length;
         for (var i = 0; i <= 24; i++) {
           var d = start + (i * 95) / 24,
             base = 11 * Math.sin(d / 47 + seed) + 4.5 * Math.sin(d / 20 + seed * 0.6),
             center = base + forkOffset(d, choice);
-          vertices.push(center - 2.4, height(d) + 0.12, -d, center + 2.4, height(d) + 0.12, -d);
+          var halfWidth = canopy ? 7.5 : 2.4;
+          vertices.push(center - halfWidth, height(d) + 0.12, -d, center + halfWidth, height(d) + 0.12, -d);
+          uvs.push((center - halfWidth) / 7, -d / 7, (center + halfWidth) / 7, -d / 7);
           if (i) {
             var v = i * 2;
             indices.push(v - 2, v - 1, v, v - 1, v + 1, v);
@@ -147,20 +184,62 @@
         }
         var geo = new THREE.BufferGeometry();
         geo.setAttribute("position", new THREE.Float32BufferAttribute(vertices, 3));
+        if (canopy) geo.setAttribute("uv", new THREE.Float32BufferAttribute(uvs, 2));
         geo.setIndex(indices);
         geo.computeVertexNormals();
         scene.add(
           new THREE.Mesh(
             geo,
-            new THREE.MeshStandardMaterial({
-              color: choice === 0 ? 0x65cba2 : 0xe3c67d,
-              roughness: 0.85,
-              side: THREE.DoubleSide
-            })
+            canopy
+              ? deckMaterial
+              : new THREE.MeshStandardMaterial({
+                  color: choice === 0 ? 0x65cba2 : 0xe3c67d,
+                  roughness: 0.85,
+                  side: THREE.DoubleSide
+                })
           )
         );
       });
     });
+
+    if (canopy) {
+      // Closely spaced cross-planks make the elevated surface read as a
+      // constructed bridge, including on each of the two fork arms.
+      var plankTransforms = [],
+        plankDummy = new THREE.Object3D();
+      function plankAt(d, forced, raised) {
+        var base = function (x) {
+          return 11 * Math.sin(x / 47 + seed) + 4.5 * Math.sin(x / 20 + seed * 0.6) + forkOffset(x, forced);
+        };
+        var slope = (base(d + 0.05) - base(d - 0.05)) / 0.1;
+        plankDummy.position.set(base(d), height(d) + raised, -d);
+        plankDummy.rotation.set(0, -Math.atan(slope), 0);
+        plankDummy.scale.set(14.9, 0.12, 1.3);
+        plankDummy.updateMatrix();
+        plankTransforms.push(plankDummy.matrix.clone());
+      }
+      for (var pd = -18; pd < s.length + 25; pd += 1.45) plankAt(pd, null, 0.08);
+      s.events.forEach(function (e) {
+        if (e.kind !== "fork") return;
+        for (
+          var fd = e.at * s.length + 1.45;
+          fd < Math.min(s.length + 20, e.at * s.length + 95);
+          fd += 1.45
+        ) {
+          plankAt(fd, 0, 0.2);
+          plankAt(fd, 1, 0.2);
+        }
+      });
+      var planks = new THREE.InstancedMesh(
+        new THREE.BoxGeometry(1, 1, 1),
+        deckMaterial,
+        plankTransforms.length
+      );
+      plankTransforms.forEach(function (m, i) {
+        planks.setMatrixAt(i, m);
+      });
+      scene.add(planks);
+    }
 
     var box = new THREE.BoxGeometry(1, 1, 1),
       stone = new THREE.IcosahedronGeometry(1, 0);
@@ -192,6 +271,33 @@
         stamp("coral", trunk, 0xf38d74, dist, offset, 1.1, 0.37, 3 * size, 0.42, a, side * 0.2);
         stamp("arm", trunk, 0xffbb8d, dist, offset + 0.52, 1.8, 0.24, 1.8, 0.26, 0, -0.7);
         stamp("kelp", sphere, 0x338575, dist + 1, offset + 0.8, 1, 0.26, 2.6 * size, 0.45, a, 0.25);
+      } else if (biome === 2 && canopy) {
+        stamp(
+          "canopy-trunk",
+          trunk,
+          0x655747,
+          dist,
+          offset + side * 3,
+          -11,
+          size,
+          15,
+          size,
+          a,
+          side * 0.08
+        );
+        stamp("canopy-crown", stone, 0x55936a, dist, offset + side * 3, -4, 5.2, 2.6, 5.2, a);
+        stamp(
+          "canopy-cap",
+          sphere,
+          i % 4 < 2 ? 0xc48170 : 0xd3a377,
+          dist + 1,
+          offset,
+          -1.7,
+          2.1 * size,
+          0.55 * size,
+          2.1 * size,
+          a
+        );
       } else if (biome === 2) {
         stamp("bark", trunk, 0x5c5441, dist, offset + side * 3, 4.4, size, 11, size, a, side * 0.13);
         stamp("leaf", stone, 0x478458, dist, offset + side * 3, 9, 4.5, 3.5, 4.7, a);

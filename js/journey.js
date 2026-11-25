@@ -232,6 +232,22 @@
     function enter() {
       if (MAY.activeJourney || !api.available || MAY.currentCtx !== ctx || MAY.modalOpen) return;
       initialized();
+      if (state.resume) {
+        // Native maps spawn Mây at the usual chapter start on reload. Restore
+        // the spot where she stepped through the door before resuming inside.
+        var saved = state.returnPoint;
+        var valid =
+          Array.isArray(saved) &&
+          saved.length === 4 &&
+          saved.every(Number.isFinite) &&
+          Math.hypot(saved[0] - entry.x, saved[2] - entry.z) <= 14;
+        var x = valid ? saved[0] : entry.x,
+          z = valid ? saved[2] : entry.z + 1.4;
+        var water = ctx.waterLevel !== undefined && ctx.groundH(x, z) < ctx.waterLevel - 0.85;
+        var y = valid ? saved[1] : water ? entry.y : ctx.groundH(x, z) + 1.05;
+        MAY.player.spawnAt(x, y, z, valid ? saved[3] : 0, water);
+      }
+      state.returnPoint = [MAY.player.pos.x, MAY.player.pos.y, MAY.player.pos.z, MAY.player.yaw];
       state.resume = true;
       MAY.activeJourney = api;
       beforeLand = MAY.player.onLand;

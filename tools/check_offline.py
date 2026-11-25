@@ -4,6 +4,7 @@ from threading import Thread
 from functools import partial
 from playwright.sync_api import sync_playwright
 from trace_transition import Handler, Server
+from check_journey_saves import STEPS
 
 
 class Interrupted(Handler):
@@ -85,7 +86,26 @@ def main():
         page.reload(wait_until="domcontentloaded")
         page.locator("#btn-play").click()
         assert page.evaluate("MAY.currentLevelId === 'level6' && !!MAY.RIGGED.stormking && !MAY.RIGGED.golem")
-        print("PASS: partial download, reconnect, offline reload, six map entries, saved world first", flush=True)
+        # Start each already-downloaded chapter at a persisted, unfinished expedition.
+        # The HTTP server is stopped. Moving, leaving and reloading must still work.
+        for number, steps in enumerate(STEPS, 1):
+            page.evaluate("""([n, completed]) => {
+              const id = 'level' + n, level = MAY.getLevelSave(id);
+              completed.journey = {section:0, event:0, distance:7, lateral:0, choices:{}, resume:true, done:false};
+              level.story = {stage:n === 1 ? 1 : 2, steps:completed, bossDown:false, rewarded:false};
+              level.gem=false; level.introSeen=true;
+              MAY.save.currentLevel=id; MAY.persist();
+            }""", [number, steps])
+            page.reload(wait_until="domcontentloaded")
+            page.locator("#btn-play").click()
+            page.wait_for_function("n => MAY.activeJourney && MAY.currentCtx.meta.num === n", arg=number)
+            page.keyboard.down("ArrowUp")
+            page.wait_for_function("MAY.currentCtx.story.steps.journey.distance > 10")
+            page.keyboard.up("ArrowUp")
+            page.locator("#journey-leave").click()
+            assert page.evaluate("!MAY.activeJourney && MAY.currentCtx.chapterJourney.available && !MAY.ErrorBoundary.history.length")
+            print(f"Offline chapter {number}: resumed, walked and returned to the entrance", flush=True)
+        print("PASS: interrupted download, six offline maps, six playable expedition resumes and exits", flush=True)
         browser.close()
 
 

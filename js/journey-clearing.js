@@ -21,7 +21,8 @@
       crystal = new THREE.ConeGeometry(1, 1, 6);
     var torus = new THREE.TorusGeometry(1, 0.13, 8, 20),
       rock = new THREE.IcosahedronGeometry(1, 0);
-    var materials = new Map(), occlusionMaterials = new Map();
+    var materials = new Map(),
+      occlusionMaterials = new Map();
     function part(parent, geo, color, x, y, z, w, h, d, emissive) {
       var key = color + "/" + !!emissive;
       if (!materials.has(key))
@@ -131,18 +132,19 @@
       root.position.set(d.x, 0, d.z);
       scene.add(root);
       var solidParts = [];
-      if (!buddy) top.traverse(function (object) {
-        if (!object.isMesh) return;
-        var solid = object.material;
-        if (!occlusionMaterials.has(solid)) {
-          var faded = solid.clone();
-          faded.transparent = true;
-          faded.opacity = 0.19;
-          faded.depthWrite = false;
-          occlusionMaterials.set(solid, faded);
-        }
-        solidParts.push({mesh: object, solid: solid, faded: occlusionMaterials.get(solid)});
-      });
+      if (!buddy)
+        top.traverse(function (object) {
+          if (!object.isMesh) return;
+          var solid = object.material;
+          if (!occlusionMaterials.has(solid)) {
+            var faded = solid.clone();
+            faded.transparent = true;
+            faded.opacity = 0.19;
+            faded.depthWrite = false;
+            occlusionMaterials.set(solid, faded);
+          }
+          solidParts.push({ mesh: object, solid: solid, faded: occlusionMaterials.get(solid) });
+        });
       devices.set(d.id, {
         definition: d,
         root: root,
@@ -150,18 +152,37 @@
         ring: ring,
         buddy: buddy,
         label: label,
-        following: false, solidParts: solidParts, occluded: false
+        following: false,
+        solidParts: solidParts,
+        occluded: false
       });
     }
     field.devices.forEach(buildDevice);
+    // Keep follower coordinates in the saved room object. Reuse each small record
+    // while drawing so existing checkpoint calls capture the latest positions.
+    if (!room.followerPositions || typeof room.followerPositions !== "object") room.followerPositions = {};
+    var restoringFollowers = true;
     function refresh() {
       var follow = field.followers ? field.followers(values) : [];
       devices.forEach(function (m, id) {
         var appearance = field.look ? field.look(id, values) || {} : {};
+        var wasFollowing = m.following;
         m.following = follow.includes(id);
         m.root.visible = !appearance.hide;
-        if (!m.following)
+        if (m.following && !wasFollowing) {
+          var saved = room.followerPositions[id];
+          if (restoringFollowers) {
+            if (saved && Number.isFinite(saved.x) && Number.isFinite(saved.z))
+              m.root.position.set(saved.x, 0, saved.z);
+            else m.root.position.set(room.x + 1.2, 0, room.z + 1.8);
+          }
+          if (!saved || typeof saved !== "object")
+            saved = room.followerPositions[id] = { x: m.root.position.x, z: m.root.position.z };
+          saved.x = m.root.position.x;
+          saved.z = m.root.position.z;
+        } else if (!m.following) {
           m.root.position.set(appearance.x ?? m.definition.x, 0, appearance.z ?? m.definition.z);
+        }
         m.top.rotation.y = appearance.angle || 0;
         m.ring.visible = !m.following;
         m.top.scale.setScalar(appearance.lit ? 1.16 : 1);
@@ -192,6 +213,7 @@
       });
     }
     refresh();
+    restoringFollowers = false;
     scene.add(MAY.diver);
     var body = new THREE.Vector3(),
       eye = new THREE.Vector3(),
@@ -276,6 +298,9 @@
             m.root.position.z += (step * mz) / dist;
             m.top.rotation.y = Math.atan2(mx, mz);
           }
+          var position = room.followerPositions[m.definition.id];
+          position.x = m.root.position.x;
+          position.z = m.root.position.z;
         }
         if (m.buddy && m.buddy.userData.mixer) m.buddy.userData.mixer.update(dt);
         var range = Math.hypot(m.root.position.x - room.x, m.root.position.z - room.z);
@@ -283,7 +308,9 @@
         var occluded = Math.abs(m.root.position.x - room.x) < 1.5 && inFront > -1.1 && inFront < 2.7;
         if (occluded !== m.occluded) {
           m.occluded = occluded;
-          m.solidParts.forEach(function (part) { part.mesh.material = occluded ? part.faded : part.solid; });
+          m.solidParts.forEach(function (part) {
+            part.mesh.material = occluded ? part.faded : part.solid;
+          });
         }
         m.label.visible = range < 16 && !m.following;
         if (range <= 3.3 && !m.following) nearest.push({ device: m.definition, range: range });
@@ -336,8 +363,12 @@
       dispose: function () {
         MAY.scene.add(MAY.diver);
         MAY.disposeSceneBranch(scene);
-        occlusionMaterials.forEach(function (mat) { mat.dispose(); });
-        materials.forEach(function (mat) { mat.dispose(); });
+        occlusionMaterials.forEach(function (mat) {
+          mat.dispose();
+        });
+        materials.forEach(function (mat) {
+          mat.dispose();
+        });
         [box, round, log, crystal, torus, rock].forEach(function (g) {
           g.dispose();
         });
