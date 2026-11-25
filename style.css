@@ -149,6 +149,17 @@ body {
 .crystal-notes, .crystal-actions { display: flex; justify-content: center; gap: 5px; }
 #crystal-music button { min-height: 44px; border: 2px solid #c4b5fd; border-radius: 9px; padding: 5px 9px; color: white; background: #37265f; font-weight: 800; }
 #crystal-music button.flash { background: #ffdf4e; color: #19213b; transform: scale(1.08); }
+#crystal-music.collapsed { width: auto; padding: 0; }
+#crystal-music.collapsed .crystal-notes, #crystal-music.collapsed #crystal-music-status,
+#crystal-music.collapsed .crystal-actions button:not(#crystal-close) { display: none; }
+@media (max-width: 600px) and (orientation: portrait) {
+  body.touch #crystal-music {
+    bottom: calc(154px + env(safe-area-inset-bottom, 0px));
+    left: max(8px, calc((100% - 428px) / 2));
+    transform: none;
+    max-width: calc(100% - 92px);
+  }
+}
 body.boss-active #toast { top: 136px; }
 
 #hint {

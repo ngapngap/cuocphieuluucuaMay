@@ -372,9 +372,25 @@
     var noteButtons = musicPanel.querySelectorAll("[data-note]");
     var echoTargets = [];
     musicPanel.querySelectorAll("button").forEach(function (b) {
-      b.onkeydown = function (event) { if (event.code === "Space") { event.preventDefault(); b.click(); } };
+      b.onkeydown = function (event) {
+        if (event.code !== "Enter" && event.code !== "Space") return;
+        event.stopPropagation();
+        // Keep the avatar still and activate the focused control once per press.
+        event.preventDefault();
+        if (!event.repeat) b.click();
+      };
     });
-    document.getElementById("crystal-close").onclick = function () { ++replayToken; musicPanel.classList.add("hidden"); };
+    var musicToggle = document.getElementById("crystal-close");
+    function expandMusic(expanded) {
+      musicPanel.classList.toggle("collapsed", !expanded);
+      musicToggle.setAttribute("aria-expanded", String(expanded));
+      musicToggle.textContent = expanded ? "Thu gọn" : "Mở đàn";
+    }
+    musicToggle.onclick = function () {
+      ++replayToken;
+      noteButtons.forEach(function (b) { b.classList.remove("flash"); });
+      expandMusic(musicPanel.classList.contains("collapsed"));
+    };
     function replayNotes(notes) {
       var token = ++replayToken;
       noteButtons.forEach(function (b) { b.classList.remove("flash"); });
@@ -396,6 +412,7 @@
     document.getElementById("crystal-replay-played").onclick = function () { if (played.length) replayNotes(played); else musicStatus.textContent = "Mây chưa gõ nốt nào."; };
     noteButtons.forEach(function (b, i) { b.onclick = function () { if (MAY.currentCtx === ctx && echoTargets[i] && echoTargets[i].isActive()) echoTargets[i].onHit(); }; });
     function echoLesson() {
+      expandMusic(true);
       var phrase = echoPatterns[echoRound].map(function (n) { return noteNames[n]; }).join(" → ");
       MAY.toast("🎵 Nghe và nhìn nhịp: " + phrase + ". Hãy tự gõ lại bằng phép 💎!");
       musicPanel.classList.remove("hidden");
@@ -641,6 +658,7 @@
       onInteract: function () {
         if (ch4St.stage >= 2 && ch4St.steps.wallBroken && !ch4St.steps.echoDone) { echoLesson(); return; }
         if (!ch4St.bossDown) return;
+        expandMusic(true);
         if (practiceActive) { musicPanel.classList.remove("hidden"); replayNotes([1, 2, 0]); return; }
         practiceActive = true; practiceProgress = 0; played = []; musicPanel.classList.remove("hidden");
         MAY.toast("🎵 Bài luyện: ▲ MI → ◆ SON → ● ĐÔ. Dùng phép 💎 gõ lại nhé!");

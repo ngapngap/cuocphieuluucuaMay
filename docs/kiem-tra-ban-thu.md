@@ -65,7 +65,26 @@ Chạy qua bản đồ ở chế độ Cốt truyện từ bản lưu mới. K�
 | Bản lưu | Đã thử giữa chương, cờ hạ trùm cũ, đã có Ngọc, đã mở đủ vùng và thưởng vật phẩm. Bản mới cần nhận Ngọc để mở chương kế. |
 | Hang Pha Lê | Đã thử nốt đúng/sai, hai nút phát lại, tín hiệu sáng, tải lại giữa câu, hai mẫu và mở giáp rồi chiếu Nắng gây sát thương. |
 
-**Bản thử** sẵn sàng cho buổi chơi thử. Chờ kết quả tổng hợp của ít nhất năm trẻ ở #10 để quyết định cơ chế cho #11–#13. Việc chơi xuyên sáu chương mới và kiểm tra trên điện thoại thật của #14 vẫn cần thực hiện trước khi phát hành. [Phiếu buổi thử](choi-thu-hang-pha-le.md)
+**Bản thử** sẵn sàng cho buổi chơi thử. Chờ kết quả tổng hợp của ít nhất năm trẻ ở #10 để quyết định cơ chế cho #11–#13. Phần kiểm tra trên điện thoại thật của #14 vẫn còn mở. [Phiếu buổi thử](choi-thu-hang-pha-le.md)
+
+## Chơi qua các chương bằng điều khiển trong game
+
+Lượt Cốt truyện bắt đầu với bản lưu trống trong Chrome. Kịch bản đọc vị trí để định hướng rồi gửi phím, chọn phép và tương tác qua giao diện. Chương 5 và chương 6 được chơi lại từ bản lưu do game tạo sau Ngọc 4 và Ngọc 5. Bảng ghi thời gian game lưu khi trao Ngọc trong lượt hoàn thành mỗi chương, làm tròn tới giây. Đây là lượt đã biết đường, có bỏ qua thoại và phim.
+
+| Chương | Thao tác đã chơi | Nơi nhận Ngọc | Thời gian trong game |
+| --- | --- | --- | ---: |
+| Vịnh San Hô | Học Sóng, cứu Bubi, dọn ba đám mực và đẩy ngọc trai | Bệ Ngọc | 22 giây |
+| Rừng Nấm | Rửa bùn, dùng Nở Hoa lên ba cây, phối hợp Sóng và Nở Hoa để hạ Vua Nấm | Bệ Ngọc | 58 giây |
+| Sa Mạc | Hồi sinh ốc đảo, dùng Tia Nắng với ba gương rồi đánh Bọ Cạp | Lạc Đà Kiki | 52 giây |
+| Hang Pha Lê | Thắp hai đuốc, phá vách, gõ hai mẫu nhạc, phá giáp Golem rồi chiếu Nắng | Nhạc Sư Cú Mèo | 44 giây |
+| Xứ Tuyết | Phá vách băng, dựng ba cầu, đóng băng cầu tuyết rồi dùng Sương Băng và Tia Nắng hạ Sói | Trưởng làng Cánh Cụt Bông | 38 giây |
+| Vương Quốc Mây | Học Lốc Cầu Vồng ở Đài Hợp Nhất, phá ba ổ khóa sét và hạ Vua Mây Bão qua ba pha | Sứ giả Phượng Hoàng | 39 giây |
+
+Sau Ngọc thứ sáu, game tự đưa Mây về Đảo Mây. Phim lễ hội chạy hết ba cảnh và thanh điều khiển lễ hội xuất hiện. Bản lưu cuối ghi đủ sáu Ngọc và đã xem lễ hội. Không có nhiệm vụ phụ nào hoàn tất trong lượt Cốt truyện này. [Ảnh cảnh cuối lễ hội](choi-thu-le-hoi.webp)
+
+Ở lượt riêng bằng bàn phím, người điều khiển chọn Hang Pha Lê từ bản đồ Tự do, nhận phép từ Cú Mèo và cố ý gõ Mi khi mẫu bắt đầu bằng Đô. Game báo sai ở nốt đầu. Sau khi bấm **Nghe lại mẫu**, người chơi sửa được nốt, hoàn thành cả hai mẫu và nhận Ngọc Tím. Quay lại trụ Đô sau trận Golem còn chơi được bài luyện Mi → Son → Đô. Từ Hang cũng có thể đi tiếp qua Xứ Tuyết và Vương Quốc Mây bằng nút sang màn.
+
+Trên Chrome giả lập cảm ứng 390 × 844, bảng đàn che gần hết joystick. Khi bấm **Đóng**, người chơi phải tìm lại trụ Đô để mở đàn. Bản sửa đặt bảng cao hơn joystick và giữ lại nút **Mở đàn** ngay tại chỗ. Ở lượt chơi lại, người chơi kéo được joystick khi đàn đang mở, thu gọn rồi mở lại, nghe mẫu và gõ qua câu thứ hai. Ở khung 360 × 640 cũng đã kiểm tra vị trí và vùng nhận chạm của các nút. [Ảnh bảng đàn sau khi sửa, 390 × 844](choi-thu-dan-pha-le-390.webp)
 
 ## Giọng hướng dẫn và âm thanh ở Vịnh và Hang (#17–#18)
 
