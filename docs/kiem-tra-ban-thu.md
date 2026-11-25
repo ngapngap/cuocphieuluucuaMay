@@ -60,7 +60,7 @@ Chạy qua bản đồ ở chế độ Cốt truyện từ bản lưu mới. K�
 | Chơi khi mất mạng | Tắt máy chủ và cho trình duyệt ngoại tuyến. Tải lại game, mở đủ sáu vùng qua bản đồ, tải lại ở chương 6. Trang phục giải mã đủ sáu ảnh và đoạn thoại trả đúng 128 byte được yêu cầu. |
 | Nội dung | 36/36 GLB qua bộ kiểm tra. Ở đợt đo trước #17, cache có 47 đoạn thoại, bảy âm thanh vùng và sáu ảnh trang phục. |
 | Điều khiển | Nút Chơi nằm trong khung 360 × 640, 390 × 844 và 844 × 390. Đã thử thao tác NPC, thoại, Sổ tay và chọn/tung phép trong Chrome. Có kiểm tra bố cục thanh máu trùm khi đủ sáu phép. |
-| Trang phục | Tên, trạng thái khóa, đang mặc và toàn thân được kiểm tra ở 390 × 844 và 1180 × 760. Sáu ảnh WebP dùng 48.794 byte. Ba ảnh cũ và ảnh đại diện dùng chung trước đây chiếm 139.902 byte tính theo tệp duy nhất. Ảnh đại diện vẫn dùng ở màn mở đầu. |
+| Trang phục | Tên, trạng thái khóa, đang mặc và toàn thân được kiểm tra ở 390 × 844 và 1180 × 760. Sáu ảnh WebP dùng 48.794 byte. Ba ảnh cũ và ảnh đại diện dùng chung trước đây chiếm 139.902 byte tính theo tệp duy nhất. Ảnh đại diện vẫn dùng ở màn mở đầu. Trên model thật, bộ Khám phá Rừng giữ màu khi đứng, đi bằng phím W và tải lại. Khi xuống Vịnh, Mây mặc đồ bơi. Khi trở lên bãi ở (0, 96), bộ rừng hiện lại và có thể đổi về Váy hồng. |
 | Câu đố | Đã thử sai, xem gợi ý, tự sửa, bỏ qua, mở lại và tải lại khi tắt tiếng, ngoại tuyến. Điểm được lưu một lần cho mỗi đáp án đúng. |
 | Bản lưu | Đã thử giữa chương, cờ hạ trùm cũ, đã có Ngọc, đã mở đủ vùng và thưởng vật phẩm. Bản mới cần nhận Ngọc để mở chương kế. |
 | Hang Pha Lê | Đã thử nốt đúng/sai, hai nút phát lại, tín hiệu sáng, tải lại giữa câu, hai mẫu và mở giáp rồi chiếu Nắng gây sát thương. |
