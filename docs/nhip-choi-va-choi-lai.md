@@ -1,5 +1,7 @@
 # Nhịp chơi và những lần quay lại
 
+Trang này ghi lại lối chơi và mốc thời lượng trước khi mở rộng sáu chương. [Thiết kế nội dung hiện tại](noi-dung.md) · [Nghiệm thu tuyến mở rộng](nghiem-thu-sau-chuong.md).
+
 ## Tuyến cốt truyện
 
 | Chương | Người chơi làm gì | Điều gì đổi trong cảnh |

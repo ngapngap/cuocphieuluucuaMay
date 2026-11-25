@@ -1,0 +1,62 @@
+{
+  "1": {
+    "clock": 325,
+    "wallWithDialogue": 348.95,
+    "activity": {
+      "journey": 298.8947000000923,
+      "nativeActive": 25.62750000011891,
+      "nativeStationary": 0.0891000001430502
+    },
+    "journeyFramesSimulated": false
+  },
+  "2": {
+    "clock": 380,
+    "wallWithDialogue": 389.11,
+    "activity": {
+      "journey": 356.22499999991965,
+      "nativeActive": 23.886400000035692,
+      "nativeStationary": 0.22250000011921145
+    },
+    "journeyFramesSimulated": false
+  },
+  "3": {
+    "clock": 418,
+    "wallWithDialogue": 430.14,
+    "activity": {
+      "journey": 392.2731000000487,
+      "nativeActive": 25.388699999630248,
+      "nativeStationary": 0.38020000004766796
+    },
+    "journeyFramesSimulated": false
+  },
+  "4": {
+    "clock": 311,
+    "wallWithDialogue": 330.66,
+    "activity": {
+      "journey": 299.4240000001727,
+      "nativeActive": 11.616600000143467,
+      "nativeStationary": 0.13119999992841258
+    },
+    "journeyFramesSimulated": false
+  },
+  "5": {
+    "clock": 355,
+    "wallWithDialogue": 357.76,
+    "activity": {
+      "journey": 326.8471000000667,
+      "nativeActive": 28.365500000178795,
+      "nativeStationary": 0.10789999997614563
+    },
+    "journeyFramesSimulated": false
+  },
+  "6": {
+    "clock": 425,
+    "wallWithDialogue": 436.84,
+    "activity": {
+      "journey": 394.6489999999681,
+      "nativeActive": 30.639200000166127,
+      "nativeStationary": 0.10630000001199047
+    },
+    "journeyFramesSimulated": false
+  }
+}

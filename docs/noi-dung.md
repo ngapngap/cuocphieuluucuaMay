@@ -20,6 +20,8 @@ Mở sâu vào khu vực của sáu chương hiện có. Mỗi khu có lối và
 | Vương Quốc Mây | 0:33 | 7:10 | Gầm cầu → tháp chuông → lối sơ tán → sân lâu đài và hải đăng |
 | **Tổng** | **3:40** | **36:40** | **2.200 giây trên tuyến lấy Ngọc** |
 
+Lượt chơi nghiệm thu ngày 25/11/2026 ghi nhận **36 phút 54 giây chơi chủ động** đến Ngọc thứ sáu, gấp **10,06 lần** mốc cũ. [Thời gian từng màn và kết quả ba vòng review](nghiem-thu-sau-chuong.md).
+
 ## Thiết kế từng chương
 
 ### 1. Bubi quay lại

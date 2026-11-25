@@ -11,7 +11,7 @@ Phiên bản web 3D (PWA chơi offline hoàn toàn, sẵn sàng chạy trên Git
 
 Mây đi tìm sáu Ngọc để thắp lại hải đăng. Nửa đường, Bé Gió gửi tín hiệu xin Mây đổi hướng ánh sáng. Sáu vùng lần lượt mở rộng vào khoang tàu, tán nấm, kim tự tháp, hồ vọng âm, sườn tuyết và tháp chuông. Người chơi phải đưa người bạn cuối cùng về an toàn trước khi ngọn đèn lại tỏa sáng.
 
-[Cốt truyện, thiết kế chi tiết sáu chương và tiêu chí nghiệm thu](docs/noi-dung.md) · [Những hoạt động sau khi nhận Ngọc và số đo bản trước](docs/nhip-choi-va-choi-lai.md)
+[Cốt truyện và thiết kế sáu chương](docs/noi-dung.md) · [Thời lượng và kết quả nghiệm thu](docs/nghiem-thu-sau-chuong.md) · [Những hoạt động sau khi nhận Ngọc](docs/nhip-choi-va-choi-lai.md)
 
 ## Nâng cấp kỹ thuật v10.0 (`js/story.js`, `js/pbr.js`, `js/audio.js`)
 - **Hộp thoại RPG kể chuyện NPC (`!`/`?`/`★`/`♥`)**, **3 Trái Tim Ánh Sáng**, **Thanh Máu Trùm**, **Biến đổi khí quyển Sương Xám → Rực Rỡ** sau khi hạ Boss & **Chế độ Tự Do mở nhanh 6 phép** trong Sổ Tay (`J`).
