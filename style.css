@@ -594,7 +594,7 @@ button:focus-visible, summary:focus-visible, #interact:focus-visible { outline: 
 #journey-actions:not(:empty) { margin-top:7px; }
 .journey-nav { display:none; }
 #journey-map { position:absolute; top:max(66px,calc(env(safe-area-inset-top) + 56px)); right:12px; width:100px; height:92px; background:#172c3de6; border:1px solid #fff7; border-radius:12px; }
-body.in-journey :is(.hud,#hud-right,#dot,#hint,#interact,#joy,#touch-btns,#mobile-actions,#skill-banner,#toast,#big,#vignette,#mask,#grade) { visibility:hidden !important; }
+body.in-journey :is(.hud,#hud-right,#dot,#hint,#interact,#joy,#vert,#crystal-music,#skill-banner,#toast,#big,#vignette,#mask,#grade) { visibility:hidden !important; }
 body.in-journey { touch-action:none; }
 @media (pointer:coarse),(max-width:700px) {
   .journey-top { padding-inline:9px; }

@@ -21,7 +21,7 @@
       crystal = new THREE.ConeGeometry(1, 1, 6);
     var torus = new THREE.TorusGeometry(1, 0.13, 8, 20),
       rock = new THREE.IcosahedronGeometry(1, 0);
-    var materials = new Map();
+    var materials = new Map(), occlusionMaterials = new Map();
     function part(parent, geo, color, x, y, z, w, h, d, emissive) {
       var key = color + "/" + !!emissive;
       if (!materials.has(key))
@@ -130,6 +130,19 @@
       root.add(label);
       root.position.set(d.x, 0, d.z);
       scene.add(root);
+      var solidParts = [];
+      if (!buddy) top.traverse(function (object) {
+        if (!object.isMesh) return;
+        var solid = object.material;
+        if (!occlusionMaterials.has(solid)) {
+          var faded = solid.clone();
+          faded.transparent = true;
+          faded.opacity = 0.19;
+          faded.depthWrite = false;
+          occlusionMaterials.set(solid, faded);
+        }
+        solidParts.push({mesh: object, solid: solid, faded: occlusionMaterials.get(solid)});
+      });
       devices.set(d.id, {
         definition: d,
         root: root,
@@ -137,7 +150,7 @@
         ring: ring,
         buddy: buddy,
         label: label,
-        following: false
+        following: false, solidParts: solidParts, occluded: false
       });
     }
     field.devices.forEach(buildDevice);
@@ -266,6 +279,12 @@
         }
         if (m.buddy && m.buddy.userData.mixer) m.buddy.userData.mixer.update(dt);
         var range = Math.hypot(m.root.position.x - room.x, m.root.position.z - room.z);
+        var inFront = m.root.position.z - room.z;
+        var occluded = Math.abs(m.root.position.x - room.x) < 1.5 && inFront > -1.1 && inFront < 2.7;
+        if (occluded !== m.occluded) {
+          m.occluded = occluded;
+          m.solidParts.forEach(function (part) { part.mesh.material = occluded ? part.faded : part.solid; });
+        }
         m.label.visible = range < 16 && !m.following;
         if (range <= 3.3 && !m.following) nearest.push({ device: m.definition, range: range });
       });
@@ -317,6 +336,8 @@
       dispose: function () {
         MAY.scene.add(MAY.diver);
         MAY.disposeSceneBranch(scene);
+        occlusionMaterials.forEach(function (mat) { mat.dispose(); });
+        materials.forEach(function (mat) { mat.dispose(); });
         [box, round, log, crystal, torus, rock].forEach(function (g) {
           g.dispose();
         });

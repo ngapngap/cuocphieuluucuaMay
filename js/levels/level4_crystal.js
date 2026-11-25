@@ -619,6 +619,128 @@
       }
     });
 
+    // Preserve saves that had already opened the boss before this route existed.
+    var ch4LegacyBoss = ch4St.stage >= 3 || ch4St.bossDown || ch4St.rewarded || ctx.save.gem;
+    var expedition = MAY.createChapterJourney(ctx, {
+      title: "Tiếng gọi bên kia hồ", entry: [0, ctx.groundH(0, 11), 11], color: 0x9c8bfa,
+      clearing: {
+        section: 2, name:"Lời đáp bên hồ", brief:"Tìm bờ có câu gọi đúng, rồi đi tới các pha lê gõ hai ngắn, một dài.",
+        devices:[
+          {id:"left",name:"Bờ trái ● ● ◆",x:-16,z:-22,form:"bell",color:0x6ee7f3,pattern:[0,0,2]},
+          {id:"right",name:"Bờ phải ● ◆ ●",x:16,z:-22,form:"bell",color:0xa58ac5,pattern:[0,2,0]},
+          {id:"short",name:"Nhịp ngắn ●",x:-8,z:-5,form:"crystal",color:0x60d9ed},
+          {id:"long",name:"Nhịp dài ◆",x:8,z:-5,form:"crystal",color:0xe78dd0},
+          {id:"wind",name:"Tín hiệu Bé Gió",x:0,z:-30,form:"lamp",color:0xffe788}
+        ],
+        hint:function(v){return !v.bank?"So sánh hai bờ và chọn câu ● ● ◆.":"Gõ tại pha lê: ● ● ◆ ("+(v.note||0)+"/3).";},
+        action:function(id,v){
+          if(id==="right")return {text:"Bờ này đáp ● ◆ ●, khác câu gọi. Hãy thử bờ kia.",done:false};
+          if(id==="left"){v.bank=true;return {text:"Đúng nguồn ● ● ◆. Tự gõ lời đáp ở hai pha lê.",done:false};}
+          if(id==="short"||id==="long"){
+            if(!v.bank)return {text:"Tìm nguồn gọi đúng trước khi đáp.",done:false};
+            var notes=["short","short","long"],i=v.note||0;
+            if(id!==notes[i])return {text:"Nốt này chưa đúng; giữ những nốt đã gõ và thử lại.",done:false};
+            v.note=i+1;return {text:v.note===3?"Bé Gió nhận lời đáp: chờ tớ!":"Đúng nhịp "+v.note+"/3.",done:v.note===3};
+          }
+          return {text:"Bé Gió còn chờ người bên lâu đài. Hãy gửi lời đáp.",done:false};
+        },
+        look:function(id,v){return {lit:id==="left" || (id==="wind" && (v.note||0)>=3) || (id==="short" && !!v.bank) || (id==="long" && !!v.bank),angle:0};},
+        links:function(v){return v.bank?[["left","short",0x67e8f9],["short","long",0xd8a4ff]]:[["left","wind",0x67e8f9]];}
+      },
+      sections: [
+        { name: "Hang vọng", brief: "Cú Mèo gõ mẫu, Mây nhìn và gõ đáp.", landmark: "Chuông cửa hang", length: 590, sky: 0x302644, ground: 0x514359, path: 0x79677e, scenery: "echo", companion: "owl", events: [
+          {at:0.09,kind:"echo",pattern:[0,0,2],cue:"Cú Mèo gõ hai ngắn, một dài. Gõ đáp!",success:"Tiếng đáp vang qua cửa hang."},
+          {at:0.20,kind:"pass",lane:-1,cue:"Ánh pha lê chỉ lối trái",success:"Mây qua vòm đá."},
+          {at:0.31,kind:"cast",spell:"crystal",cue:"Gõ pha lê nghe tiếng vọng",success:"Tiếng vọng trả lại câu nhạc."},
+          {at:0.42,kind:"echo",pattern:[0,2,1],cue:"Nhìn hình và nghe ba nốt",success:"Câu nhạc mở khoang vọng."},
+          {at:0.53,kind:"pass",lane:1,cue:"Lối phải tránh cột đá",success:"Mây tới khoang rộng."},
+          {at:0.64,kind:"switch",choices:["Hai ngắn, một dài", "Một dài, hai ngắn"],answer:0,cue:"Tín hiệu chờ tớ là câu nào?",wrong:"Đó là nhịp khác. Nhìn hai nốt ngắn rồi một nốt dài.",success:"Mây nhớ được lời gọi."},
+          {at:0.75,kind:"cast",spell:"solar",cue:"Thắp đèn cửa khoang",success:"Ánh đèn soi hai nguồn vọng."},
+          {at:0.87,kind:"echo",pattern:[0,0,2],cue:"Gửi lời chờ tớ vào hang",success:"Một nguồn vọng đáp lại."}
+        ]},
+        { name: "Khoang hai nguồn vọng", brief: "Tìm nguồn đáp đúng câu nhạc.", landmark: "Hai vòm vọng", length: 590, sky: 0x282643, ground: 0x403e5e, path: 0x70658a, scenery: "echo", events: [
+          {at:0.09,kind:"echo",pattern:[0,0,2],cue:"Nghe và nhìn lại câu gọi",success:"Câu gọi vang tới hai vòm."},
+          {at:0.20,kind:"switch",choices:["Hai ngắn, một dài", "Hai ngắn, hai dài"],answer:0,cue:"Nguồn nào đáp đúng câu vừa học?",wrong:"Nguồn này lặp thêm một nhịp. Hãy thử nguồn kia.",success:"Nguồn đúng lóe sáng."},
+          {at:0.31,kind:"pass",lane:-1,cue:"Theo vòm có tín hiệu đúng ở trái",success:"Mây tới gần nguồn vọng."},
+          {at:0.42,kind:"cast",spell:"crystal",cue:"Gõ pha lê để hỏi lại",success:"Vòm đá trả lời."},
+          {at:0.53,kind:"echo",pattern:[0,0,2],cue:"Gõ lại câu trả lời",success:"Tiếng gọi rõ hơn."},
+          {at:0.64,kind:"switch",choices:["Nguồn thật", "Tiếng vọng lặp thừa"],answer:0,cue:"Chọn nguồn giữ đúng nhịp",wrong:"Tiếng vọng thừa một nhịp. Tìm câu gọi ban đầu.",success:"Đèn nguồn thật sáng lên."},
+          {at:0.75,kind:"pass",lane:1,cue:"Đá chắn trái, đi vòng bên phải",success:"Mây ra tới bờ hồ."},
+          {at:0.87,kind:"cast",spell:"solar",cue:"Soi dấu nốt cạnh hồ",success:"Hình nốt hiện trên bờ tối."}
+        ]},
+        { name: "Hai bờ hồ tối", brief: "Đổi bờ khi tín hiệu đổi phía.", landmark: "Bờ hồ tối", length: 600, sky: 0x171c39, ground: 0x273549, path: 0x4a7181, scenery: "lake", events: [
+          {at:0.09,kind:"switch",choices:["Bờ trái: hai ngắn, một dài", "Bờ phải: một dài, hai ngắn"],answer:0,cue:"Bờ nào trả lời đúng câu gọi?",wrong:"Bờ này đáp sai thứ tự. Thử nghe bờ còn lại.",success:"Tín hiệu thật ở bờ trái."},
+          {at:0.20,kind:"pass",lane:-1,cue:"Qua lối đá bên bờ trái",success:"Mây đi sát nguồn gọi."},
+          {at:0.31,kind:"echo",pattern:[0,0,2],cue:"Gửi lại câu gọi từ bờ hồ",success:"Ánh nốt đáp từ bờ đối diện."},
+          {at:0.42,kind:"switch",choices:["Ở lại bờ cũ", "Đổi sang bờ có tín hiệu"],answer:1,cue:"Tín hiệu thật đã chuyển bờ",wrong:"Tín hiệu đã đổi bờ. Hãy đi theo nó.",success:"Mây đổi bờ theo tín hiệu."},
+          {at:0.53,kind:"pass",lane:1,cue:"Đi về phía bờ phải đang lóe sáng",success:"Mây đến bờ mới."},
+          {at:0.64,kind:"cast",spell:"solar",cue:"Soi đường đá dưới nước",success:"Lối qua hồ hiện ra."},
+          {at:0.75,kind:"echo",pattern:[0,0,2],cue:"Nhìn dấu nốt rồi đáp bên bờ mới",success:"Bé Gió đáp lại phía trước."},
+          {at:0.87,kind:"pass",lane:0,cue:"Bước giữa những ánh pha lê",success:"Mây qua hồ tối."}
+        ]},
+        { name: "Nơi gửi tín hiệu", brief: "Báo đường an toàn từ bờ bên kia rồi đánh thức Golem.", landmark: "Đài tín hiệu pha lê", length: 600, sky: 0x282440, ground: 0x484057, path: 0x8c7aaa, scenery: "lake", events: [
+          {at:0.09,kind:"cast",spell:"crystal",cue:"Gõ đài pha lê mở đường báo tin",success:"Đài ngân sáng trên bờ."},
+          {at:0.20,kind:"echo",pattern:[0,0,2],cue:"Gõ nhịp mở đường cho Cú Mèo",success:"Các tinh thể soi lối qua hồ."},
+          {at:0.31,kind:"pass",lane:1,cue:"Theo ánh đáp bên phải",success:"Mây tới gần đài tín hiệu."},
+          {at:0.42,kind:"switch",choices:["Những người còn ở lâu đài", "Chỉ cho riêng Mây"],answer:0,cue:"Cần giữ đường cho ai?",wrong:"Những người còn lại cũng cần một lối an toàn.",success:"Mây giữ lối sáng cho những người còn lại."},
+          {at:0.53,kind:"echo",pattern:[0,2,1],cue:"Cú Mèo nhắc câu nhạc dẫn đường",success:"Các nốt soi sáng mặt hồ."},
+          {at:0.64,kind:"pass",lane:-1,cue:"Chọn lối trái theo dấu nốt",success:"Mây qua chỗ đá sụt."},
+          {at:0.75,kind:"cast",spell:"crystal",cue:"Đánh thức pha lê gần Golem",success:"Pha lê rung, Golem cựa mình."},
+          {at:0.87,kind:"echo",pattern:[0,0,2],cue:"Gửi tin lối hồ đã sáng cho Cú Mèo",success:"Cú Mèo nhận tin; Golem thức giấc."}
+        ]}
+      ],
+      makeVista: function (i, state) {
+        var g=new THREE.Group();
+        var rock=new THREE.MeshStandardMaterial({color:0x433b59,roughness:0.9});
+        var water=new THREE.MeshBasicMaterial({color:0x163753,transparent:true,opacity:0.9});
+        function box(w,h,d,x,y,z,mat) { var m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat); m.position.set(x,y,z); g.add(m); return m; }
+        if (i < 2) {
+          box(32,1,75,0,11,-32,rock);
+          [-1,1].forEach(function(side) { for(var z=-12;z>=-68;z-=18) { box(3,10,3,side*13,5,z,rock); } });
+        }
+        if (i >= 1) {
+          // Two visually distinct sources answer across the chamber/lake.
+          var sources=[];
+          [-1,1].forEach(function(side) {
+            var source=new THREE.Group(); source.position.set(side*4.5,4,-23);
+            var glow=new THREE.Mesh(new THREE.OctahedronGeometry(2,0),new THREE.MeshBasicMaterial({color:0x9f94e7})); source.add(glow);
+            var symbol=MAY.makeLabel("● ● ◆",{sx:3,sy:0.8,bg:"rgba(14,18,38,.95)"}); symbol.position.y=2.7; source.add(symbol);
+            var reflected=MAY.makeLabel("● ◆ ●",{sx:3,sy:0.8,bg:"rgba(14,18,38,.95)"}); reflected.position.y=2.7; source.add(reflected); g.add(source);
+            sources.push({group:source,glow:glow,symbol:symbol,reflected:reflected});
+          });
+          if(i>=2) {
+            box(60,0.15,80,0,-0.35,-34,water);
+            box(8,1,80,-19,0,-34,rock); box(8,1,80,19,0,-34,rock);
+            var left=MAY.makeLabel("BỜ TRÁI",{sx:3.5,sy:0.8,bg:"rgba(10,22,44,.9)"}); left.position.set(-4,2,-18);g.add(left);
+            var right=MAY.makeLabel("BỜ PHẢI",{sx:3.5,sy:0.8,bg:"rgba(10,22,44,.9)"}); right.position.set(4,2,-18);g.add(right);
+          }
+          return {group:g,tick:function(distance,lateral,eventIndex,time) {
+            var trueSide=i===2 && eventIndex>=4 ? 1 : 0;
+            sources.forEach(function(source,k) {
+              var actual=k===trueSide;
+              source.glow.material.color.setHex(actual?0x7cf1ff:0x71658b);
+              source.glow.scale.setScalar(actual?1.1+0.14*Math.sin(time*4):0.8);
+              source.symbol.visible=actual; source.reflected.visible=!actual;
+            });
+          }};
+        }
+        return {group:g,tick:function(){}};
+      },
+      makeLandmark: function (i) {
+        var g = new THREE.Group();
+        var rock = new THREE.MeshStandardMaterial({color:0x50465f, roughness:0.8});
+        var crystal = new THREE.MeshBasicMaterial({color:i < 2 ? 0xa78bfa : 0x67d7e8});
+        for (var x = -1; x <= 1; x += 2) {
+          var pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.6,1.0,6,6),rock); pillar.position.set(x * 4,3,0); g.add(pillar);
+          var gem = new THREE.Mesh(new THREE.OctahedronGeometry(1.1,0),crystal); gem.position.set(x * 4,6.5,0); g.add(gem);
+        }
+        var arch = new THREE.Mesh(new THREE.BoxGeometry(9,0.8,1),rock); arch.position.y = 6; g.add(arch);
+        if (i >= 2) { var pool = new THREE.Mesh(new THREE.CircleGeometry(3,24),new THREE.MeshBasicMaterial({color:0x264d70,transparent:true,opacity:0.75})); pool.rotation.x = -Math.PI/2; pool.position.y = 0.08; g.add(pool); }
+        return g;
+      },
+      onComplete: function () { updateCh4Story(); }
+    });
+
     function updateCh4Story() {
       if (ch4St.rewarded || ctx.save.gem) {
         ch4Npc.setMarker("♥");
@@ -657,6 +779,7 @@
         ctx.setObjective("🎵", "NHỚ VÀ GÕ NHỊP " + (echoRound + 1) + "/2 BẰNG 💎 (" + echoProgress + "/3) · ● ĐÔ  ▲ MI  ◆ SON", null);
         return;
       }
+      if (!ch4LegacyBoss && expedition.block()) return;
       ch4St.stage = 3; MAY.persist();
       ch4Npc.setMarker("?");
       if (!ch4Boss.active) {
