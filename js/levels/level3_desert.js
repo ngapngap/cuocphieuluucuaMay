@@ -401,6 +401,125 @@
       }
     });
 
+    // The expedition is part of the main story. Old saves already at the boss
+    // retain their progress; each new checkpoint is stored by the journey.
+    var ch3LegacyBoss = ch3St.stage >= 3 || ch3St.bossDown || ch3St.rewarded || ctx.save.gem;
+    var expedition = MAY.createChapterJourney(ctx, {
+      title: "Đường ánh sáng", entry: [0, ctx.groundH(0, -18), -18], color: 0xffd35a,
+      clearing: {
+        section: 2, name: "Đài đổi hướng bão", brief: "Đi tới từng gương, nối tia qua gương thứ hai rồi hướng tới tháp trống.",
+        devices: [
+          {id:"sun",name:"Hải đăng",x:0,z:-28,form:"lamp",color:0xffe16a},
+          {id:"first",name:"Gương đầu",x:0,z:-14,form:"mirror",color:0xffd774},
+          {id:"relay",name:"Gương chuyển",x:12,z:-14,form:"mirror",color:0xffd774},
+          {id:"castle",name:"Lâu đài có Bé Gió",x:-15,z:-28,form:"tower",color:0x9783a7},
+          {id:"empty",name:"Tháp trống",x:17,z:-29,form:"tower",color:0xd5a76a}
+        ],
+        hint:function(v){return !v.first ? "Xoay gương đầu để tia tới gương chuyển." : !v.relay ? "Tới gương chuyển, đổi tia khỏi lâu đài." : "Tia đã tới tháp trống; bão rời lâu đài.";},
+        action:function(id,v){
+          if(id==="first") {v.first=!v.first;return {text:v.first?"Tia tới gương chuyển.":"Tia lại hướng về lâu đài; hãy xoay gương.",done:false};}
+          if(id==="relay") {if(!v.first)return {text:"Gương này chưa nhận tia. Hãy nối gương đầu trước.",done:false};v.relay=!v.relay;return {text:v.relay?"Tia tới tháp trống, bão rời Bé Gió!":"Tia hướng về lâu đài; xoay lại để bảo vệ Bé Gió.",done:!!v.relay};}
+          return {text:"Theo tia từ hải đăng tới gương, rồi chuyển nó khỏi lâu đài.",done:false};
+        },
+        look:function(id,v){return {lit:id==="sun" || id==="first" || (id==="relay"&&!!v.first) || (id==="empty"&&!!v.first&&!!v.relay) || (id==="castle"&&(!v.first||!v.relay)),angle:id==="first"?(v.first?Math.PI/2:-Math.PI/2):id==="relay"?(v.relay?Math.PI: -Math.PI/2):0};},
+        links:function(v){var a=[["sun","first",0xffe275]];a.push(["first",v.first?"relay":"castle",0xffe275]);if(v.first)a.push(["relay",v.relay?"empty":"castle",0xffe275]);return a;}
+      },
+      sections: [
+        { name: "Sân gương", brief: "Chỉnh gương đưa tia tới vòng nắng.", landmark: "Sân gương mặt trời", length: 690, sky: 0xe8b86e, ground: 0xc89455, path: 0xe8ca8b, scenery: "pyramid", events: [
+          {at:0.08,kind:"align",slots:4,answer:2,initial:0,cue:"Xoay gương tới vòng nắng",success:"Tia nối tới sân tiếp theo."},
+          {at:0.18,kind:"pass",lane:-1,cue:"Đi bên trái vào bóng cột",success:"Mây đi qua vùng râm."},
+          {at:0.28,kind:"cast",spell:"solar",cue:"Dùng Nắng thắp đĩa mặt trời",success:"Đĩa sáng chỉ đường."},
+          {at:0.38,kind:"align",slots:4,answer:1,initial:3,cue:"Theo tia tới vòng nắng",success:"Gương đã nối đúng."},
+          {at:0.49,kind:"pass",lane:1,cue:"Cát xoáy trái, đi bên phải",success:"Mây tránh cát xoáy."},
+          {at:0.59,kind:"switch",choices:["Vòng nắng", "Vòng trăng"],answer:0,cue:"Đích nào nhận ánh sáng vàng?",wrong:"Vòng trăng không nhận tia vàng. Hãy tìm vòng nắng.",success:"Vòng nắng mở lối."},
+          {at:0.70,kind:"align",slots:4,answer:3,initial:0,cue:"Chỉnh tia qua cổng",success:"Cổng gương sáng."},
+          {at:0.81,kind:"cast",spell:"solar",cue:"Thắp dấu nắng trên cổng",success:"Ánh sáng lan vào kim tự tháp."},
+          {at:0.92,kind:"pass",lane:0,cue:"Đi giữa vào bóng râm",success:"Mây tới cửa tháp."}
+        ]},
+        { name: "Đường sáng kim tự tháp", brief: "Theo tia qua các phòng và sửa gương.", landmark: "Phòng tia sáng", length: 710, sky: 0xa16b4e, ground: 0x986d4c, path: 0xc3a476, scenery: "pyramid", events: [
+          {at:0.08,kind:"align",slots:4,answer:1,initial:0,cue:"Đưa tia tới vòng bên phòng đầu",success:"Phòng thứ nhất sáng."},
+          {at:0.18,kind:"cast",spell:"solar",cue:"Đánh thức đĩa nắng",success:"Một tia mới hiện ra."},
+          {at:0.28,kind:"pass",lane:1,cue:"Bậc đá bên phải còn nguyên",success:"Mây bước qua bậc đá."},
+          {at:0.38,kind:"align",slots:4,answer:2,initial:0,cue:"Xoay gương nối hai phòng",success:"Tia nối hai phòng."},
+          {at:0.48,kind:"switch",choices:["Theo tia vàng", "Theo bóng tối"],answer:0,cue:"Cửa nào được tia chỉ tới?",wrong:"Bóng tối không dẫn tia tới cửa.",success:"Cửa được chiếu sáng mở ra."},
+          {at:0.58,kind:"pass",lane:-1,cue:"Chọn lối trái tránh cột đổ",success:"Mây qua cột đổ."},
+          {at:0.68,kind:"align",slots:4,answer:3,initial:1,cue:"Đưa tia lên đích trên tường",success:"Tường hiện bản đồ bầu trời."},
+          {at:0.78,kind:"cast",spell:"solar",cue:"Chiếu sáng bản đồ",success:"Đài quan sát hiện ra."},
+          {at:0.89,kind:"pass",lane:0,cue:"Đi giữa hai hàng cột",success:"Mây ra khỏi tháp."}
+        ]},
+        { name: "Đài quan sát", brief: "Nhìn tín hiệu của Bé Gió và hướng bão.", landmark: "Đài quan sát sao", length: 700, sky: 0x85799a, ground: 0xa88c72, path: 0xd6bd91, scenery: "observatory", events: [
+          {at:0.08,kind:"align",slots:4,answer:2,initial:1,cue:"Chỉnh kính tới hải đăng",success:"Hải đăng lóe sáng phía xa."},
+          {at:0.18,kind:"echo",pattern:[0,0,2],cue:"Bé Gió đáp hai ngắn, một dài. Gõ lại!",success:"Mây nhận ra lời chờ tớ."},
+          {at:0.28,kind:"pass",lane:-1,cue:"Theo bóng tia xuống lối trái",success:"Mây thấy bóng bão tiến về lâu đài."},
+          {at:0.38,kind:"switch",choices:["Lâu đài có người trú", "Tháp trống"],answer:1,cue:"Bão theo ánh sáng. Dẫn tới đâu?",wrong:"Tia hướng về lâu đài kéo bão tới nơi Bé Gió đang trú! Hãy đổi hướng.",success:"Tháp trống ở xa những người bạn."},
+          {at:0.48,kind:"align",slots:4,answer:1,initial:3,cue:"Tách tia khỏi lâu đài, hướng tới tháp trống",success:"Tia rời nơi Bé Gió trú."},
+          {at:0.58,kind:"pass",lane:1,cue:"Bão ở trái, tránh sang phải",success:"Mây tránh luồng cát."},
+          {at:0.68,kind:"cast",spell:"solar",cue:"Dùng Nắng giữ tia trên tháp trống",success:"Tia đã ổn định."},
+          {at:0.78,kind:"echo",pattern:[0,0,2],cue:"Gửi lại lời chờ tớ",success:"Bé Gió thấy tín hiệu."},
+          {at:0.89,kind:"align",slots:4,answer:2,initial:0,cue:"Nối gương tới tháp đón bão",success:"Đường sáng đã đổi hướng."}
+        ]},
+        { name: "Tháp đón bão", brief: "Giữ đường dẫn bão ổn định và báo lối an toàn.", landmark: "Tháp đón bão", length: 710, sky: 0x726574, ground: 0xa48462, path: 0xe4bf79, scenery: "observatory", events: [
+          {at:0.08,kind:"pass",lane:1,cue:"Cát xoáy trái, tránh sang phải",success:"Mây tránh bão."},
+          {at:0.18,kind:"align",slots:4,answer:3,initial:0,cue:"Chỉnh gương giữ đường dẫn đã đổi hướng",success:"Tia tiếp tục dẫn bão tới tháp trống."},
+          {at:0.28,kind:"cast",spell:"solar",cue:"Thắp dấu cảnh báo trên đường bão",success:"Dấu cảnh báo sáng lên."},
+          {at:0.38,kind:"pass",lane:-1,cue:"Tìm vùng khuất gió bên trái",success:"Mây tới chỗ khuất gió."},
+          {at:0.48,kind:"switch",choices:["Giữ lối trú được đánh dấu", "Tắt dấu cảnh báo"],answer:0,cue:"Làm sao để mọi người nhận ra lối trú?",wrong:"Tắt dấu khiến lối trú khó thấy. Hãy giữ dấu sáng.",success:"Lối trú đã được đánh dấu."},
+          {at:0.58,kind:"align",slots:4,answer:2,initial:1,cue:"Chỉnh gương dự phòng khi gió đổi",success:"Gương dự phòng giữ đường dẫn ổn định."},
+          {at:0.68,kind:"pass",lane:0,cue:"Lối giữa đã khuất cát",success:"Mây qua cơn gió."},
+          {at:0.78,kind:"cast",spell:"solar",cue:"Thắp đèn báo lối trú cuối cùng",success:"Đường trú hiện rõ phía trước."},
+          {at:0.89,kind:"echo",pattern:[0,0,2],cue:"Báo cho Bé Gió lối trú đã sáng",success:"Bé Gió thấy dấu báo lối trú."}
+        ]}
+      ],
+      makeVista: function (i, state) {
+        var g = new THREE.Group();
+        var sandstone = new THREE.MeshStandardMaterial({color:0xb78a5d,roughness:0.9});
+        var gold = new THREE.MeshBasicMaterial({color:0xffdc67});
+        function box(w,h,d,x,y,z,mat) { var m = new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat); m.position.set(x,y,z); g.add(m); return m; }
+        if (i === 0) {
+          [-1,1].forEach(function(side) { for (var z=-15; z>=-65; z-=18) { box(2,8,2,side*11,4,z,sandstone); box(3,0.8,3,side*11,8,z,gold); } });
+        }
+        if (i === 1) {
+          // A roof and paired pillars turn this stretch into connected chambers.
+          box(29,1,75,0,10,-32,sandstone);
+          [-1,1].forEach(function(side) { for(var z=-8;z>=-68;z-=15) { box(2,10,2,side*12,5,z,sandstone); box(5,1,2,side*10,9,z,gold); } });
+        }
+        if (i >= 2) {
+          var towerMat = new THREE.MeshStandardMaterial({color:0xc1a072,roughness:0.8});
+          // The lighthouse projects toward the castle until Mây redirects it.
+          box(4,11,4,0,5.5,-48,towerMat); box(5,1,5,0,11,-48,gold);
+          [-1,1].forEach(function(side) { box(7,6,5,side*10,3,-35,towerMat); box(2,10,2,side*13,5,-35,towerMat); box(2,10,2,side*7,5,-35,towerMat); });
+          var castleLabel=MAY.makeLabel("LÂU ĐÀI · BÉ GIÓ",{sx:5,sy:1,bg:"rgba(25,25,40,.9)"}); castleLabel.position.set(-4,6,-23); g.add(castleLabel);
+          var emptyLabel=MAY.makeLabel("THÁP TRỐNG",{sx:5,sy:1,bg:"rgba(25,25,40,.9)"}); emptyLabel.position.set(4,6,-23); g.add(emptyLabel);
+          var storm=new THREE.Group();
+          var cloudMat=new THREE.MeshStandardMaterial({color:0x51485e,roughness:1});
+          [-2,0,2].forEach(function(x) { var cloud=new THREE.Mesh(new THREE.SphereGeometry(2.4,9,6),cloudMat); cloud.position.set(x,0,0); storm.add(cloud); });
+          var bolt=new THREE.Mesh(new THREE.ConeGeometry(0.5,5,4),gold); bolt.position.y=-3.2; bolt.rotation.z=0.25; storm.add(bolt); g.add(storm);
+          var beam=new THREE.Mesh(new THREE.CylinderGeometry(0.13,0.13,1,8),new THREE.MeshBasicMaterial({color:0xffe87b,transparent:true,opacity:0.85})); g.add(beam);
+          return {group:g,tick:function(distance,lateral,eventIndex,time) {
+            var redirected=i===3 || eventIndex>=5;
+            var target=new THREE.Vector3(redirected?10:-10,9,-35), source=new THREE.Vector3(0,11,-48), delta=target.clone().sub(source);
+            beam.position.copy(source).add(target).multiplyScalar(0.5); beam.scale.y=delta.length(); beam.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),delta.normalize());
+            storm.position.set(target.x+Math.sin(time)*0.7,16,target.z); bolt.visible=Math.sin(time*4)>0;
+          }};
+        }
+        return {group:g,tick:function(){}};
+      },
+      makeLandmark: function (i) {
+        var g = new THREE.Group();
+        var stone = new THREE.MeshStandardMaterial({color:i < 2 ? 0xc8995c : 0x8d7990, roughness:0.85});
+        var gold = new THREE.MeshBasicMaterial({color:0xffdc67});
+        if (i < 2) {
+          var pyramid = new THREE.Mesh(new THREE.ConeGeometry(5.5, 7, 4), stone); pyramid.rotation.y = Math.PI / 4; pyramid.position.y = 3.5; g.add(pyramid);
+          var sun = new THREE.Mesh(new THREE.TorusGeometry(1.2, 0.17, 8, 20), gold); sun.position.set(0,4,4); g.add(sun);
+        } else {
+          var tower = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 2.4, 7, 8), stone); tower.position.y = 3.5; g.add(tower);
+          var ring = new THREE.Mesh(new THREE.TorusGeometry(2.5, 0.18, 8, 24), gold); ring.position.y = 6; g.add(ring);
+        }
+        return g;
+      },
+      onComplete: function () { updateCh3Story(); }
+    });
+
     function updateCh3Story() {
       mirrorPuzzles.forEach(function (puzzle) { puzzle.sync(); });
       if (ch3St.rewarded || ctx.save.gem) {
@@ -436,6 +555,7 @@
         for (var j = 0; j < 3; j++) if (!ch3St.steps["mir" + j]) { nextM = mirrors[j].pos; break; }
         ctx.setObjective("☀️", "XOAY GƯƠNG ĐẾN ĐÍCH ☀️, RỒI DÙNG TIA NẮNG (" + litCount + "/3)", nextM);
       } else {
+        if (!ch3LegacyBoss && expedition.block()) return;
         ch3St.stage = 3; MAY.persist();
         if (darkSeal.visible) {
           darkSeal.visible = false;
