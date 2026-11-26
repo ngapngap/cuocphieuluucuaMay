@@ -538,6 +538,17 @@
   var ambFilePending = {};
   var activeAmbTrack = null; /* { biome, src, gain } */
   var ambSeq = 0;
+  MAY.ambienceFormat = document.createElement("audio").canPlayType("audio/flac") ? "flac" : "wav";
+  MAY.ambienceFormatReady = (async function () {
+    if (MAY.ambienceFormat !== "flac") return;
+    // Test the decoder used by the game even if the player has muted the first visit.
+    // This fixture is 32 silent stereo PCM samples at 16 kHz, encoded as FLAC.
+    try {
+      var decoder = new OfflineAudioContext(2, 32, 16000);
+      var probe = atob("ZkxhQwAAACIQABAAAAAPAAAPA+gC8AAAACDwnzWlY3g5RY5GLmNQ7LzkhAAAKCAAAAByZWZlcmVuY2UgbGliRkxBQyAxLjQuMyAyMDIzMDYyMwAAAAD/+GUYAB8KAAAAAAAAwuA=");
+      await decoder.decodeAudioData(Uint8Array.from(probe, function (c) { return c.charCodeAt(0); }).buffer);
+    } catch (error) { MAY.ambienceFormat = "wav"; }
+  })();
 
   var BIOME_AMB_FILES = {
     hub:    { url: "assets/audio/amb_hub.wav",    gain: 0.24, rev: 0.20 },
@@ -581,8 +592,8 @@
     } catch (e) {}
   }
 
-  function playDecodedBiomeAmbience(biomeId, buffer, seq) {
-    if (!AC || !buffer || seq !== ambSeq) return;
+  function playDecodedBiomeAmbience(biomeId, clip, seq) {
+    if (!AC || !clip || seq !== ambSeq) return;
     try {
       var now = AC.currentTime;
       var meta = BIOME_AMB_FILES[biomeId] || BIOME_AMB_FILES.hub;
@@ -604,7 +615,7 @@
       }
 
       var src = AC.createBufferSource();
-      src.buffer = buffer;
+      src.buffer = clip.buffer;
       src.loop = true;
       var g = AC.createGain();
       g.gain.setValueAtTime(0.0001, now);
@@ -613,7 +624,7 @@
       g.connect(ambBus);
       src.start(0);
       activeAmbTrack = { biome: biomeId, src: src, gain: g };
-      MAY.ambienceSourceMode = "wav-buffer";
+      MAY.ambienceSourceMode = clip.format + "-buffer";
       /* Tắt sạch lớp nhiễu tổng hợp ngay khi track WAV thật bắt đầu phát */
       setSynthBedLevel(0.0);
     } catch (e) {}
@@ -628,15 +639,31 @@
       return;
     }
     if (!ambFilePending[biomeId]) {
-      ambFilePending[biomeId] = fetch(meta.url)
-        .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.arrayBuffer(); })
-        .then(function (ab) { return AC.decodeAudioData(ab); })
+      var format = MAY.ambienceFormat;
+      ambFilePending[biomeId] = decodeFile(format)
+        .catch(function (error) {
+          if (format === "wav") throw error;
+          return decodeFile("wav").then(function (clip) {
+            if (error.name === "EncodingError" && MAY.ambienceFormat !== "wav") {
+              MAY.ambienceFormat = "wav";
+              if (MAY.refreshOfflineAudio) MAY.refreshOfflineAudio();
+            }
+            return clip;
+          });
+        })
         .then(function (buf) { ambFileBuffers[biomeId] = buf; return buf; })
         .catch(function () { ambFilePending[biomeId] = null; return null; });
     }
     ambFilePending[biomeId].then(function (buf) {
       if (buf && biomeId === currentBiome) playDecodedBiomeAmbience(biomeId, buf, seq);
     });
+
+    async function decodeFile(extension) {
+      var response = await fetch(meta.url.replace(".wav", "." + extension));
+      if (!response.ok) throw new Error("HTTP " + response.status);
+      var buffer = await AC.decodeAudioData(await response.arrayBuffer());
+      return { format: extension, buffer: buffer };
+    }
   }
 
   function applyBiomeAmbience(biomeId, overrideFreq, overrideVol) {

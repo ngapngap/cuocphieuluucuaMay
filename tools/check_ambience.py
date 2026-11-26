@@ -45,15 +45,36 @@ def main():
             page = context.new_page()
             page.set_default_timeout(120000)
             page.goto(f"http://127.0.0.1:{server.server_port}/")
+            samples = page.evaluate("""async () => {
+              const ac = new OfflineAudioContext(2, 160000, 16000);
+              let compared = 0;
+              for (const id of ['hub','level1','level2','level3','level4','level5','level6']) {
+                const pair = await Promise.all(['wav','flac'].map(async ext =>
+                  ac.decodeAudioData(await (await fetch('assets/audio/amb_' + id + '.' + ext)).arrayBuffer())));
+                const [a,b] = pair;
+                if (a.numberOfChannels !== b.numberOfChannels || a.length !== b.length) throw Error(id);
+                for (let channel = 0; channel < a.numberOfChannels; channel++) {
+                  const x = a.getChannelData(channel), y = b.getChannelData(channel);
+                  if (!x.every((sample, i) => sample === y[i])) throw Error(id + ' sample mismatch');
+                  compared += x.length;
+                }
+              }
+              return compared;
+            }""")
+            assert samples == 2240000, samples
             page.locator("#btn-start-free").click()
             page.locator("#btn-play").click()
             for level in ("level1", "level4"):
                 page.evaluate("id => MAY.enterLevel(id, true)", level)
                 page.evaluate("MAY.Cutscene.cancelSilent(); MAY.closeDialogue(false)")
-                page.wait_for_function("MAY.ambienceSourceMode === 'wav-buffer' && window.mixMeter && mixMeter.context.state === 'running'")
+                page.wait_for_function("MAY.ambienceSourceMode === MAY.ambienceFormat + '-buffer' && window.mixMeter && mixMeter.context.state === 'running'")
                 result = page.evaluate(SAMPLE)
                 print(level, json.dumps(result), flush=True)
                 assert result["peak"] > .001 and result["silentWindows"] == 0, result
+            # Force the live chapter's decoder to reject a FLAC response.
+            page.route("**/amb_level3.flac", lambda route: route.fulfill(body=b"broken audio"))
+            page.evaluate("MAY.enterLevel('level3', true)")
+            page.wait_for_function("MAY.ambienceSourceMode === 'wav-buffer'")
             browser.close()
     finally:
         server.shutdown()

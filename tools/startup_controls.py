@@ -46,24 +46,44 @@ def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("root", type=Path)
     p.add_argument("output", type=Path)
+    p.add_argument("--compare", type=Path, help="Also serve a baseline and alternate the order in each pair")
+    p.add_argument("--slow", action="store_true", help="Use 150 ms latency and 1.6 Mbit/s down, service workers blocked")
     args = p.parse_args()
-    server = Server(("127.0.0.1", 0), partial(Handler, directory=str(args.root.resolve())))
-    Thread(target=server.serve_forever, daemon=True).start()
+    roots = {"baseline": args.compare, "candidate": args.root} if args.compare else {"candidate": args.root}
+    servers = {}
+    for name, folder in roots.items():
+        server = Server(("127.0.0.1", 0), partial(Handler, directory=str(folder.resolve())))
+        Thread(target=server.serve_forever, daemon=True).start()
+        servers[name] = server
     rows = []
     with sync_playwright() as pw:
         browser = pw.chromium.launch(channel="chrome", args=["--enable-gpu", "--use-angle=d3d11"])
-        for _ in range(5):
-            context = browser.new_context(viewport={"width": 1180, "height": 760})
-            page = context.new_page()
-            page.add_init_script(f"({OBSERVE})()")
-            page.goto(f"http://127.0.0.1:{server.server_port}/", wait_until="domcontentloaded")
-            page.wait_for_function("window.startup && startup.control", timeout=120000)
-            rows.append(page.evaluate("startup"))
-            args.output.write_text(json.dumps(rows, indent=2), encoding="utf8")
-            context.close()
+        for i in range(5):
+            for name in (list(servers) if i % 2 == 0 else reversed(servers)):
+                context = browser.new_context(viewport={"width": 1180, "height": 760},
+                                              service_workers="block" if args.slow else "allow")
+                page = context.new_page()
+                if args.slow:
+                    cdp = context.new_cdp_session(page)
+                    cdp.send("Network.enable")
+                    cdp.send("Network.emulateNetworkConditions", dict(
+                        offline=False, latency=150, downloadThroughput=200000, uploadThroughput=93750,
+                        connectionType="cellular3g"))
+                page.add_init_script(f"({OBSERVE})()")
+                page.goto(f"http://127.0.0.1:{servers[name].server_port}/", wait_until="domcontentloaded", timeout=180000)
+                page.wait_for_function("window.startup && startup.control", timeout=180000)
+                row = page.evaluate("startup")
+                if args.compare or args.slow:
+                    row.update(build=name, run=i + 1, resources=page.evaluate("""performance.getEntriesByType('resource')
+                        .filter(e=>e.responseEnd<=startup.control).map(e=>[new URL(e.name).pathname,e.encodedBodySize])"""))
+                rows.append(row)
+                args.output.write_text(json.dumps(rows, indent=2), encoding="utf8")
+                print(name, i + 1, round(row["control"]), flush=True)
+                context.close()
         browser.close()
-    server.shutdown()
-    server.server_close()
+    for server in servers.values():
+        server.shutdown()
+        server.server_close()
 
 
 if __name__ == "__main__":

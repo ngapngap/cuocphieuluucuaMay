@@ -90,6 +90,8 @@
       return;
     }
     var side = e ? (e.kind === "fork" ? 1 : e.lane || 0) : 0;
+    // Follow the wind signal after the first flash, then return to cast again.
+    if (c.id === "level6" && st.beaconWind === "seek") side = 1;
     var delta = side * MAY.journeyLaneWidth - st.lateral,
       keys = ["ShiftLeft", "KeyW"];
     if (Math.abs(delta) > 0.25) keys.push(delta > 0 ? "KeyD" : "KeyA");

@@ -14,6 +14,51 @@
     var player = MAY.player.pos;
     var hint = document.getElementById("hint");
     var armed = true, elapsed = 0, splitTimes = [], path = [], ghostIndex = 0;
+    var bonusTime = 0, boostStars = [];
+    // Optional detours: the stars buy breathing room, but cost distance to reach.
+    for (var i = 0; i < Math.min(2, race.rings.length); i++) {
+      var star = new THREE.Mesh(MAY.starGeo, new THREE.MeshBasicMaterial({ color: 0xffd34f }));
+      star.userData.sharedGeo = true;
+      star.visible = false;
+      star.scale.setScalar(0.7);
+      ctx.add(star);
+      boostStars.push(star);
+    }
+
+    race.boostStars = boostStars;
+
+    function placeBoostStars() {
+      var wins = ctx.save.raceRecord ? ctx.save.raceRecord.wins : 0;
+      boostStars.forEach(function (star, index) {
+        var endIndex = Math.min(race.rings.length - 1, index * 2);
+        var a = endIndex ? race.rings[endIndex - 1].position : race.startRing.position;
+        var b = race.rings[endIndex].position;
+        var dx = b.x - a.x, dz = b.z - a.z;
+        var length = Math.sqrt(dx * dx + dz * dz) || 1;
+        var side = (wins + index) % 2 ? -1 : 1;
+        star.position.set((a.x + b.x) / 2 - dz / length * 3.5 * side,
+          (a.y + b.y) / 2, (a.z + b.z) / 2 + dx / length * 3.5 * side);
+        // The cloud route crosses open sky. Keep the detour over a walkable
+        // island or bridge so a player can actually reach it by jumping.
+        if (ctx.id === "level6") {
+          var found = false;
+          [3.5 * side, -3.5 * side, 0].some(function (offset) {
+            return [0.5, 0.35, 0.65, 0.2, 0.8].some(function (fraction) {
+              var x = a.x + dx * fraction - dz / length * offset;
+              var z = a.z + dz * fraction + dx / length * offset;
+              var ground = ctx.groundH(x, z);
+              if (ground < -100) return false;
+              star.position.set(x, ground + 1.4, z);
+              found = true;
+              return true;
+            });
+          });
+          if (!found) star.position.copy(b);
+        }
+        star.userData.collected = false;
+        star.visible = true;
+      });
+    }
     var ghost = new THREE.Mesh(MAY.starGeo, new THREE.MeshBasicMaterial({ color: 0xffdc79 }));
     ghost.userData.sharedGeo = true;
     ghost.scale.setScalar(0.46);
@@ -32,13 +77,15 @@
       race.idx = 0;
       race.t = race.limit;
       elapsed = 0;
+      bonusTime = 0;
+      placeBoostStars();
       splitTimes = [];
       path = [sample(0, player)];
       ghostIndex = 0;
       ghost.visible = !!ctx.save.raceRecord;
       if (ghost.visible) moveGhost();
       MAY.sndFriend();
-      MAY.toast("🏁 " + race.title + (ghost.visible ? " · Đua với ngôi sao của lượt nhanh nhất!" : " · Qua các vòng xanh để lập kỷ lục đầu tiên!"));
+      MAY.toast("🏁 " + race.title + (ghost.visible ? " · Đua với kỷ lục của mình. Nhặt sao vàng để thêm giờ!" : " · Qua các vòng xanh. Nhặt sao vàng để thêm giờ!"));
     }
 
     function moveGhost() {
@@ -53,6 +100,7 @@
     function stop() {
       race.active = false;
       ghost.visible = false;
+      boostStars.forEach(function (star) { star.visible = false; });
       race.rings.forEach(function (ring) {
         ring.scale.setScalar(1);
         if (ring.userData.rimMat) ring.userData.rimMat.emissiveIntensity = 1;
@@ -106,14 +154,28 @@
         return;
       }
       elapsed += dt;
-      race.t = Math.max(0, race.limit - elapsed);
-      if (elapsed >= race.limit) {
+      race.t = Math.max(0, race.limit + bonusTime - elapsed);
+      if (elapsed >= race.limit + bonusTime) {
         stop();
         MAY.toast("⏱️ Hết giờ. Quay lại vạch xuất phát để thử đường khác nhé!");
         return;
       }
       if (elapsed - path[path.length - 1][0] >= 0.32) path.push(sample(elapsed, player));
       if (ghost.visible) moveGhost();
+      boostStars.forEach(function (star) {
+        if (star.userData.collected) return;
+        star.rotation.y += dt * 2.5;
+        star.scale.setScalar(0.7 + Math.sin(t * 5) * 0.1);
+        if (star.position.distanceTo(player) < 2.4) {
+          star.userData.collected = true;
+          star.visible = false;
+          bonusTime += 4;
+          race.t += 4;
+          MAY.sndStar();
+          MAY.burstAt(star.position.clone(), 0xffd34f, 14);
+          MAY.toast("⭐ Sao tiếp sức! Thêm 4 giây để về đích!");
+        }
+      });
       var ring = race.rings[race.idx];
       var left = Math.ceil(race.t);
       hint.style.display = "block";

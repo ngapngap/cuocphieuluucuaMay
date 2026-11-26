@@ -224,7 +224,6 @@ body.touch #big { display: none; }
 }
 .panel.wide { max-width: 700px; }
 .panel h1 { font-size: clamp(22px, 4.5vw, 32px); margin: 4px 0; line-height: 1.15; letter-spacing: .03em; text-shadow: 0 3px 0 rgba(0,30,60,.65); }
-.ver-tag { font-size: 12px; background: rgba(255,217,61,.22); border: 1px solid #ffd93d; color: #ffd93d; border-radius: 999px; padding: 2px 9px; vertical-align: middle; }
 .panel p { font-size: 14px; line-height: 1.45; margin: 6px 0; }
 .story-lead { background: rgba(255,255,255,.08); border-radius: 12px; padding: 8px 12px; }
 
@@ -556,7 +555,6 @@ button:focus-visible, summary:focus-visible, #interact:focus-visible { outline: 
   #spell-name { max-width: 90vw; }
   #ov-start .panel { padding: 10px 14px; }
   #ov-start .panel h1 { font-size: 21px; }
-  #ov-start .ver-tag { display: none; }
 }
 @media (max-height: 500px) and (orientation: landscape) {
   #ov-start .panel { max-height: calc(100dvh - 12px); }
@@ -603,3 +601,22 @@ body.in-journey { touch-action:none; }
   .journey-nav { display:flex; position:absolute; bottom:max(12px,env(safe-area-inset-bottom)); left:50%; transform:translateX(-50%); gap:12px; }
   .journey-nav button { width:58px; min-height:46px; }
 }
+
+/* Keep touch controls reachable without covering the centre of the scene. */
+.start-touch-tip { display: none; }
+body.touch .start-touch-tip { display: block; margin: 8px auto 0; max-width: 34em; color: #ccecff; font-size: 13px; line-height: 1.35; }
+body.touch #joy { left: max(18px, env(safe-area-inset-left)); bottom: max(22px, env(safe-area-inset-bottom)); touch-action: none; }
+body.touch #vert { right: max(18px, env(safe-area-inset-right)); bottom: max(22px, env(safe-area-inset-bottom)); display: grid; grid-template-columns: repeat(2, 58px); }
+@media (max-width: 720px) {
+  /* The spell row follows the actual height of the objective, including wrapped text. */
+  #hud-left { width: calc(100vw - 20px); }
+  #spellbar { position: static; max-width: 100%; margin-top: 12px; }
+  #spell-row { flex-wrap: wrap; }
+}
+@media (max-height: 500px) and (orientation: landscape) {
+  body.touch #joy { bottom: max(8px, env(safe-area-inset-bottom)); }
+  body.touch #vert { display: flex; right: max(8px, env(safe-area-inset-right)); bottom: max(8px, env(safe-area-inset-bottom)); }
+  #spellbar { position: static; margin-top: 4px; }
+}
+
+#interact { pointer-events: auto; border: 0; cursor: pointer; font-family: inherit; max-width: 90vw; white-space: normal; }

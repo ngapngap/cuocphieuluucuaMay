@@ -170,6 +170,7 @@
     MAY.started = true;
     MAY.modalOpen = false;
     MAY.startAmbient();
+    if (MAY.saveStatus) showSaveNotice(MAY.saveStatus);
     if (targetLevel && targetLevel !== MAY.currentLevelId) {
       MAY.enterLevel(targetLevel, false);
     } else {
@@ -211,9 +212,6 @@
   var intEl = document.getElementById("interact");
   if (intEl) {
     intEl.onclick = function () { if (MAY.doInteract) MAY.doInteract(); };
-    intEl.onkeydown = function (e) {
-      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); intEl.click(); }
-    };
   }
   var freeBtn = document.getElementById("btn-free-spells");
   if (freeBtn) freeBtn.onclick = function () { if (MAY.toggleFreeSpells) MAY.toggleFreeSpells(); };
@@ -228,8 +226,7 @@
   };
   document.getElementById("btn-restart").onclick = function () {
     if (confirm("Chơi lại toàn bộ 6 màn từ đầu? Các Viên Ngọc và bộ sưu tập sẽ đặt lại!")) {
-      MAY.resetSave();
-      location.reload();
+      if (MAY.resetSave()) location.reload();
     }
   };
 
@@ -281,18 +278,48 @@
   setBoot("Đang chuẩn bị " + MAY.getMeta(initLv).shortName + "…", 20);
   MAY.enterLevel(initLv, true);
 
-  function startOfflineDownload() {
+  function showSaveNotice(status) {
+    var message = {
+      recovered: "Đã khôi phục hành trình từ lần lưu dự phòng gần nhất.",
+      damaged: "Không đọc được bản lưu trước. Mây sẽ bắt đầu hành trình mới.",
+      unavailable: "Trình duyệt chưa lưu được hành trình. Hãy giữ thẻ này mở để tiếp tục chơi.",
+      changed: "Hành trình đã thay đổi ở thẻ khác. Tải lại trang này để tiếp tục từ lần lưu mới."
+    }[status] || "";
+    document.querySelectorAll("[data-save-notice]").forEach(function (el) {
+      el.textContent = message;
+      el.hidden = !message;
+    });
+    if (MAY.started && message) MAY.toast(message);
+  }
+  MAY.onSaveStatus = showSaveNotice;
+  showSaveNotice(MAY.saveStatus);
+
+  function saveOnExit() {
+    if (MAY.started && !pendingLevel && !MAY.activeJourney) MAY.persist();
+  }
+  window.addEventListener("pagehide", saveOnExit);
+  document.addEventListener("visibilitychange", function () { if (document.hidden) saveOnExit(); });
+
+  var packedModels = !!(MayPackages.canUseModelGzip && MayPackages.canUseModelGzip());
+  async function startOfflineDownload() {
     if (!("serviceWorker" in navigator) || !MAY.currentCtx) return;
+    await MAY.ambienceFormatReady;
     navigator.serviceWorker.ready.then(function (registration) {
-      if (registration.active) registration.active.postMessage({ type: "cache-worlds", first: MAY.currentLevelId });
+      if (registration.active) registration.active.postMessage({
+        type: "cache-worlds", first: MAY.currentLevelId, audio: MAY.ambienceFormat,
+        packed: packedModels
+      });
     });
   }
+  MAY.refreshOfflineAudio = startOfflineDownload;
   if ("serviceWorker" in navigator) {
     window.addEventListener("online", startOfflineDownload);
     document.getElementById("offline-retry").onclick = startOfflineDownload;
     navigator.serviceWorker.addEventListener("controllerchange", startOfflineDownload);
     navigator.serviceWorker.addEventListener("message", function (event) {
       if (!event.data || event.data.type !== "offline-progress") return;
+      if (event.data.audio && event.data.audio !== MAY.ambienceFormat) return;
+      if (typeof event.data.packed === "boolean" && event.data.packed !== packedModels) return;
       var status = document.getElementById("offline-status");
       if (status) status.textContent = event.data.text;
       document.getElementById("offline-retry").hidden = !event.data.paused;

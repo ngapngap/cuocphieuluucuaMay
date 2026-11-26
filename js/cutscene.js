@@ -6,6 +6,7 @@
 (function (MAY) {
 
   var activeCS = null;
+  var motionPreference = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)");
   var _camPos = new THREE.Vector3();
   var _camLook = new THREE.Vector3();
   var _tmpV = new THREE.Vector3();
@@ -123,7 +124,9 @@
       cs.shotT += dt;
       var dur = Math.max(0.2, sh.dur || 3.0);
       var rawP = Math.min(1, cs.shotT / dur);
-      var p = easeInOutCubic(rawP);
+      // Hold a stable framing for people who request reduced motion.
+      var reduceMotion = motionPreference && motionPreference.matches;
+      var p = reduceMotion ? 0.5 : easeInOutCubic(rawP);
 
       if (sh.orbit) {
         var o = sh.orbit;
@@ -149,7 +152,7 @@
       MAY.camera.lookAt(_camLook);
 
       if (sh.fov !== undefined) {
-        MAY.camera.fov += (sh.fov - MAY.camera.fov) * Math.min(1, dt * 4);
+        MAY.camera.fov = reduceMotion ? sh.fov : MAY.camera.fov + (sh.fov - MAY.camera.fov) * Math.min(1, dt * 4);
         MAY.camera.updateProjectionMatrix();
       }
       if (sh.onTick) {

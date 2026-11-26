@@ -341,7 +341,8 @@
     }
     function controls(e) {
       actions.replaceChildren();
-      cue.textContent = e.cue;
+      cue.textContent = finalBeacon(e) && state.beaconWind ?
+        (state.beaconWind === "seek" ? "Sang trái hoặc phải đón Bé Gió, rồi trở lại giữa dùng Nắng." : "Bé Gió đã tới! Trở lại giữa và dùng Nắng.") : e.cue;
       status.textContent = "";
       flash = 0;
       if (e.kind === "align") {
@@ -414,6 +415,10 @@
         message(e.wrong || "Chưa đúng. Quan sát dấu hiệu ở đây rồi thử lại.");
       }
     }
+    function finalBeacon(e) {
+      return ctx.id === "level6" && state.section === config.sections.length - 1 &&
+        state.event === section().events.length - 1 && e && e.kind === "cast" && e.spell === "solar";
+    }
     function attemptCast() {
       var e = event();
       if (!near || !e || e.kind !== "cast") return;
@@ -426,6 +431,18 @@
         return;
       }
       if (!MAY.isSpellUnlocked(selected)) return;
+      if (finalBeacon(e) && !state.beaconWind) {
+        state.beaconWind = "seek";
+        cue.textContent = "Đèn đã lóe lên! Sang trái hoặc phải đón Bé Gió, rồi trở lại giữa dùng Nắng.";
+        message("Bé Gió gọi từ bên cạnh — hãy đón bạn trước khi thắp đèn!");
+        MAY.beep(440, 0.2, "sine", 0.06, { exact: true });
+        checkpoint();
+        return;
+      }
+      if (finalBeacon(e) && state.beaconWind === "seek") {
+        message("Sang một bên đón Bé Gió, rồi quay lại giữa.");
+        return;
+      }
       mark(e);
     }
     function input(code) {
@@ -595,6 +612,14 @@
       var floor = state.event ? s.events[state.event - 1].at * s.length : 0;
       var limit = e ? e.at * s.length : s.length;
       state.distance = clamp(old + (Number(forward) - Number(back)) * speed * dt, floor, limit);
+      if (finalBeacon(e) && state.beaconWind === "seek" && closeEnough(e) && Math.abs(state.lateral) >= 3.2) {
+        state.beaconWind = "ready";
+        state.beaconSide = state.lateral < 0 ? -1 : 1;
+        cue.textContent = "Bé Gió đã tới! Trở lại giữa và dùng Nắng để thắp đèn.";
+        message("Bé Gió ở bên Mây rồi. Cùng thắp đèn nào!");
+        MAY.beep(660, 0.2, "sine", 0.07, { exact: true });
+        checkpoint();
+      }
       if (e && closeEnough(e) && !near) {
         near = true;
         controls(e);

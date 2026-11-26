@@ -698,7 +698,7 @@
 
     var beaconTarget = ctx.addSkillTarget({
       id: "l6_beacon_trial", pos: beaconPos, radius: 8, reqSpell: "solar", done: !!ch6St.steps.beaconLit,
-      hint: "☀️ Chiếu đèn để tìm Bé Gió", ringColor: 0xfef08a,
+      hint: "☀️ Thắp hải đăng soi lối ra", ringColor: 0xfef08a,
       isActive: beaconActive,
       onHit: function (sp, tg) {
         if (!ch6St.steps.beaconLit && sp === "solar") {
@@ -710,7 +710,7 @@
           beaconCore.material.color.setHex(0xffdd73); beaconCore.material.emissive.setHex(0xa96b00);
           MAY.VFX.spawnShatterBurst(beaconPos.clone().add(new THREE.Vector3(0, 1.6, 0)), 0xffe47a);
           tg.markDone();
-          MAY.toast("☀️ Đèn đã sáng! Đi theo các đốm sáng đến gần Bé Gió để cứu bạn.");
+          MAY.toast("☀️ Hải đăng đã sáng! Bé Gió đang đợi ở cuối con đường sáng.");
           updateCh6Story();
         }
       }
@@ -762,8 +762,8 @@
       } else if (beaconActive()) {
         ch6Npc.setMarker("?");
         ctx.setObjective(ch6St.steps.beaconLit ? "💨" : "☀️", ch6St.steps.beaconLit
-          ? "ĐI THEO ĐỐM SÁNG ĐẾN GẦN BÉ GIÓ ĐỂ CỨU BẠN"
-          : "DÙNG ☀️ TIA NẮNG CHIẾU ĐÈN TÌM BÉ GIÓ (3+R)", ch6St.steps.beaconLit ? rescuePos : beaconPos);
+          ? "THEO ĐỐM SÁNG ĐẾN GẶP BÉ GIÓ Ở LỐI RA"
+          : "DÙNG ☀️ TIA NẮNG THẮP HẢI ĐĂNG SOI LỐI RA (3+R)", ch6St.steps.beaconLit ? rescuePos : beaconPos);
       } else {
         ch6St.stage = 3; MAY.persist();
         ch6Npc.setMarker("?");
@@ -846,7 +846,7 @@
         ch6St.steps.beaconTrialDone = true; MAY.persist();
         windCage.visible = false; rescueTrail.visible = false;
         MAY.burstAt(rescuePos.clone().add(new THREE.Vector3(0, 1.1, 0)), 0xa8eafa, 18);
-        MAY.toast("💨 Bé Gió được cứu rồi! Bạn ấy reo vui và chỉ đường đến Vua Mây Bão!");
+        MAY.toast("💨 Ra khỏi vùng bão rồi! Bé Gió nắm tay Mây và chỉ đường đến Vua Mây Bão.");
         updateCh6Story();
       }
       if (rescueGroup.visible) {

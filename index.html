@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Cuộc Phiêu Lưu Của Mây v13.5 — 36 Mô Hình 3D Blender &amp; CC0 Rigged, 6 Phép Nguyên Tố &amp; Đấu Trùm</title>
+<title>Cuộc Phiêu Lưu Của Mây — Sáu viên Ngọc Cầu Vồng</title>
 
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
@@ -124,7 +124,7 @@
 <!-- Số vật phẩm lớn góc dưới phải -->
 <div class="hud" id="big"><div class="n"><span id="big-icon">⭐</span><span id="star-n2">0</span></div><div class="l" id="big-label">SAO BIỂN</div></div>
 
-<div id="interact" role="button" tabindex="0" aria-label="T&#432;&#417;ng t&#225;c">👆</div>
+<button type="button" id="interact" aria-label="Tương tác">👆</button>
 <div id="toast"></div>
 <section id="crystal-music" class="hidden" aria-label="Đàn pha lê">
   <div id="crystal-music-status" role="status" aria-live="polite"></div>
@@ -141,9 +141,10 @@
 <div class="overlay" id="ov-start">
   <div class="panel wide">
     <img class="hero-img" src="assets/img/hero.jpg" alt="Mây">
-    <h1>CUỘC PHIÊU LƯU CỦA MÂY <span class="ver-tag">v13.5 GI PBR + SKINNED 3D</span></h1>
+    <h1>CUỘC PHIÊU LƯU CỦA MÂY</h1>
     <div class="boot-bar"><i id="boot-fill"></i></div>
-    <div id="boot-msg">Đang tổng hợp vật liệu PBR…</div>
+    <div id="boot-msg">Đang chuẩn bị cuộc phiêu lưu…</div>
+    <p class="start-touch-tip">Kéo vòng tròn để di chuyển · Vuốt màn hình để nhìn · Chạm để tương tác</p>
     <div style="margin-top:12px"><button class="btn" id="btn-play" disabled aria-label="Bắt đầu cuộc phiêu lưu của Mây">▶ Bắt Đầu Phiêu Lưu!</button></div>
     <details class="start-details"><summary>&#128214; C&#226;u chuy&#7879;n</summary><p class="story-lead">
       <b>Vua Mây Bão (Bóng Xám)</b> đã cướp <b>6 Viên Ngọc Cầu Vồng</b> 🌈, bắt cóc <b>Bé Gió Lốc Tí Hon</b> và phủ Sương Xám lên 6 vùng đất!
@@ -204,11 +205,12 @@
       <div id="festival-guests"></div>
       <button class="btn small" id="festival-conduct" type="button" hidden>🎶 Về đảo dẫn nhịp</button>
     </section>
-    <details class="settings"><summary>&#9881; C&#224;i &#273;&#7863;t &#273;&#7891; h&#7885;a</summary>    <div class="qrow">✨ Chất lượng đồ họa PBR &amp; Hậu kỳ:
+    <details class="settings"><summary>&#9881; C&#224;i &#273;&#7863;t &#273;&#7891; h&#7885;a</summary>    <div class="qrow">✨ Chất lượng hình ảnh:
       <button class="qbtn" data-q="low" aria-label="Chọn chất lượng đồ họa Nhẹ">Nhẹ</button>
       <button class="qbtn sel" data-q="mid" aria-label="Chọn chất lượng đồ họa Đẹp Vừa">Đẹp (Vừa)</button>
-      <button class="qbtn" data-q="high" aria-label="Chọn chất lượng đồ họa Siêu Thực Cao">Siêu Thực (Cao)</button>
+      <button class="qbtn" data-q="high" aria-label="Chọn chất lượng hình ảnh cao">Chi tiết (Cao)</button>
     </div></details>
+    <p data-save-notice role="status" hidden></p>
     <p id="offline-status" role="status">Đang kiểm tra nội dung ngoại tuyến…</p>
     <button id="offline-retry" class="btn small" hidden>Tiếp tục tải ngoại tuyến</button>
     <div class="alb-sec">&#128230; B&#7897; s&#432;u t&#7853;p v&#249;ng hi&#7879;n t&#7841;i</div>
@@ -352,7 +354,7 @@
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function () {
-    navigator.serviceWorker.register('sw.js').catch(function () {});
+    navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(function () {});
   });
 }
 </script>

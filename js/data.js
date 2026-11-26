@@ -551,13 +551,88 @@ window.MAY = window.MAY || {};
     };
   }
 
+  var backupKey = MAY.SAVE_KEY + "-backup";
+  var lastPrimary = null, lastGood = null;
+  MAY.saveStatus = "";
+  function saveStatus(value) {
+    if (value === MAY.saveStatus) return;
+    MAY.saveStatus = value;
+    if (MAY.onSaveStatus) MAY.onSaveStatus(value);
+  }
+
+  function parseSave(text, allowPartial) {
+    try {
+      var raw = JSON.parse(text);
+      if (!raw || raw.version !== 10) return null;
+      var table = raw.levels;
+      var isRecord = function (value) { return value && typeof value === "object" && !Array.isArray(value); };
+      if (table !== undefined && !isRecord(table)) return null;
+      if ((!table || !Object.keys(table).length) && !Array.isArray(raw.gems) &&
+          !(allowPartial && Object.keys(raw).some(function (key) { return key !== "version"; }))) return null;
+      if (raw.gems !== undefined && !Array.isArray(raw.gems)) return null;
+      if (table && MAY.LEVEL_META.some(function (level) {
+        var entry = table[level.id];
+        if (entry === undefined) return false;
+        return !isRecord(entry) || (entry.story !== undefined && (!isRecord(entry.story) ||
+          (entry.story.steps !== undefined && !isRecord(entry.story.steps))));
+      })) return null;
+      return raw;
+    } catch (error) { return null; }
+  }
+
+  function writeSave(save, reset) {
+    try {
+      var text = JSON.stringify(save);
+      var current = localStorage.getItem(MAY.SAVE_KEY);
+      // A tab left on the title screen must not overwrite another tab's adventure.
+      if (current !== lastPrimary && current !== text) {
+        saveStatus("changed");
+        return false;
+      }
+      if (reset || current !== text) {
+        localStorage.setItem(MAY.SAVE_KEY, text);
+        lastPrimary = text;
+        var backup = reset ? text : lastGood || text;
+        lastGood = text;
+        try { localStorage.setItem(backupKey, backup); } catch (error) {
+          // On reset even an old backup must no longer restore the previous adventure.
+          if (reset) localStorage.removeItem(backupKey);
+        }
+      } else {
+        lastPrimary = lastGood = text;
+      }
+      if (reset || (MAY.saveStatus !== "recovered" && MAY.saveStatus !== "damaged")) saveStatus("");
+      return true;
+    } catch (error) {
+      saveStatus("unavailable");
+      return false;
+    }
+  }
+
   MAY.loadSave = function () {
     var s = createDefaultSave();
     try {
-      var raw = JSON.parse(localStorage.getItem(MAY.SAVE_KEY) || "null");
-      if (raw && raw.version === 10) {
+      lastPrimary = localStorage.getItem(MAY.SAVE_KEY);
+      lastGood = lastPrimary;
+      var raw = parseSave(lastPrimary);
+      if (!raw) {
+        lastGood = localStorage.getItem(backupKey);
+        raw = parseSave(lastGood);
+        if (raw) saveStatus("recovered");
+        else if ((raw = parseSave(lastPrimary, true))) {
+          // Keep settings from a sparse older save when there is no complete backup.
+          lastGood = lastPrimary;
+        } else {
+          if (lastPrimary || lastGood) saveStatus("damaged");
+          lastGood = null;
+        }
+      } else if (!localStorage.getItem(backupKey)) {
+        // On the first visit after updating, an existing adventure also gets a backup.
+        try { localStorage.setItem(backupKey, lastPrimary); } catch (error) { /* Primary is still valid. */ }
+      }
+      if (raw) {
         s.outfit = MAY.OUTFITS[raw.outfit] ? raw.outfit : "vayhong";
-        s.currentLevel = raw.currentLevel || "hub";
+        s.currentLevel = MAY.getMeta(raw.currentLevel).id;
         s.storySeen = !!raw.storySeen;
         s.finaleSeen = !!raw.finaleSeen;
         s.festivalConcerts = Number.isSafeInteger(raw.festivalConcerts) && raw.festivalConcerts > 0 ? raw.festivalConcerts : 0;
@@ -619,9 +694,7 @@ window.MAY = window.MAY || {};
             if (level.story.bossDown && m.num < 6 && s.legacyAccess.indexOf(m.num + 1) === -1) s.legacyAccess.push(m.num + 1);
           });
         }
-        if (!raw.progressionVersion || progressionChanged) {
-          try { localStorage.setItem(MAY.SAVE_KEY, JSON.stringify(s)); } catch (e) {}
-        }
+        if (!raw.progressionVersion || progressionChanged || MAY.saveStatus === "recovered") writeSave(s);
       } else {
         /* Bảo toàn trang phục nếu người chơi nâng cấp từ v8/v9 lên v10 */
         var old8 = JSON.parse(localStorage.getItem(MAY.V8_KEY) || "null");
@@ -629,25 +702,26 @@ window.MAY = window.MAY || {};
           s.outfit = old8.outfit;
         }
       }
-    } catch (e) {}
+    } catch (e) { saveStatus("unavailable"); }
     return s;
   };
 
   MAY.save = MAY.loadSave();
 
   MAY.persist = function () {
-    try { localStorage.setItem(MAY.SAVE_KEY, JSON.stringify(MAY.save)); } catch (e) {}
+    return writeSave(MAY.save);
   };
 
   MAY.resetSave = function () {
-    var keepOutfit = MAY.save.outfit;
-    var keepQ = MAY.save.quality, keepV = MAY.save.voiceOn, keepCam = MAY.save.camDist;
-    MAY.save = createDefaultSave();
-    MAY.save.outfit = MAY.isOutfitUnlocked(keepOutfit) ? keepOutfit : "vayhong";
-    MAY.save.quality = keepQ || "mid";
-    MAY.save.voiceOn = keepV !== undefined ? keepV : true;
-    MAY.save.camDist = keepCam || 4.8;
-    MAY.persist();
+    var fresh = createDefaultSave();
+    var outfit = MAY.OUTFITS[MAY.save.outfit];
+    if (outfit && !outfit.unlockedBy) fresh.outfit = MAY.save.outfit;
+    fresh.quality = MAY.save.quality;
+    fresh.voiceOn = MAY.save.voiceOn;
+    fresh.camDist = MAY.save.camDist;
+    if (!writeSave(fresh, true)) return false;
+    MAY.save = fresh;
+    return true;
   };
 
   MAY.isLevelUnlocked = function (levelId) {
@@ -805,6 +879,7 @@ window.MAY = window.MAY || {};
       { q: "Mây tô 5 màu cầu vồng. Cần thêm mấy màu cho đủ 7?", ans: "2 màu", opts: ["1 màu", "2 màu", "4 màu"] },
       { q: "Đã tô 4 màu cầu vồng, còn mấy màu mới đủ 7?", ans: "3 màu", opts: ["2 màu", "3 màu", "4 màu"] },
       { q: "Cầu vồng rực rỡ có mấy sắc màu chính?", ans: "7 màu", opts: ["7 màu", "3 màu", "2 màu"] },
+      { q: "Một cầu vồng có bao nhiêu màu chính?", ans: "7 màu", opts: ["7 màu", "5 màu", "6 màu"] },
       { q: "Chim cánh cụt Bông sống ở vùng nào?", ans: "Thung Lũng Tuyết", opts: ["Thung Lũng Tuyết", "Sa Mạc", "Vịnh San Hô"] }
     ]
   };
@@ -856,6 +931,7 @@ window.MAY = window.MAY || {};
     if (/Pha màu/.test(q.q)) return "colour";
     if (/tiếng Anh/.test(q.q)) return "english";
     if (/sống ở|bướu|bơi giỏi|sa mạc/.test(q.q)) return "habitat";
+    if (/cầu vồng/i.test(q.q)) return /còn|thêm/i.test(q.q) ? "rainbowMissing" : "rainbowCount";
     return "rainbow";
   };
 
@@ -887,6 +963,12 @@ window.MAY = window.MAY || {};
           if (!recent.includes(prompt)) return { q: prompt, ans: String(answer), opts: uniqueNumOpts(answer, 0) };
         }
       }
+    }
+    // For a small exhausted bank, revisit the least recently attempted example.
+    if (!choices.length && skill) {
+      choices = Object.values(STATIC_QUIZZES).flat().filter(function (q) { return MAY.quizKind(q) === skill; });
+      choices.sort(function (a, b) { return recent.lastIndexOf(a.q) - recent.lastIndexOf(b.q); });
+      choices = choices.slice(0, 1);
     }
     if (!choices.length) choices = bank.filter(function (q) { return !recent.includes(q.q); });
     var pick = choices[Math.floor(Math.random() * choices.length)];

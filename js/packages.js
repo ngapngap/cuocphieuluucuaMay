@@ -12,9 +12,18 @@
     level6: ["companion_milo", "cc0_unicorn", "polyfork_sheep", "boss_storm_king", "hero_castle", "cc0_windmill", "jelly"]
   };
   function modelURL(name) { return "assets/models/" + name + ".glb"; }
+  var startupModels = Array.from(new Set(models.common.concat(models.hub)));
+  function modelGzipURL(name) {
+    return startupModels.indexOf(name) < 0 ? null : "assets/models/gzip/" + name + ".glb.gz";
+  }
+  function canUseModelGzip() {
+    return typeof scope.DecompressionStream === "function" && typeof scope.Blob === "function" &&
+      typeof scope.Blob.prototype.stream === "function" && typeof scope.fetch === "function";
+  }
   var guides = {
     level1: ["ocean_greeting", "ocean_boss", "ocean_trap", "ocean_wave", "ocean_jelly", "ocean_pearl"],
     level4: ["cave_greeting", "cave_boss", "cave_dark", "cave_torch", "cave_spell", "cave_listen", "cave_rock", "cave_core"]
   };
-  scope.MayPackages = { models: models, modelURL: modelURL, guides: guides };
+  scope.MayPackages = { models: models, modelURL: modelURL, startupModels: startupModels,
+    modelGzipURL: modelGzipURL, canUseModelGzip: canUseModelGzip, guides: guides };
 })(self);

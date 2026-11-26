@@ -10,6 +10,49 @@ from check_journey_controls import ROOT, fixture, journey
 from trace_transition import Handler, Server
 
 
+def check_final_beacon(browser, url):
+    context = browser.new_context(viewport={"width": 390, "height": 844}, has_touch=True,
+                                  is_mobile=True, reduced_motion="reduce", service_workers="block")
+    page = context.new_page()
+    page.set_default_timeout(90000)
+    state = "MAY.currentCtx.story.steps.journey"
+    page.goto(url)
+    data = fixture("level6", journey(3, 9, 694, clearing={"entered": True, "done": True}))
+    page.evaluate("s => localStorage.setItem(MAY.SAVE_KEY, JSON.stringify(s))", data)
+
+    def resume():
+        page.reload()
+        page.locator("#btn-play").tap()
+        page.wait_for_function("MAY.activeJourney")
+
+    def move(key, condition):
+        page.keyboard.down(key)
+        try:
+            page.wait_for_function(state + condition, timeout=12000)
+        finally:
+            page.keyboard.up(key)
+
+    resume()
+    solar = page.locator('#journey-actions [data-spell="solar"]')
+    solar.tap()
+    page.wait_for_function(state + ".beaconWind === 'seek'")
+    resume()
+    move("ArrowDown", ".distance < 686")
+    move("ArrowLeft", ".lateral < -3.3")
+    assert page.evaluate(state + ".beaconWind === 'seek'")
+    move("ArrowUp", ".beaconWind === 'ready'")
+    assert page.evaluate(state + ".beaconSide === -1")
+    resume()
+    move("ArrowRight", ".lateral > -0.6")
+    page.locator('#journey-actions [data-spell="frost"]').tap()
+    assert page.evaluate(state + ".event === 9")
+    solar.tap()
+    page.wait_for_function(state + ".event === 10")
+    assert not page.evaluate("MAY.ErrorBoundary.history.length")
+    context.close()
+    print("PASS cloud beacon: remote signal rejected, left side and both checkpoints restored, wrong spell blocked", flush=True)
+
+
 def main():
     server = Server(("127.0.0.1", 0), partial(Handler, directory=str(ROOT)))
     Thread(target=server.serve_forever, daemon=True).start()
@@ -101,6 +144,7 @@ def main():
                     print("PASS snow touch: frost before thaw blocked; solar, frost and escort", flush=True)
                 assert not errors, errors
                 context.close()
+            check_final_beacon(browser, f"http://127.0.0.1:{server.server_port}/")
             browser.close()
     finally:
         server.shutdown(); server.server_close()

@@ -524,6 +524,9 @@
   };
   P.triggerVictoryAnim = function () {
     if (rigMay) { rigMay.smileT = 3.5; playMayClip("Victory", 0.12, true); }
+    var companion = MAY.currentCtx && MAY.currentCtx.companion;
+    if (companion && companion.group && companion.group.userData && companion.group.userData.mixer)
+      companion.group.userData.happyT = 2.4;
   };
 
   /* Bóng tiếp xúc chân mềm gắn dưới đất để Mây luôn dính sát mặt đất */
@@ -933,7 +936,11 @@
     swimBubbles.length = 0;
   };
 
+  var dialogueWasOpen = false;
   P.update = function (dt, t, ctx) {
+    // A brief smile acknowledges a new conversation without interrupting movement clips.
+    if (MAY.dialogueOpen && !dialogueWasOpen && rigMay) rigMay.smileT = 2.4;
+    dialogueWasOpen = !!MAY.dialogueOpen;
     if (document.hasFocus && !document.hasFocus()) P.clearKeys();
     var fwd = 0, str = 0;
     if (!MAY.modalOpen && !MAY.dialogueOpen) {

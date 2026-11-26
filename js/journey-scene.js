@@ -98,7 +98,7 @@
     var skyBridge = biome === 6;
     var scene = new THREE.Scene();
     scene.background = new THREE.Color(s.sky);
-    scene.fog = new THREE.FogExp2(s.sky, biome === 4 ? 0.017 : 0.011);
+    scene.fog = new THREE.FogExp2(s.sky, biome === 4 ? 0.017 : (biome === 5 || biome === 6 ? 0.007 : 0.011));
     MAY.addJourneyHorizon(scene, biome, sectionIndex, s.sky);
     scene.environment = MAY.scene.environment;
     scene.add(new THREE.HemisphereLight(0xfff6df, s.ground, 0.8));
@@ -137,6 +137,8 @@
       ahead = new THREE.Vector3();
     var surface = new THREE.Color(s.path),
       soil = new THREE.Color(s.ground);
+    // Cool, compacted snow keeps the walkable trail distinct from fresh banks.
+    if (biome === 5) surface.lerp(new THREE.Color(0x7292a7), 0.48);
     function ribbon(edges, colors, material) {
       var verts = [],
         shades = [],
@@ -179,6 +181,7 @@
       );
     }
     var rim = surface.clone().lerp(new THREE.Color(config.color), 0.35);
+    if (biome === 5) rim.setHex(0x648398);
     var deckMaterial = canopy
       ? new THREE.MeshStandardMaterial({
           map: MAY.PBR.bark.map,
@@ -221,7 +224,7 @@
       ribbon([[-7.5,0.02],[-4.5,0.02],[-1.5,0.02],[1.5,0.02],[4.5,0.02],[7.5,0.02]],
         [stripe[0],stripe[1],stripe[2],stripe[3],stripe[4],stripe[4]], bridgeSide);
       // Narrow stone kerbs remain legible alongside the pastel paving.
-      var edging = new THREE.Color(0xa98a75);
+      var edging = new THREE.Color(0x775b70);
       ribbon([[-7.5,0.045],[-7.12,0.045]], [edging,edging], bridgeSide);
       ribbon([[7.12,0.045],[7.5,0.045]], [edging,edging], bridgeSide);
     } else
@@ -357,10 +360,20 @@
       if (biome === 1 && g === "wreck") {
         stamp("rib", box, 0x704936, dist, offset, 2.6, 0.68, 7, 0.78, 0.2, side * 0.35);
         if (i % 3 !== 1) stamp("plank", box, 0x977052, dist, offset + side * 1.2, 1.1, 2.6, 0.34, 4.6, a * 0.2, side * 0.36);
+        if (i % 2 === 0) {
+          stamp("plank", box, 0x977052, dist + 1.1, offset + side * 1.5, 0.25, 1.0, 0.22, 3.0, a * 0.4, side * 0.08);
+          stamp("wreck-coral", trunk, 0xe9967e, dist - 1, offset + side * 1.3, 0.6, 0.24, 1.3, 0.25, a, side * 0.2);
+        }
       } else if (biome === 1) {
         stamp("coral", trunk, 0xf38d74, dist, offset, 1.1, 0.37, 3 * size, 0.42, a, side * 0.2);
         if (i % 3 !== 0) stamp("arm", trunk, 0xffbb8d, dist, offset + 0.52, 1.8, 0.24, 1.8, 0.26, 0, -0.7);
         stamp("kelp", sphere, 0x338575, dist + 1, offset + 0.8, 1, 0.26, 2.6 * size, 0.45, a, 0.25);
+        // Small branching fans and rounded reef stones give the silhouette a
+        // readable base without placing anything in the three travel lanes.
+        if (i % 2 === 0) {
+          stamp("arm", trunk, 0xffbb8d, dist - 0.6, offset - 0.55, 1.45, 0.22, 1.6, 0.23, a, 0.65);
+          stamp("reef-stone", stone, 0x699a96, dist + 1.2, offset + side * 1.2, 0.35, 1.3, 0.7, 1.0, a);
+        }
       } else if (biome === 2 && canopy) {
         stamp(
           "canopy-trunk",
@@ -391,6 +404,8 @@
       } else if (biome === 2) {
         stamp("bark", trunk, 0x5c5441, dist, offset + side * 3, 4.4, size, 11, size, a, side * 0.13);
         stamp("leaf", stone, 0x478458, dist, offset + side * 3, 9, 4.5, 3.5, 4.7, a);
+        // Overlapping lobes break the single faceted ball into a canopy.
+        if (i % 2 === 0) stamp("leaf", stone, 0x478458, dist + 1.8, offset + side * 4.7, 8.3, 2.8, 2.4, 3.1, -a);
         if (i % 3 !== 1) stamp("stem", trunk, 0xedce9c, dist + 1, offset, 1, 0.46, 2.5 * size, 0.5, a);
         if (i % 3 !== 1) stamp(
           "cap",
@@ -404,16 +419,28 @@
           2 * size,
           a
         );
+        if (i % 2 === 0) {
+          stamp("forest-fern", spike, 0x729b61, dist - 1, offset + side * 1.5, 0.65, 0.7, 1.5, 0.7, a, side * 0.55);
+          stamp("forest-fern", spike, 0x729b61, dist + 0.5, offset + side * 2, 0.55, 0.65, 1.25, 0.65, -a, -side * 0.5);
+        }
       } else if (biome === 3) {
         if (i % 3 !== 1) {
           stamp("column", trunk, 0xb48253, dist, offset, 2.9, 1.1, 6 * size, 1.1, a * 0.1);
           stamp("capital", box, 0xf0cc8d, dist, offset, 5.95 * size, 2.6, 0.65, 2.6, a * 0.1);
         } else stamp("ruin", stone, 0xb48253, dist, offset, 1.3, 2.8, 2.1, 2.0, a);
+        if (i % 2 === 0) {
+          stamp("ruin", stone, 0xb48253, dist + 1.4, offset + side * 1.5, 0.35, 1.25, 0.65, 0.9, a);
+          stamp("desert-grass", spike, 0xd9b873, dist - 1, offset + side * 1.8, 0.48, 0.45, 1.1, 0.45, a, side * 0.3);
+        }
         if (i % 5 === 0) stamp("pylon", spike, 0xbb996a, dist, offset + side * 15, 4, 7, 10, 7, a);
       } else if (biome === 4) {
         stamp("cave", stone, 0x514a75, dist, offset + side * 5, 3.3, 5 * size, 6.8, 4.3, a);
         if (i % 3 !== 1) stamp("quartz", spike, 0x8e9fe5, dist, offset, 2.0, 0.95, (3.5 + i % 3) * size, 1.1, a, side * 0.24);
         if (i % 3 !== 2) stamp("amethyst", spike, 0xc886ef, dist + 1, offset + 1, 1.15, 0.65, 2.9, 0.8, a, -side * 0.3);
+        if (i % 2 === 0) {
+          stamp("quartz", spike, 0x8e9fe5, dist - 1.3, offset + side * 1.2, 0.65, 0.43, 1.4, 0.48, a, -side * 0.4);
+          stamp("amethyst", spike, 0xc886ef, dist + 1.8, offset - side * 0.8, 0.55, 0.38, 1.2, 0.4, a, side * 0.35);
+        }
         if (i % 4 === 0) {
           stamp("cave-shelf", box, 0x453b60, dist, offset + side * 6, 5.2, 7.2, 1.1, 5.2, a * 0.2, side * 0.08);
           stamp("cave-column", stone, 0x625479, dist + 2, offset + side * 8, 4.5, 2.1, 8.8, 2.8, a);
@@ -422,6 +449,10 @@
       } else if (biome === 5) {
         stamp("granite", stone, 0x737e97, dist, offset, 0.65, 2.2 * size, 1.5, 2.4, a);
         stamp("drift", stone, 0xe6f7ff, dist, offset, 1.45, 2.45 * size, 1.1, 2.6, a);
+        if (i % 2 === 0) {
+          stamp("granite", stone, 0x737e97, dist - 1.5, offset + side * 1.5, 0.3, 0.9, 0.6, 0.8, a);
+          stamp("drift", stone, 0xe6f7ff, dist - 1.5, offset + side * 1.5, 0.65, 0.95, 0.35, 0.85, a);
+        }
         if (i % 4 !== 1) {
           var pineHeight = 5.0 + (i % 3) * 1.3;
           stamp("icepine", spike, 0x65979a, dist + 2, offset + side * 6, pineHeight * 0.45, 2.0 * size, pineHeight, 2.1, a);
@@ -430,19 +461,22 @@
       } else {
         stamp("cloud", sphere, 0xffe8e9, dist, offset + side * 4, 0.8, 4.5 * size, 2, 4.2, a);
         if (i % 4 === 0) {
+          stamp("cloud", sphere, 0xffe8e9, dist + 1.5, offset + side * 2, 0.6, 2.5, 1.3, 2.2, a);
+        }
+        if (i % 4 === 0) {
           stamp("pier", trunk, 0xa99ebd, dist, offset, 2.5, 0.75, 5.3, 0.75, a * 0.2);
           stamp("gold", spike, 0xfac976, dist, offset, 5.9, 1.0, 2.0, 1.0, a);
         } else if (i % 4 === 1) {
           stamp("sky-masonry", box, 0xb99cac, dist, offset, 1.65, 2.6, 3.3, 2.3, a * 0.2);
-          stamp("sky-rail", box, 0x9e725d, dist, offset, 3.45, 3.0, 0.35, 2.7, a * 0.2);
+          stamp("sky-rail", box, 0x795b70, dist, offset, 3.45, 3.0, 0.35, 2.7, a * 0.2);
         } else if (i % 4 === 2) {
           stamp("pier", trunk, 0xa99ebd, dist, offset, 1.25, 0.48, 2.5, 0.48, a);
           stamp("sky-lantern", sphere, 0xffd889, dist, offset, 2.8, 0.55, 0.7, 0.55, a);
         }
         var bridgeSlope = (xAt(dist + 0.05) - xAt(dist - 0.05)) / 0.1;
         [-1, 1].forEach(function (edge) {
-          stamp("sky-rail", box, 0x9e725d, dist, edge * 7.7, 1.15, 0.22, 0.22, 6.3, -Math.atan(bridgeSlope));
-          stamp("sky-post", box, 0xb38f75, dist, edge * 7.7, 0.55, 0.22, 1.1, 0.22, 0);
+          stamp("sky-rail", box, 0x795b70, dist, edge * 7.7, 1.15, 0.28, 0.28, 6.3, -Math.atan(bridgeSlope));
+          stamp("sky-post", box, 0x795b70, dist, edge * 7.7, 0.55, 0.28, 1.1, 0.28, 0);
         });
         if (i % 4 === 0) {
           stamp("sky-masonry", box, 0xb99cac, dist + 1, offset + side * 3, -0.5, 6, 1.0, 4.0, a * 0.15);
@@ -529,13 +563,17 @@
     function makeMarker(e) {
       var station = new THREE.Group(),
         lane = (e.lane || 0) * laneWidth;
-      place(e.at * s.length, 0, 0.13, station.position);
+      // Keep the final lamp ahead of the player and above the mobile action panel.
+      var finalLamp = biome === 6 && sectionIndex === config.sections.length - 1 &&
+        e.kind === "cast" && e.spell === "solar" && e.at === s.events[s.events.length - 1].at;
+      place(e.at * s.length + (finalLamp ? 8 : 0), 0, 0.13, station.position);
       var out = { group: station };
       if (e.kind === "pass" || e.kind === "escort" || e.kind === "fork") {
         for (var n = -1; n <= 1; n++) {
           var safe = e.kind === "fork" ? n !== 0 : n === (e.lane || 0);
           if (safe) {
-            var gateColor = e.kind === "fork" ? (n < 0 ? 0x62e4b2 : 0xffd16a) : config.color;
+            var gateColor = e.kind === "fork" ? (n < 0 ? 0x62e4b2 : 0xffd16a) :
+              biome === 5 ? 0x268c9b : biome === 6 ? 0xa44f83 : config.color;
             mesh(station, ringGeo, gateColor, n * laneWidth, 1.55, 0, 1.6, 1.75, 1, true);
           } else {
             if (biome === 1 && s.scenery === "wreck") {
@@ -636,9 +674,51 @@
       scene.add(station);
       return out;
     }
+    // The last beacon accepts either bank. Show both possible meeting places,
+    // then keep only the spirit on the bank Mây actually reached.
+    var finalBeaconIndex = biome === 6 && sectionIndex === config.sections.length - 1 ? s.events.length - 1 : -1;
+    var windSignals = [], windSpirit = null, beaconLight = null, beaconAura = null, windSide = 0;
+    var reducedJourneyMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)");
+    if (finalBeaconIndex >= 0) {
+      [-1, 1].forEach(function (side) {
+        var signal = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({
+          color: 0x1a9dbb, transparent: true, opacity: 0.9, depthWrite: false, fog: false
+        }));
+        var inner = new THREE.Mesh(ringGeo, signal.material);
+        inner.scale.set(0.62, 0.34, 0.6);
+        inner.rotation.z = side * 0.6;
+        signal.add(inner);
+        signal.scale.set(1.05, 1.05, 1);
+        signal.visible = false;
+        scene.add(signal);
+        windSignals.push(signal);
+      });
+      windSpirit = MAY.makeAnimal("windspirit");
+      windSpirit.scale.setScalar(1.25);
+      windSpirit.rotation.y = Math.PI;
+      windSpirit.visible = false;
+      scene.add(windSpirit);
+    }
     var markers = s.events.map(function (_, i) {
       return makeMarker(resolvedEvent(i));
     });
+    function attachBeaconLight() {
+      if (finalBeaconIndex < 0) return;
+      var station = markers[finalBeaconIndex].group;
+      if (!beaconLight) {
+        beaconLight = new THREE.Mesh(sphere, new THREE.MeshBasicMaterial({ color: 0xffe9a4 }));
+        beaconLight.position.set(0, 2.45, 0);
+        beaconLight.scale.setScalar(0.48);
+        beaconAura = new THREE.Sprite(new THREE.SpriteMaterial({
+          map: MAY.TEX.glow, color: 0xffdd76, transparent: true,
+          opacity: 0.28, depthWrite: false, blending: THREE.AdditiveBlending
+        }));
+        beaconAura.position.copy(beaconLight.position);
+        beaconAura.scale.set(3.2, 3.2, 1);
+      }
+      station.add(beaconLight, beaconAura);
+    }
+    attachBeaconLight();
     var lastChoices = JSON.stringify(state.choices);
     function refreshFutureMarkers() {
       var choices = JSON.stringify(state.choices);
@@ -648,6 +728,7 @@
         scene.remove(markers[i].group);
         markers[i] = makeMarker(resolvedEvent(i));
       }
+      if (state.event <= finalBeaconIndex) attachBeaconLight();
     }
     var kinds = {
       bubi: "dolphin",
@@ -754,6 +835,41 @@
         m.rotation.y = Math.PI - Math.atan(heading);
         if (m.userData.mixer) m.userData.mixer.update(dt);
       });
+      if (finalBeaconIndex >= 0) {
+        var seekWind = state.event === finalBeaconIndex && state.beaconWind === "seek";
+        var metWind = state.beaconWind === "ready" || state.event > finalBeaconIndex;
+        var still = reducedJourneyMotion && reducedJourneyMotion.matches;
+        if (seekWind) windSide = 0;
+        if (metWind && !windSide) windSide = state.beaconSide === -1 || state.beaconSide === 1
+          ? state.beaconSide : (state.lateral < 0 ? -1 : 1);
+        windSignals.forEach(function (signal, j) {
+          var side = j ? 1 : -1;
+          signal.visible = seekWind;
+          if (seekWind) {
+            place(s.events[finalBeaconIndex].at * s.length + 8, side * laneWidth, 2.1, signal.position);
+            signal.scale.setScalar(still ? 1 : 1 + 0.12 * Math.sin(t * 3 + j));
+          }
+        });
+        windSpirit.visible = metWind;
+        if (metWind) {
+          if (!windSpirit.userData.wasVisible) {
+            place(s.events[finalBeaconIndex].at * s.length + 8, windSide * laneWidth, 1.3, windSpirit.position);
+            windSpirit.userData.wasVisible = true;
+          }
+          // Float a little ahead and toward the centre so the mobile controls
+          // do not cover the friend while Mây crosses back to the lamp.
+          place(distance + 5, x - windSide * 1.2, 2.2 + (still ? 0 : 0.15 * Math.sin(t * 2.2)), pt);
+          if (still) windSpirit.position.copy(pt);
+          else windSpirit.position.lerp(pt, Math.min(1, dt * 3));
+          if (windSpirit.userData.swirl && !still) windSpirit.userData.swirl.rotation.z += dt * 1.5;
+        }
+        if (beaconLight && beaconAura) {
+          var solved = state.event > finalBeaconIndex;
+          beaconLight.material.color.setHex(solved ? 0xfff7c4 : 0xffca6a);
+          beaconAura.material.opacity = solved ? 0.9 : (still ? 0.32 : 0.3 + 0.12 * Math.sin(t * 4));
+          beaconAura.scale.setScalar(solved ? 5 : 3.2);
+        }
+      }
       var marker = markers[state.event];
       if (marker && marker.dial)
         marker.dial.rotation.y = (angle * 2 * Math.PI) / resolvedEvent(state.event).slots;
@@ -777,6 +893,11 @@
       var marker = markers[i];
       if (!marker) return;
       marker.group.clear();
+      if (i === finalBeaconIndex) {
+        mesh(marker.group, trunk, 0x927b9a, 0, 0.8, 0, 0.7, 1.6, 0.7);
+        attachBeaconLight();
+        return;
+      }
       // A lasting bloom, clear-water pearl or glowing seal records the change.
       var hue = biome === 1 ? 0x8cefe0 : biome === 2 ? 0x91e69b : config.color;
       mesh(marker.group, ringGeo, hue, 0, 0.3, 0, 0.8, 0.8, 0.8, true).rotation.x = Math.PI / 2;

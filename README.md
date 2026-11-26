@@ -1,8 +1,10 @@
-# 🌈 Cuộc Phiêu Lưu Của Mây v11.0 — Cốt Truyện 6 Chương, Kỹ Năng Thực Chiến & Đấu Trùm (Three.js PBR)
+# 🌈 Cuộc Phiêu Lưu Của Mây
 
 Phiên bản web 3D (PWA chơi offline hoàn toàn, sẵn sàng chạy trên GitHub Pages mà không cần bước build).
 
-## Nâng cấp mới ở v11.0 (Điêu khắc 3D + Sửa toàn bộ lỗi gameplay)
+Ở chặng cuối, hãy nhìn theo luồng gió để đón Bé Gió và cùng thắp đèn. Trong sáu cuộc đua, Mây có thể rẽ khỏi đường chính để lấy sao tiếp sức. Trên điện thoại, kéo vòng tròn để đi, vuốt bằng ngón còn lại để nhìn và chạm lời nhắc để tương tác. [Ảnh trò chơi và kết quả chơi thử](docs/cai-tien-trai-nghiem.md)
+
+## Thay đổi ở v11.0
 - **Kiến trúc & Mô hình 3D hữu cơ sắc nét hơn**: Nâng cấp khuôn mặt/tóc Mây (tròng trắng + điểm sáng mắt + nơ tóc), điêu khắc lại Hươu/Tuần lộc/Kỳ lân/Chim/Phượng hoàng bằng `CapsuleGeometry` & cánh phân lớp, nâng cấp toàn bộ **6 mô hình Trùm**, **Ngọn Hải Đăng** (lan can sắt + cửa sổ tròn), **Cây Cổ Thụ Mẹ** (thân Lathe + hốc cổ tích + 5 cành uốn TubeGeometry), **Kim Tự Tháp** (chóp vàng + 2 trụ Obelisk), **Đấu Trường Tròn Golem Pha Lê** trên hồ ngầm và **Lâu Đài Cầu Vồng** (tường châu mai, cổng vòm vàng, cờ bay & lan can cầu vồng cong).
 - **Camera điện ảnh & điều khiển không kẹt chuột**: Gỡ khóa con trỏ tự động gây kẹt nút hội thoại, hỗ trợ **click trực tiếp lên NPC/rương bằng con trỏ chuột**, xóa phím kẹt khi đóng hộp thoại (`clearKeys`), không còn bị Cổng Đố tự bật giữa nhiệm vụ, camera tự xoay giới thiệu Trùm khi xuất hiện (`triggerCamFocus`), và thay toàn bộ `setTimeout` đòn Boss bằng bộ hẹn giờ an toàn `ctx.scheduleEvent` tạm dừng theo modal.
 - **Vật lý cầu & giải đố thật 100%**: Đi bộ vững trên Cầu gỗ Đảo Mây, Cầu vòm Rừng Nấm, Cầu đá & Đấu trường tròn Hang Pha Lê; 3 khe suối Chương 5 khoét sâu thật vào địa hình tuyết để phép `❄️` đóng băng thành Cầu Băng trượt qua; sửa trùng NPC ở cả 6 chương và tối ưu hiệu năng FPS (`PlanarReflector` xen kẽ khung hình trên mức `mid`).

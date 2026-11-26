@@ -2073,7 +2073,8 @@
       if (ctx.companion) {
         var cp = ctx.companion;
         if (cp.group.userData && cp.group.userData.mixer) {
-          if (cp.group.userData.playClip) cp.group.userData.playClip(cp.flying ? "Fly" : "Idle");
+          if (cp.group.userData.happyT > 0) cp.group.userData.happyT -= dt;
+          if (cp.group.userData.playClip) cp.group.userData.playClip(cp.flying ? "Fly" : (cp.group.userData.happyT > 0 ? "Happy" : "Idle"));
           cp.group.userData.mixer.update(dt);
         } else {
           if (cp.group.userData.tail) cp.group.userData.tail.rotation.z = Math.sin(t * 10) * 0.5;
@@ -2220,7 +2221,7 @@
         var strong = document.createElement("strong");
         strong.textContent = match[1].charAt(0);
         feedback.appendChild(strong);
-        feedback.appendChild(document.createTextNode(match[1].slice(1) + ". Hãy chọn chữ ấy nhé!"));
+        feedback.appendChild(document.createTextNode(match[1].slice(1) + ". Chữ cái đầu tiên là " + q.ans + ". Dấu thanh cho biết cách đọc tiếng đó."));
         return;
       }
     }

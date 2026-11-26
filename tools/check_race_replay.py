@@ -1,5 +1,6 @@
 """Play the ocean race from the journal, reload, and race the recorded star."""
 from functools import partial
+import argparse
 from pathlib import Path
 from threading import Thread
 
@@ -32,8 +33,67 @@ DRIVE = """async () => {
   return MAY.currentCtx.save.raceRecord;
 }"""
 
+# Steer using the same keyboard input as a player; never reposition Mây at a star.
+DRIVE_BOOST = """async index => {
+  const race=MAY.currentCtx.raceCh, star=race.boostStars[index], keys=new Set();
+  const stopAt=performance.now()+35000;
+  let closest=Infinity;
+  function steer(wanted) {
+    for(const key of ['KeyW','KeyS','KeyA','KeyD','Space','KeyC','ShiftLeft']) {
+      if(wanted.includes(key)===keys.has(key)) continue;
+      window.dispatchEvent(new KeyboardEvent(wanted.includes(key)?'keydown':'keyup',{code:key,bubbles:true}));
+      if(wanted.includes(key)) keys.add(key); else keys.delete(key);
+    }
+  }
+  while(star.visible && race.active && performance.now()<stopAt) {
+    const p=MAY.player.pos, yaw=MAY.player.yaw, dx=star.position.x-p.x,
+      dz=star.position.z-p.z, dy=star.position.y-p.y;
+    closest=Math.min(closest,p.distanceTo(star.position));
+    const f=-dx*Math.sin(yaw)-dz*Math.cos(yaw), s=dx*Math.cos(yaw)-dz*Math.sin(yaw), wanted=['ShiftLeft'];
+    if(Math.abs(f)>.5) wanted.push(f>0?'KeyW':'KeyS');
+    if(Math.abs(s)>.5) wanted.push(s>0?'KeyD':'KeyA');
+    if(Math.abs(dy)>.5) wanted.push(dy>0?'Space':'KeyC');
+    steer(wanted);
+    await new Promise(requestAnimationFrame);
+  }
+  steer([]);
+  return {collected:!!star.userData.collected, active:race.active,
+    closest:+closest.toFixed(2), position:MAY.player.pos.toArray(), target:star.position.toArray()};
+}"""
+
+
+def check_boost_stars(page):
+    # Unlock the worlds, but leave their race records empty. The second pass
+    # uses a real record produced by completing the first race.
+    page.evaluate("MAY.save.gems=[1,2,3,4,5,6]")
+    for level in range(1, 7):
+        page.evaluate("""async n => {
+          await MAY.enterLevel('level'+n,true);
+          if(MAY.Cutscene?.isPlaying()) MAY.Cutscene.skip();
+          delete MAY.currentCtx.save.raceRecord;
+        }""", level)
+        first_targets = []
+        for run in (1, 2):
+            page.evaluate("MAY.currentCtx.raceCh.launch()")
+            for index in (0, 1):
+                result = page.evaluate(DRIVE_BOOST, index)
+                print(f"level {level}, run {run}, star {index+1}: {result}", flush=True)
+                assert result['collected'], (level, run, index, result)
+                if run == 1:
+                    first_targets.append(result['target'])
+                else:
+                    assert sum((a-b)**2 for a, b in zip(first_targets[index], result['target'])) > 0.01, (level, index, first_targets[index], result['target'])
+            if run == 1:
+                record = page.evaluate(DRIVE)
+                assert record and record['wins'] == 1, (level, record)
+            else:
+                page.evaluate("MAY.currentCtx.raceCh.cancel()")
+
 
 def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--boost-stars', action='store_true', help='Drive both optional stars before and after a race win in all worlds')
+    args = parser.parse_args()
     root = Path(__file__).resolve().parents[1]
     server = Server(("127.0.0.1", 0), partial(Handler, directory=str(root)))
     Thread(target=server.serve_forever, daemon=True).start()
@@ -47,6 +107,11 @@ def main():
             page.goto(f"http://127.0.0.1:{server.server_port}/")
             page.locator("#btn-play").click()
             page.keyboard.press("Escape")
+            if args.boost_stars:
+                check_boost_stars(page)
+                assert not errors, errors
+                browser.close()
+                return
             # A finished v10 chapter from before race records were introduced.
             page.evaluate("""() => {
               MAY.save.gems=[1]; MAY.save.levels.level1.gem=true;

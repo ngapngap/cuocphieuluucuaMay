@@ -2,6 +2,8 @@
 
 These game files include work by Polyfork under [Creative Commons Attribution 4.0 International](https://creativecommons.org/licenses/by/4.0/). The game uses local copies.
 
+The bear, deer, mountain hare, rabbit and wolf animations were resampled to remove redundant keys. The game also distributes a gzip copy of the startup rabbit and sheep.
+
 | Game file | Original model by Polyfork | Changes in this game |
 | --- | --- | --- |
 | polyfork_bear.glb | [Bear](https://polyfork.dev/asset/bear-base) | New sculpt and painted coat variants for panda and polar bear, skinned to the Polyfork skeleton and animations. The frost bear uses the same rig. |

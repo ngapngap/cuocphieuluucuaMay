@@ -146,20 +146,23 @@
     return t;
   }
 
-  var TEX = {
-    hero: texLoader.load(MAY.IMG.hero),
-    sand: loadRepeatTex(MAY.IMG.sand, 16, 16),
-    rock: loadRepeatTex(MAY.IMG.rock, 4, 4),
-    wood: loadRepeatTex(MAY.IMG.wood, 2, 2),
-    caustics: loadRepeatTex(MAY.IMG.caustics, 14, 14),
-    pano: texLoader.load(MAY.IMG.pano),
-    fan: (function () {
-      var t = loadRepeatTex(MAY.IMG.fan, 0.45, 0.9); t.offset.set(0.5, 0); return t;
-    })(),
-    fanAlpha: (function () {
-      var t = loadRepeatTex(MAY.IMG.fanAlpha, 0.45, 0.9); t.offset.set(0.5, 0); return t;
-    })()
-  };
+  var TEX = { wood: loadRepeatTex(MAY.IMG.wood, 2, 2), pano: texLoader.load(MAY.IMG.pano) };
+  // Unused photos do not compete with the first playable area's models.
+  // Only loaded textures become enumerable for the shared-texture disposal check.
+  function deferPhoto(name, rx, ry, offset) {
+    Object.defineProperty(TEX, name, { configurable: true, get: function () {
+      var texture = rx ? loadRepeatTex(MAY.IMG[name], rx, ry) : texLoader.load(MAY.IMG[name]);
+      if (offset) texture.offset.x = offset;
+      Object.defineProperty(TEX, name, { value: texture, enumerable: true, configurable: true });
+      return texture;
+    } });
+  }
+  deferPhoto("hero");
+  deferPhoto("rock", 4, 4);
+  deferPhoto("sand", 16, 16);
+  deferPhoto("fan", 0.45, 0.9, 0.5);
+  deferPhoto("fanAlpha", 0.45, 0.9, 0.5);
+  deferPhoto("caustics", 14, 14);
 
   TEX.glow = (function () {
     var c = document.createElement("canvas"); c.width = c.height = 128;
@@ -774,11 +777,39 @@
 
   var modelLoads = new Map();
   var modelLoader = new THREE.GLTFLoader();
+  function loadOriginalModel(name) {
+    return new Promise(function (resolve, reject) {
+      modelLoader.load(MayPackages.modelURL(name), resolve, undefined, reject);
+    });
+  }
+  function loadPackedModel(name, url) {
+    return fetch(url).then(function (response) {
+      if (!response.ok) throw new Error("Packed model HTTP " + response.status);
+      return response.arrayBuffer();
+    }).then(function (bytes) {
+      var magic = new Uint8Array(bytes, 0, Math.min(4, bytes.byteLength));
+      // Some hosts serve .gz with Content-Encoding: gzip, so fetch already decoded it.
+      if (magic[0] === 0x1f && magic[1] === 0x8b) {
+        return new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip"))).arrayBuffer();
+      }
+      return bytes;
+    }).then(function (bytes) {
+      var header = new Uint8Array(bytes, 0, Math.min(4, bytes.byteLength));
+      if (header.length !== 4 || header[0] !== 0x67 || header[1] !== 0x6c || header[2] !== 0x54 || header[3] !== 0x46)
+        throw new Error("Invalid packed GLB");
+      // Resolve any relative glTF resources against the original model directory,
+      // never the gzip directory.
+      var base = new URL(".", new URL(MayPackages.modelURL(name), window.location.href)).href;
+      return new Promise(function (resolve, reject) { modelLoader.parse(bytes, base, resolve, reject); });
+    });
+  }
   function loadModel(name) {
     if (!modelLoads.has(name)) {
-      var request = new Promise(function (resolve, reject) {
-        modelLoader.load(MayPackages.modelURL(name), resolve, undefined, reject);
-      }).then(function (gltf) {
+      var packed = MayPackages.modelGzipURL && MayPackages.modelGzipURL(name);
+      var source = packed && MayPackages.canUseModelGzip()
+        ? loadPackedModel(name, packed).catch(function () { return loadOriginalModel(name); })
+        : loadOriginalModel(name);
+      var request = source.then(function (gltf) {
         var key = rigKeys[name];
         if (key) {
           protectTemplateObj(gltf.scene);
